@@ -1,4 +1,8 @@
 # coding:utf-8
+'''
+    EXE6_ChipTextEditor by ideal.exe
+'''
+
 import re
 import os
 import sys
