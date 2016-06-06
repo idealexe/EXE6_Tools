@@ -1,4 +1,6 @@
-# coding:utf-8
+#!/usr/bin/python
+# coding: utf-8
+
 '''
     EXE6_EnemyNameEditor by ideal.exe
 
