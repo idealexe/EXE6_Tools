@@ -82,28 +82,28 @@ CP_EXE6_2_inv = {v:k for k, v in CP_EXE6_2.items()}
 
 # グレイガ版の各種アドレス
 GXX_Addr = {
+"ChipTextStart":"0x70C364",
+"ChipTextEnd":  "0x7102A2",
 "EnemyStart":   "0x710FF6",
 "EnemyEnd":     "0x71163F",
 "NaviStart":    "0x7117B0",
 "NaviEnd":      "0x711B7F",
 "KeyItemStart": "0x75F094",
-"KeyItemStart": "0x75F37A",
+"KeyItemEnd": "0x75F37A",
 "NaviCusStart": "0x75FF36",
-"NaviCusEnd":   "0x7600A0",
-"ChipTextStart":"0x70C364",
-"ChipTextEnd":  "0x7102A2"
+"NaviCusEnd":   "0x7600A0"
 }
 
 # ファルザー版の各種アドレス
 RXX_Addr = {
+"ChipTextStart":"0x70E404",
+"ChipTextEnd":  "0x712342",
 "EnemyStart":   "0x713096",
 "EnemyEnd":     "0x7136DF",
 "NaviStart":    "0x713850",
 "NaviEnd":      "0x713C1F",
 "KeyItemStart": "0x761160",
-"KeyItemStart": "0x761446",
+"KeyItemEnd": "0x761446",
 "NaviCusStart": "0x762002",
-"NaviCusEnd":   "0x76216C",
-"ChipTextStart":"0x70E404",
-"ChipTextEnd":  "0x712342"
+"NaviCusEnd":   "0x76216C"
 }

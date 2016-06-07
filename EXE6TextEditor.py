@@ -7,9 +7,9 @@
     ※開発中のプログラムなので危険です。必ずデータのバックアップを取った状態で使用してください。
 
     開発環境はWindows10 + Python2.7.11 + PyQt4
-    現在対応しているデータはグレイガ版のみです
-    >python EXE6_TextEditor.py でGUIが開きます
-    File メニューからグレイガ版のROMデータを開きます
+    現在対応しているデータは日本語版グレイガ，ファルザーです
+    >python EXE6TextEditor.py でGUIが開きます
+    File メニューから対応しているROMデータを開きます
     敵の名前とデータの先頭アドレスが表示されます
     テキストボックス内の文字列を書き換えてWriteボタンを押すとメモリ上のROMデータを書き換えます（元のファイルに影響はありません）
     ※元の敵の名前に上書きするので容量を超えた書き込みは出来ません。元の容量より少ない場合は左を\x00で埋めます
@@ -28,8 +28,7 @@ CP_EXE6_1 = EXE6Dict.CP_EXE6_1
 CP_EXE6_2 = EXE6Dict.CP_EXE6_2
 CP_EXE6_1_inv = EXE6Dict.CP_EXE6_1_inv
 CP_EXE6_2_inv = EXE6Dict.CP_EXE6_2_inv
-GXX_Addr = EXE6Dict.GXX_Addr
-RXX_Addr = EXE6Dict.RXX_Addr
+
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
@@ -48,7 +47,7 @@ class Window(QtGui.QMainWindow):
         openAction.triggered.connect(self.openFile)
 
         statusBar = self.statusBar()
-        statusBar.showMessage("Choose File")
+        statusBar.showMessage("ファイルを選択してください")
 
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
@@ -57,9 +56,23 @@ class Window(QtGui.QMainWindow):
 
         self.widget = QtGui.QWidget()
 
-        self.text = QtGui.QTextEdit(self)   # 説明文を表示するテキストボックス
+        self.modeLabel = QtGui.QLabel(self)
+        self.modeLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignRight)   # 縦：中央，横：右寄せ
+        self.modeLabel.setText("編集するデータ")
+
+        self.modeComb = QtGui.QComboBox(self)   # モード選択用コンボボックス
+        self.modeComb.activated.connect(self.modeActivated)
+        # もうちょっとスマートな書き方ないのか
+        self.modeComb.addItem("チップ説明文")
+        self.modeComb.addItem("エネミー名")
+        self.modeComb.addItem("ナビ名")
+        self.modeComb.addItem("キーアイテム名")
+        self.modeComb.addItem("ナビカス名")
+
         self.comb = QtGui.QComboBox(self)   # リストを表示するコンボボックス
         self.comb.activated.connect(self.onActivated)   # コンボボックス内の要素が選択されたときに実行する関数を指定
+
+        self.text = QtGui.QTextEdit(self)   # 説明文を表示するテキストボックス
 
         self.btnWrite = QtGui.QPushButton("Write", self)  # テキストを書き込むボタン
         self.btnWrite.clicked.connect(self.writeText)   # ボタンを押したときに実行する関数を指定
@@ -74,6 +87,10 @@ class Window(QtGui.QMainWindow):
         self.saveBtn = QtGui.QPushButton("Save", self)  # 保存ボタン
         self.saveBtn.clicked.connect(self.saveFile)
 
+        modeHbox = QtGui.QHBoxLayout()
+        modeHbox.addWidget(self.modeLabel)
+        modeHbox.addWidget(self.modeComb)
+
         addrHbox = QtGui.QHBoxLayout()
         addrHbox.addWidget(self.addrLabel)
         addrHbox.addWidget(self.comb)
@@ -83,6 +100,7 @@ class Window(QtGui.QMainWindow):
         btnHbox.addWidget(self.saveBtn)
 
         vbox = QtGui.QVBoxLayout()
+        vbox.addLayout(modeHbox)
         vbox.addLayout(addrHbox)
         vbox.addWidget(self.text)
         vbox.addWidget(self.capacityLabel)
@@ -131,7 +149,6 @@ class Window(QtGui.QMainWindow):
                 while string[readPos] != ">":
                     currentChar += string[readPos]
                     readPos += 1
-                readPos += 1
                 currentChar += string[readPos]
 
             if currentChar in CP_EXE6_2_inv:    # 2バイト文字なら
@@ -153,6 +170,7 @@ class Window(QtGui.QMainWindow):
         readPos = startAddr
         self.enemyList = []
         currentEnemy = ""
+        self.comb.clear()
 
         while readPos <= endAddr:
             currentChar = romData[readPos]
@@ -160,7 +178,7 @@ class Window(QtGui.QMainWindow):
                 currentEnemy += currentChar
             else:
                 capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
-                enemyData = [hex(startAddr), currentEnemy, capacity]    # エネミー名の先頭アドレス，エネミー名，データ容量
+                enemyData = [hex(startAddr), currentEnemy, capacity]    # 先頭アドレス，データ文字列，データ容量
                 self.enemyList.append(enemyData)
                 self.comb.addItem( hex(startAddr) )
                 startAddr = readPos + 1
@@ -180,21 +198,44 @@ class Window(QtGui.QMainWindow):
             romName = self.romData[0xA0:0xAC]
             if romName == "ROCKEXE6_GXX":
                 print u"グレイガ版としてロードしました"
-                EXE6_Addr = EXE6Dict.GXX_Addr
+                self.EXE6_Addr = EXE6Dict.GXX_Addr
             elif romName == "ROCKEXE6_RXX":
                 print u"ファルザー版としてロードしました"
-                EXE6_Addr = EXE6Dict.RXX_Addr
+                self.EXE6_Addr = EXE6Dict.RXX_Addr
             else:
                 print u"ROMタイトルが識別出来ませんでした"
-                EXE6_Addr = EXE6Dict.GXX_Addr   # 一応グレイガ版の辞書に設定する
+                self.EXE6_Addr = EXE6Dict.GXX_Addr   # 一応グレイガ版の辞書に設定する
 
-            self.dumpListData(self.romData, EXE6_Addr["EnemyStart"], EXE6_Addr["EnemyEnd"])
+            self.dumpListData(self.romData, self.EXE6_Addr["ChipTextStart"], self.EXE6_Addr["ChipTextEnd"])
 
     def saveFile(self):
         filename = QtGui.QFileDialog.getSaveFileName(self, "Save EXE6 File", os.path.expanduser('~'))
         with open( unicode(filename), 'wb') as romFile:
             romFile.write(self.romData)
             print u"ファイルを保存しました"
+
+    # コンボボックスからモードを変更する処理
+    def modeActivated(self, mode):
+        self.currentMode = mode
+
+        # ここださい
+        if mode == 0:
+            startAddr = self.EXE6_Addr["ChipTextStart"]
+            endAddr = self.EXE6_Addr["ChipTextEnd"]
+        elif mode == 1:
+            startAddr = self.EXE6_Addr["EnemyStart"]
+            endAddr = self.EXE6_Addr["EnemyEnd"]
+        elif mode == 2:
+            startAddr = self.EXE6_Addr["NaviStart"]
+            endAddr = self.EXE6_Addr["NaviEnd"]
+        elif mode == 3:
+            startAddr = self.EXE6_Addr["KeyItemStart"]
+            endAddr = self.EXE6_Addr["KeyItemEnd"]
+        elif mode == 4:
+            startAddr = self.EXE6_Addr["NaviCusStart"]
+            endAddr = self.EXE6_Addr["NaviCusEnd"]
+
+        self.dumpListData(self.romData, startAddr, endAddr)
 
     # コンボボックスがアクティブになったとき実行
     def onActivated(self, item):    # 第二引数にはインデックスが渡される
@@ -219,7 +260,7 @@ class Window(QtGui.QMainWindow):
                 bStr = "\x00" + bStr
 
             self.romData = self.romData[0:writeAddr] + bStr + self.romData[writeAddr + capacity:]    # 文字列は上書きできないので切り貼りする
-            self.dumpEnemyName(self.romData)    # エネミーリストをリロード
+            self.modeActivated(self.currentMode)    # データのリロード
             print u"書き込み成功"
         else:   # 容量オーバー
             print u"書き込み可能な容量を超えています"
