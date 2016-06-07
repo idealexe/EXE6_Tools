@@ -80,30 +80,21 @@ CP_EXE6_2 = {
 CP_EXE6_1_inv = {v:k for k, v in CP_EXE6_1.items()}
 CP_EXE6_2_inv = {v:k for k, v in CP_EXE6_2.items()}
 
-# グレイガ版の各種アドレス
-GXX_Addr = {
-"ChipTextStart":"0x70C364",
-"ChipTextEnd":  "0x7102A2",
-"EnemyStart":   "0x710FF6",
-"EnemyEnd":     "0x71163F",
-"NaviStart":    "0x7117B0",
-"NaviEnd":      "0x711B7F",
-"KeyItemStart": "0x75F094",
-"KeyItemEnd": "0x75F37A",
-"NaviCusStart": "0x75FF36",
-"NaviCusEnd":   "0x7600A0"
-}
-
+# グレイガ版の各種アドレス[名前, 先頭アドレス, 終端アドレス]
+GXX_Addr_List = [
+["Map",      "0x6EB560", "0x6EBC09"],
+#["ChipText", "0x70C364", "0x7102A2"],
+["Enemy",    "0x710FF6", "0x71163F"],
+["Navi",     "0x7117B0", "0x711B7F"],
+["KeyItem",  "0x75F094", "0x75F37A"],
+["NaviCus",  "0x75FF36", "0x7600A0"]
+]
 # ファルザー版の各種アドレス
-RXX_Addr = {
-"ChipTextStart":"0x70E404",
-"ChipTextEnd":  "0x712342",
-"EnemyStart":   "0x713096",
-"EnemyEnd":     "0x7136DF",
-"NaviStart":    "0x713850",
-"NaviEnd":      "0x713C1F",
-"KeyItemStart": "0x761160",
-"KeyItemEnd": "0x761446",
-"NaviCusStart": "0x762002",
-"NaviCusEnd":   "0x76216C"
-}
+RXX_Addr_List = [
+["Map",      "0x6ED62C", "0x6EDCD6"],
+#["ChipText", "0x70E404", "0x712342"],
+["Enemy",    "0x713096", "0x7136DF"],
+["Navi",     "0x713850", "0x713C1F"],
+["KeyItem",  "0x761160", "0x761446"],
+["NaviCus",  "0x762002", "0x76216C"]
+]

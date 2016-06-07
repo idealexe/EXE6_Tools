@@ -62,17 +62,13 @@ class Window(QtGui.QMainWindow):
 
         self.modeComb = QtGui.QComboBox(self)   # モード選択用コンボボックス
         self.modeComb.activated.connect(self.modeActivated)
-        # もうちょっとスマートな書き方ないのか
-        self.modeComb.addItem("チップ説明文")
-        self.modeComb.addItem("エネミー名")
-        self.modeComb.addItem("ナビ名")
-        self.modeComb.addItem("キーアイテム名")
-        self.modeComb.addItem("ナビカス名")
 
         self.comb = QtGui.QComboBox(self)   # リストを表示するコンボボックス
         self.comb.activated.connect(self.onActivated)   # コンボボックス内の要素が選択されたときに実行する関数を指定
 
         self.text = QtGui.QTextEdit(self)   # 説明文を表示するテキストボックス
+        self.text.setFontPointSize(14)
+        self.text.setFontFamily("MS Gothic")
 
         self.btnWrite = QtGui.QPushButton("Write", self)  # テキストを書き込むボタン
         self.btnWrite.clicked.connect(self.writeText)   # ボタンを押したときに実行する関数を指定
@@ -108,7 +104,7 @@ class Window(QtGui.QMainWindow):
 
         self.widget.setLayout(vbox)
         self.setCentralWidget(self.widget)
-        self.resize(400, 300)
+        self.resize(800, 450)
         self.setWindowTitle("EXE6 Text Editor")
         self.show()
 
@@ -196,17 +192,22 @@ class Window(QtGui.QMainWindow):
 
             # バージョンの判定
             romName = self.romData[0xA0:0xAC]
+            global EXE6_Addr    # アドレスリストをグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
             if romName == "ROCKEXE6_GXX":
                 print u"グレイガ版としてロードしました"
-                self.EXE6_Addr = EXE6Dict.GXX_Addr
+                EXE6_Addr = EXE6Dict.GXX_Addr_List
             elif romName == "ROCKEXE6_RXX":
                 print u"ファルザー版としてロードしました"
-                self.EXE6_Addr = EXE6Dict.RXX_Addr
+                EXE6_Addr = EXE6Dict.RXX_Addr_List
             else:
                 print u"ROMタイトルが識別出来ませんでした"
-                self.EXE6_Addr = EXE6Dict.GXX_Addr   # 一応グレイガ版の辞書に設定する
+                EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
 
-            self.dumpListData(self.romData, self.EXE6_Addr["ChipTextStart"], self.EXE6_Addr["ChipTextEnd"])
+            # コンボボックスにモードを追加
+            for item in range( 0, len(EXE6_Addr) ):
+                self.modeComb.addItem(EXE6_Addr[item][0])
+
+            self.dumpListData(self.romData, EXE6_Addr[0][1], EXE6_Addr[0][2])
 
     def saveFile(self):
         filename = QtGui.QFileDialog.getSaveFileName(self, "Save EXE6 File", os.path.expanduser('~'))
@@ -217,25 +218,7 @@ class Window(QtGui.QMainWindow):
     # コンボボックスからモードを変更する処理
     def modeActivated(self, mode):
         self.currentMode = mode
-
-        # ここださい
-        if mode == 0:
-            startAddr = self.EXE6_Addr["ChipTextStart"]
-            endAddr = self.EXE6_Addr["ChipTextEnd"]
-        elif mode == 1:
-            startAddr = self.EXE6_Addr["EnemyStart"]
-            endAddr = self.EXE6_Addr["EnemyEnd"]
-        elif mode == 2:
-            startAddr = self.EXE6_Addr["NaviStart"]
-            endAddr = self.EXE6_Addr["NaviEnd"]
-        elif mode == 3:
-            startAddr = self.EXE6_Addr["KeyItemStart"]
-            endAddr = self.EXE6_Addr["KeyItemEnd"]
-        elif mode == 4:
-            startAddr = self.EXE6_Addr["NaviCusStart"]
-            endAddr = self.EXE6_Addr["NaviCusEnd"]
-
-        self.dumpListData(self.romData, startAddr, endAddr)
+        self.dumpListData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
 
     # コンボボックスがアクティブになったとき実行
     def onActivated(self, item):    # 第二引数にはインデックスが渡される
