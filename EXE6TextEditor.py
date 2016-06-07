@@ -28,6 +28,8 @@ CP_EXE6_1 = EXE6Dict.CP_EXE6_1
 CP_EXE6_2 = EXE6Dict.CP_EXE6_2
 CP_EXE6_1_inv = EXE6Dict.CP_EXE6_1_inv
 CP_EXE6_2_inv = EXE6Dict.CP_EXE6_2_inv
+GXX_Addr = EXE6Dict.GXX_Addr
+RXX_Addr = EXE6Dict.RXX_Addr
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
@@ -62,18 +64,29 @@ class Window(QtGui.QMainWindow):
         self.btnWrite = QtGui.QPushButton("Write", self)  # テキストを書き込むボタン
         self.btnWrite.clicked.connect(self.writeText)   # ボタンを押したときに実行する関数を指定
 
+        self.addrLabel = QtGui.QLabel(self)
+        self.addrLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignRight)   # 縦：中央，横：右寄せ
+        self.addrLabel.setText("データの先頭アドレス")
+
         self.capacityLabel = QtGui.QLabel(self) # 書き込める容量を表示するラベル
         self.capacityLabel.setText("")
 
         self.saveBtn = QtGui.QPushButton("Save", self)  # 保存ボタン
         self.saveBtn.clicked.connect(self.saveFile)
 
+        addrHbox = QtGui.QHBoxLayout()
+        addrHbox.addWidget(self.addrLabel)
+        addrHbox.addWidget(self.comb)
+
+        btnHbox = QtGui.QHBoxLayout()
+        btnHbox.addWidget(self.btnWrite)
+        btnHbox.addWidget(self.saveBtn)
+
         vbox = QtGui.QVBoxLayout()
-        vbox.addWidget(self.comb)
+        vbox.addLayout(addrHbox)
         vbox.addWidget(self.text)
         vbox.addWidget(self.capacityLabel)
-        vbox.addWidget(self.btnWrite)
-        vbox.addWidget(self.saveBtn)
+        vbox.addLayout(btnHbox)
 
         self.widget.setLayout(vbox)
         self.setCentralWidget(self.widget)
@@ -91,12 +104,14 @@ class Window(QtGui.QMainWindow):
             if string[readPos] == "\xE4":
                 readPos += 1  # 次の文字を
                 result += CP_EXE6_2[ string[readPos] ] # 2バイト文字として出力
+            # 会話文解析用
             elif string[readPos] == "\xF0" or string[readPos] == "\xF5":
                 result += CP_EXE6_1[ string[readPos] ]
                 result += CP_EXE6_1[ string[readPos+1] ] + CP_EXE6_1[ string[readPos+2] ] + "\n"
                 readPos += 2
             elif string[readPos] == "\xE6":
                 result += CP_EXE6_1[ string[readPos] ]
+            # 通常の1バイト文字
             else:
                 result += CP_EXE6_1[ string[readPos] ]
 
@@ -109,7 +124,7 @@ class Window(QtGui.QMainWindow):
         readPos = 0
 
         while readPos < len(string):
-            currentChar = string[readPos].encode('utf-8')   # Unicode文字列から1文字取り出した後にString型に変換
+            currentChar = string[readPos].encode('utf-8')   # Unicode文字列から1文字取り出してString型に変換
             # 改行などは<改行>などのコマンドとして表示している
             if currentChar == "<":
                 readPos += 1
@@ -125,15 +140,16 @@ class Window(QtGui.QMainWindow):
                 result += CP_EXE6_1_inv[currentChar]
             else:   # 辞書に存在しない文字なら
                 result += "\x80"    # ■に置き換え
-                print "Key Not Found"
+                print u"辞書に一致する文字がありません"
 
             readPos += 1
 
         return result
 
-    def dumpEnemyName(self, romData):
-        startAddr = int("0x710FFE", 16) # メットールの先頭アドレス
-        endAddr = int("0x71163F", 16)
+    # データからリストを作成（\xE6を区切り文字として使う）
+    def dumpListData(self, romData, startAddr, endAddr):
+        startAddr = int(startAddr, 16)  # 読み取り開始位置
+        endAddr = int(endAddr, 16)  # 読み取り終了位置
         readPos = startAddr
         self.enemyList = []
         currentEnemy = ""
@@ -159,13 +175,26 @@ class Window(QtGui.QMainWindow):
         filename = QtGui.QFileDialog.getOpenFileName(self, "Open EXE6 File", os.path.expanduser('~'))   # ファイル名がQString型で返される
         with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
             self.romData = romFile.read()
-            self.dumpEnemyName(self.romData)
+
+            # バージョンの判定
+            romName = self.romData[0xA0:0xAC]
+            if romName == "ROCKEXE6_GXX":
+                print u"グレイガ版としてロードしました"
+                EXE6_Addr = EXE6Dict.GXX_Addr
+            elif romName == "ROCKEXE6_RXX":
+                print u"ファルザー版としてロードしました"
+                EXE6_Addr = EXE6Dict.RXX_Addr
+            else:
+                print u"ROMタイトルが識別出来ませんでした"
+                EXE6_Addr = EXE6Dict.GXX_Addr   # 一応グレイガ版の辞書に設定する
+
+            self.dumpListData(self.romData, EXE6_Addr["EnemyStart"], EXE6_Addr["EnemyEnd"])
 
     def saveFile(self):
         filename = QtGui.QFileDialog.getSaveFileName(self, "Save EXE6 File", os.path.expanduser('~'))
         with open( unicode(filename), 'wb') as romFile:
             romFile.write(self.romData)
-            print "Save"
+            print u"ファイルを保存しました"
 
     # コンボボックスがアクティブになったとき実行
     def onActivated(self, item):    # 第二引数にはインデックスが渡される
@@ -175,6 +204,7 @@ class Window(QtGui.QMainWindow):
         self.text.setText(txt)  # テキストボックスに表示
         self.capacityLabel.setText( "書き込み可能容量: " + str(self.enemyList[item][2]) + " バイト")
 
+    # 書き込みボタンが押されたとき実行
     def writeText(self):
         currentEnemy = self.enemyList[self.currentItem]
         writeAddr = int(currentEnemy[0], 16)    # 書き込み開始位置
@@ -201,7 +231,7 @@ main
 def main():
     app = QtGui.QApplication(sys.argv)
     # 日本語文字コードを正常表示するための設定
-    QtCore.QTextCodec.setCodecForCStrings( QtCore.QTextCodec.codecForName("utf8") )
+    QtCore.QTextCodec.setCodecForCStrings( QtCore.QTextCodec.codecForName("utf-8") )
     window = Window()
     sys.exit(app.exec_())
 
