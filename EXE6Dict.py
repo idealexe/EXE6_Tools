@@ -34,9 +34,9 @@ CP_EXE6_1 = {
 "\xC8":"を", "\xC9":"わ", "\xCA":"研", "\xCB":"げ", "\xCC":"ぐ", "\xCD":"ご", "\xCE":"が", "\xCF":"ぎ",
 "\xD0":"ぜ", "\xD1":"ず", "\xD2":"じ", "\xD3":"ぞ", "\xD4":"ざ", "\xD5":"で", "\xD6":"ど", "\xD7":"づ",
 "\xD8":"だ", "\xD9":"ぢ", "\xDA":"べ", "\xDB":"ば", "\xDC":"び", "\xDD":"ぼ", "\xDE":"ぶ", "\xDF":"ぽ",
-"\xE0":"ぷ", "\xE1":"ぴ", "\xE2":"ぺ", "\xE3":"ぱ", "\xE4":"xE4",    "\xE5":"xE5",    "\xE6":"<close>\n",    "\xE7":"<end>\n",
-"\xE8":"<テキスト>",    "\xE9":"<改行>\n",    "\xEA":"xEA",    "\xEB":"xEB",    "\xEC":"xEC",    "\xED":"xED",    "\xEE":"xEE",    "\xEF":"xEF",
-"\xF0":"<ch_speaker>",    "\xF1":"xF1",    "\xF2":"<update>\n",    "\xF3":"xF3",    "\xF4":"xF4",    "\xF5":"<open>",    "\xF6":"xF6",    "\xF7":"xF7",
+"\xE0":"ぷ", "\xE1":"ぴ", "\xE2":"ぺ", "\xE3":"ぱ", "\xE4":"xE4",    "\xE5":"xE5",    "\xE6":"<E6:閉>\n",    "\xE7":"<E7:終端>",
+"\xE8":"<E8:開>",    "\xE9":"<E9:改行>\n",    "\xEA":"xEA",    "\xEB":"xEB",    "\xEC":"<EC:Cursor>",    "\xED":"<ED:Select>\n",    "\xEE":"xEE",    "\xEF":"\n<skip?>\n",
+"\xF0":"<F0:ch_speaker>",    "\xF1":"<F1:Speed>",    "\xF2":"<F2:消去>\n",    "\xF3":"xF3",    "\xF4":"<F4:Sound>",    "\xF5":"\n<F5:顔>",    "\xF6":"xF6",    "\xF7":"xF7",
 "\xF8":"xF8",    "\xF9":"xF9",    "\xFA":"xFA",    "\xFB":"xFB",    "\xFC":"xFC",    "\xFD":"xFD",    "\xFE":"xFE",    "\xFF":"xFF",
 }
 
@@ -83,7 +83,7 @@ CP_EXE6_2_inv = {v:k for k, v in CP_EXE6_2.items()}
 # グレイガ版の各種アドレス[名前, 先頭アドレス, 終端アドレス]
 GXX_Addr_List = [
 ["Map",      "0x6EB560", "0x6EBC09"],
-#["ChipText", "0x70C364", "0x7102A2"],
+["ChipText", "0x70C364", "0x7102A2"],
 ["Enemy",    "0x710FF6", "0x71163F"],
 ["Navi",     "0x7117B0", "0x711B7F"],
 ["KeyItem",  "0x75F094", "0x75F37A"],
@@ -92,7 +92,7 @@ GXX_Addr_List = [
 # ファルザー版の各種アドレス
 RXX_Addr_List = [
 ["Map",      "0x6ED62C", "0x6EDCD6"],
-#["ChipText", "0x70E404", "0x712342"],
+["ChipText", "0x70E404", "0x712342"],
 ["Enemy",    "0x713096", "0x7136DF"],
 ["Navi",     "0x713850", "0x713C1F"],
 ["KeyItem",  "0x761160", "0x761446"],

@@ -204,6 +204,7 @@ class Window(QtGui.QMainWindow):
                 EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
 
             # コンボボックスにモードを追加
+            self.modeComb.clear()   # ROMを二回読み込んだ場合などのためにクリアする
             for item in range( 0, len(EXE6_Addr) ):
                 self.modeComb.addItem(EXE6_Addr[item][0])
 
