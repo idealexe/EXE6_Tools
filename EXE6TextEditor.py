@@ -183,7 +183,6 @@ class Window(QtGui.QMainWindow):
                 currentData = ""
 
             readPos += 1
-        self.currentItem = 0
         self.onActivated(self.currentItem)
 
     # チップ説明文モードだけ少し改変
@@ -214,7 +213,6 @@ class Window(QtGui.QMainWindow):
                 currentChip = ""
 
             readPos += 1
-        self.currentItem = 0
         self.onActivated(self.currentItem)
 
     def openFile(self):
@@ -240,6 +238,8 @@ class Window(QtGui.QMainWindow):
             for item in range( 0, len(EXE6_Addr) ):
                 self.modeComb.addItem(EXE6_Addr[item][0])
 
+            self.currentMode = 0    # 初期化
+            self.currentItem = 0    # 初期化
             self.dumpListData(self.romData, EXE6_Addr[0][1], EXE6_Addr[0][2])
 
     def saveFile(self):
@@ -281,6 +281,7 @@ class Window(QtGui.QMainWindow):
 
             self.romData = self.romData[0:writeAddr] + bStr + self.romData[writeAddr + capacity:]    # 文字列は上書きできないので切り貼りする
             self.modeActivated(self.currentMode)    # データのリロード
+            self.onActivated(self.currentItem)
             print u"書き込み成功"
         else:   # 容量オーバー
             print u"書き込み可能な容量を超えています"
