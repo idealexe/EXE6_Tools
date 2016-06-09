@@ -240,7 +240,7 @@ class Window(QtGui.QMainWindow):
 
             self.currentMode = 0    # 初期化
             self.currentItem = 0    # 初期化
-            self.dumpListData(self.romData, EXE6_Addr[0][1], EXE6_Addr[0][2])
+            self.dumpListData(self.romData, EXE6_Addr[self.currentMode][1], EXE6_Addr[self.currentMode][2])
 
     def saveFile(self):
         filename = QtGui.QFileDialog.getSaveFileName(self, "Save EXE6 File", os.path.expanduser('~'))
@@ -251,7 +251,8 @@ class Window(QtGui.QMainWindow):
     # コンボボックスからモードを変更する処理
     def modeActivated(self, mode):
         self.currentMode = mode
-        if self.currentMode != 1:    # チップ説明文モード以外
+        self.currentItem = 0    # モードを切り替えた時は先頭のアイテムを表示
+        if mode != 1:    # チップ説明文モード以外
             self.dumpListData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
         else:   # チップ説明文モード
             self.dumpChipData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
@@ -266,7 +267,8 @@ class Window(QtGui.QMainWindow):
 
     # 書き込みボタンが押されたとき実行
     def writeText(self):
-        currentData = self.dataList[self.currentItem]
+        currentItem = self.currentItem  # 書き込んだ後同じ位置に復帰できるようにローカル変数にする
+        currentData = self.dataList[currentItem]
         writeAddr = int(currentData[0], 16)    # 書き込み開始位置
         capacity = currentData[2]  # 書き込み可能容量
         qStr = self.text.toPlainText()  # Python2.xだとQStringという型でデータが返される
@@ -281,7 +283,8 @@ class Window(QtGui.QMainWindow):
 
             self.romData = self.romData[0:writeAddr] + bStr + self.romData[writeAddr + capacity:]    # 文字列は上書きできないので切り貼りする
             self.modeActivated(self.currentMode)    # データのリロード
-            self.onActivated(self.currentItem)
+            self.onActivated(currentItem)
+            self.comb.setCurrentIndex(currentItem) # コンボボックスの選択位置を維持
             print u"書き込み成功"
         else:   # 容量オーバー
             print u"書き込み可能な容量を超えています"
