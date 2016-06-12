@@ -66,6 +66,10 @@ class Window(QtGui.QMainWindow):
         self.comb = QtGui.QComboBox(self)   # リストを表示するコンボボックス
         self.comb.activated.connect(self.onActivated)   # コンボボックス内の要素が選択されたときに実行する関数を指定
 
+        self.listModel = QtGui.QStandardItemModel()
+        self.itemList = QtGui.QListView(self)
+        self.itemList.setModel(self.listModel)
+
         self.text = QtGui.QTextEdit(self)   # 説明文を表示するテキストボックス
         self.text.setFontPointSize(14)
         self.text.setFontFamily("MS Gothic")
@@ -91,6 +95,10 @@ class Window(QtGui.QMainWindow):
         addrHbox.addWidget(self.addrLabel)
         addrHbox.addWidget(self.comb)
 
+        viewHbox = QtGui.QHBoxLayout()
+        viewHbox.addWidget(self.itemList)
+        viewHbox.addWidget(self.text)
+
         btnHbox = QtGui.QHBoxLayout()
         btnHbox.addWidget(self.btnWrite)
         btnHbox.addWidget(self.saveBtn)
@@ -98,7 +106,7 @@ class Window(QtGui.QMainWindow):
         vbox = QtGui.QVBoxLayout()
         vbox.addLayout(modeHbox)
         vbox.addLayout(addrHbox)
-        vbox.addWidget(self.text)
+        vbox.addLayout(viewHbox)
         vbox.addWidget(self.capacityLabel)
         vbox.addLayout(btnHbox)
 
@@ -179,6 +187,7 @@ class Window(QtGui.QMainWindow):
                 data = [hex(startAddr), currentData, capacity]    # 先頭アドレス，データ文字列，データ容量
                 self.dataList.append(data)
                 self.comb.addItem( hex(startAddr) )
+                self.listModel.appendRow( QtGui.QStandardItem(hex(startAddr)) )
                 startAddr = readPos + 1
                 currentData = ""
 
@@ -194,6 +203,7 @@ class Window(QtGui.QMainWindow):
         self.dataList = []
         currentChip = ""
         self.comb.clear()
+        self.itemList.clear()
 
         while readPos <= endAddr:
             currentChar = romData[readPos]
@@ -210,6 +220,7 @@ class Window(QtGui.QMainWindow):
                 chipData = [hex(startAddr), currentChip, capacity]    # 先頭アドレス，データ文字列，データ容量
                 self.dataList.append(chipData)
                 self.comb.addItem( hex(startAddr) )
+                self.itemList( hex(startAddr) )
                 startAddr = readPos + 1
                 currentChip = ""
 
