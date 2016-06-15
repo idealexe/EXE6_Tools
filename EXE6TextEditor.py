@@ -10,17 +10,20 @@
     現在対応しているデータは日本語版グレイガ，ファルザーです
     >python EXE6TextEditor.py でGUIが開きます
     File メニューから対応しているROMデータを開きます
-    敵の名前とデータの先頭アドレスが表示されます
+    データの先頭アドレスと文字列データが表示されます
     テキストボックス内の文字列を書き換えてWriteボタンを押すとメモリ上のROMデータを書き換えます（元のファイルに影響はありません）
-    ※元の敵の名前に上書きするので容量を超えた書き込みは出来ません。元の容量より少ない場合は左を\x00で埋めます
+    ※元の文字列に上書きするので容量を超えた書き込みは出来ません。元の容量より少ない場合は左を\x00で埋めます
     Saveボタンを押すと保存メニューが開き、書き換えたデータをファイルに保存できます
+
 '''
 
 import re
 import os
 import sys
+import gettext
 from PyQt4 import QtGui
 from PyQt4 import QtCore
+_ = gettext.gettext # 後の翻訳用
 
 # 辞書のインポート
 import EXE6Dict
@@ -36,21 +39,25 @@ class Window(QtGui.QMainWindow):
         self.setMyself()
 
     def setMyself(self):
-        exitAction = QtGui.QAction(QtGui.QIcon('icon.png'), '&Exit', self)
+        # 終了
+        exitAction = QtGui.QAction( _("&Exit"), self)
         exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip("Exit Application")
-        exitAction.triggered.connect(QtGui.qApp.quit)
+        exitAction.setStatusTip( _("Exit Application") )
+        exitAction.triggered.connect( QtGui.qApp.quit )
 
-        openAction = QtGui.QAction(QtGui.QIcon('icon.png'), "&Open EXE6 File", self)
+        # ファイルを開く
+        openAction = QtGui.QAction( _("&Open EXE6 File"), self)
         openAction.setShortcut('Ctrl+O')
-        openAction.setStatusTip("Open GBA File")
-        openAction.triggered.connect(self.openFile)
+        openAction.setStatusTip( _("Open GBA File") )
+        openAction.triggered.connect( self.openFile )
 
+        # ステータスバー
         statusBar = self.statusBar()
-        statusBar.showMessage("ファイルを選択してください")
+        statusBar.showMessage( _("ファイルを選択してください") )
 
+        # メニューバー
         menuBar = self.menuBar()
-        fileMenu = menuBar.addMenu('&File')
+        fileMenu = menuBar.addMenu( _('&File') )
         fileMenu.addAction(openAction)
         fileMenu.addAction(exitAction)
 
@@ -58,42 +65,30 @@ class Window(QtGui.QMainWindow):
 
         self.modeLabel = QtGui.QLabel(self)
         self.modeLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignRight)   # 縦：中央，横：右寄せ
-        self.modeLabel.setText("編集するデータ")
+        self.modeLabel.setText( _("編集するデータ") )
 
         self.modeComb = QtGui.QComboBox(self)   # モード選択用コンボボックス
         self.modeComb.activated.connect(self.modeActivated)
 
-        self.comb = QtGui.QComboBox(self)   # リストを表示するコンボボックス
-        self.comb.activated.connect(self.onActivated)   # コンボボックス内の要素が選択されたときに実行する関数を指定
+        self.itemList = QtGui.QListWidget(self) # 要素を表示するリスト
+        self.itemList.currentRowChanged.connect(self.itemActivated) # クリックされた時に実行する関数
 
-        self.listModel = QtGui.QStandardItemModel()
-        self.itemList = QtGui.QListView(self)
-        self.itemList.setModel(self.listModel)
-
-        self.text = QtGui.QTextEdit(self)   # 説明文を表示するテキストボックス
-        self.text.setFontPointSize(14)
+        self.text = QtGui.QTextEdit(self)   # 文字列データを表示するテキストボックス
+        #self.text.setFontPointSize(14)
         self.text.setFontFamily("MS Gothic")
 
-        self.btnWrite = QtGui.QPushButton("Write", self)  # テキストを書き込むボタン
+        self.btnWrite = QtGui.QPushButton( _("Write"), self)  # テキストを書き込むボタン
         self.btnWrite.clicked.connect(self.writeText)   # ボタンを押したときに実行する関数を指定
-
-        self.addrLabel = QtGui.QLabel(self)
-        self.addrLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignRight)   # 縦：中央，横：右寄せ
-        self.addrLabel.setText("データの先頭アドレス")
 
         self.capacityLabel = QtGui.QLabel(self) # 書き込める容量を表示するラベル
         self.capacityLabel.setText("")
 
-        self.saveBtn = QtGui.QPushButton("Save", self)  # 保存ボタン
+        self.saveBtn = QtGui.QPushButton( _("Save"), self)  # 保存ボタン
         self.saveBtn.clicked.connect(self.saveFile)
 
         modeHbox = QtGui.QHBoxLayout()
         modeHbox.addWidget(self.modeLabel)
         modeHbox.addWidget(self.modeComb)
-
-        addrHbox = QtGui.QHBoxLayout()
-        addrHbox.addWidget(self.addrLabel)
-        addrHbox.addWidget(self.comb)
 
         viewHbox = QtGui.QHBoxLayout()
         viewHbox.addWidget(self.itemList)
@@ -105,7 +100,6 @@ class Window(QtGui.QMainWindow):
 
         vbox = QtGui.QVBoxLayout()
         vbox.addLayout(modeHbox)
-        vbox.addLayout(addrHbox)
         vbox.addLayout(viewHbox)
         vbox.addWidget(self.capacityLabel)
         vbox.addLayout(btnHbox)
@@ -113,8 +107,140 @@ class Window(QtGui.QMainWindow):
         self.widget.setLayout(vbox)
         self.setCentralWidget(self.widget)
         self.resize(400, 400)
-        self.setWindowTitle("EXE6 Text Editor")
+        self.setWindowTitle( _("EXE6 Text Editor") )
         self.show()
+
+    def openFile(self):
+        filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('~'))   # ファイル名がQString型で返される
+        with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
+            self.romData = romFile.read()
+
+            # バージョンの判定（使用する辞書を選択するため）
+            romName = self.romData[0xA0:0xAC]
+            global EXE6_Addr    # アドレスリストをグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
+            if romName == "ROCKEXE6_GXX":
+                print u"グレイガ版としてロードしました"
+                EXE6_Addr = EXE6Dict.GXX_Addr_List
+            elif romName == "ROCKEXE6_RXX":
+                print u"ファルザー版としてロードしました"
+                EXE6_Addr = EXE6Dict.RXX_Addr_List
+            else:
+                print u"ROMタイトルが識別出来ませんでした"
+                EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
+
+            # コンボボックスにモードを追加
+            self.modeComb.clear()   # ROMを二回読み込んだ場合などのためにクリアする
+            for item in range( 0, len(EXE6_Addr) ):
+                self.modeComb.addItem(EXE6_Addr[item][0])
+            self.currentMode = 0    # モードの初期化
+            self.currentItem = 0
+
+            self.dumpListData(self.romData, EXE6_Addr[0][1], EXE6_Addr[0][2])
+
+    # データからリストを作成（\xE6を区切り文字として使う）
+    def dumpListData(self, romData, startAddr, endAddr):
+        print "<dumpListData>"
+        startAddr = int(startAddr, 16)  # 読み取り開始位置
+        endAddr = int(endAddr, 16)  # 読み取り終了位置
+        readPos = startAddr
+        self.dataList = []  # リストの初期化
+        self.itemList.clear()   # 表示用リストの初期化
+        currentData = ""    # データ保持用
+
+        while readPos <= endAddr:
+            currentChar = romData[readPos]
+            if currentChar != "\xE6":   # 文字列の終端でなければ
+                currentData += currentChar
+            else:
+                capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
+                data = [hex(startAddr), currentData, capacity]    # 先頭アドレス，データ文字列，データ容量
+                self.dataList.append(data)
+                self.itemList.addItem( data[0] )
+                startAddr = readPos + 1
+                currentData = ""
+
+            readPos += 1
+
+        self.itemList.setCurrentRow(self.currentItem)   # 選択位置を保持する
+
+    # チップ説明文モードだけ少し改変
+    def dumpChipData(self, romData, startAddr, endAddr):
+        startAddr = int(startAddr, 16)  # 読み取り開始位置
+        endAddr = int(endAddr, 16)  # 読み取り終了位置
+        readPos = startAddr
+        self.dataList = []
+        currentChip = ""
+        self.comb.clear()
+        self.itemList.clear()
+
+        while readPos <= endAddr:
+            currentChar = romData[readPos]
+            if currentChar != "\xE6":   # 文字列の終端でなければ
+                currentChip += currentChar
+            else:   # "\xE6"まで読み込んだら
+                if currentChip[0:11] == "\xE8\x07\x01\x01\xE8\x06\x01\x01\xF1\x00\x00": # 一般的なチップなら
+                    startAddr += 11 # 実際の文字列の先頭を開始位置にする（書き込むときのため）
+                    currentChip = currentChip[11:-2]    # 後ろの制御文字もカット
+                    capacity = readPos - startAddr -2
+                else:
+                    capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
+
+                chipData = [hex(startAddr), currentChip, capacity]    # 先頭アドレス，データ文字列，データ容量
+                self.dataList.append(chipData)
+                self.comb.addItem( hex(startAddr) )
+                self.itemList( hex(startAddr) )
+                startAddr = readPos + 1
+                currentChip = ""
+
+            readPos += 1
+        self.currentItem = 0
+        self.onActivated(self.currentItem)
+
+    # リスト内のアイテムがアクティブになったとき実行
+    def itemActivated(self, item):    # 第二引数には現在のリストのインデックスが渡される
+        print "<itemActivated>"
+        if item != -1:  # リストから選択が外れると-1を返すのでそのときは処理を行わない（保存ボタンなどを押す時のため）
+            self.currentItem = item # 現在のアイテムを記憶
+            #print self.currentItem
+
+            currentData = self.dataList[self.currentItem]
+            txt = currentData[1]
+            txt = self.encodeByEXE6Dict(txt)   # 対応するデータをエンコード
+            self.text.setText(txt)  # テキストボックスに表示
+            self.capacityLabel.setText( "書き込み可能容量: " + str(currentData[2]) + " バイト")
+        else:
+            pass
+
+    # 書き込みボタンが押されたとき実行
+    def writeText(self):
+        print "<writeText>"
+        currentData = self.dataList[self.currentItem]
+        writeAddr = int(currentData[0], 16)    # 書き込み開始位置
+        capacity = currentData[2]  # 書き込み可能容量
+        qStr = self.text.toPlainText()  # Python2.xだとQStringという型でデータが返される
+        uStr = unicode(qStr)  # 一旦QStringからUnicode文字列に変換しないとダメ（めんどくさい）
+        uStr = uStr.replace("\n","")    # 改行文字も取り除く
+        #print isinstance(sStr, unicode)
+        bStr = self.decodeByEXE6Dict(uStr)  # バイナリ文字列
+
+        if len(bStr) <= capacity: # 新しい文字列データが書き込み可能なサイズなら
+            while len(bStr) < capacity: # 文字数が足りない場合は0埋め（もっとマシな書き方は・・・）
+                bStr = "\x00" + bStr
+
+            self.romData = self.romData[0:writeAddr] + bStr + self.romData[writeAddr + capacity:]    # 文字列は上書きできないので切り貼りする
+            self.modeActivated(self.currentMode)    # データのリロード
+            print u"書き込み成功"
+        else:   # 容量オーバー
+            print u"書き込み可能な容量を超えています"
+
+    # コンボボックスからモードを変更する処理
+    def modeActivated(self, mode):
+        print "<modeActivated>"
+        self.currentMode = mode
+        if self.currentMode != 1:    # チップ説明文モード以外
+            self.dumpListData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
+        else:   # チップ説明文モード
+            self.dumpChipData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
 
     # 辞書に基づいてバイナリ->テキスト
     def encodeByEXE6Dict(self, string):
@@ -169,137 +295,18 @@ class Window(QtGui.QMainWindow):
 
         return result
 
-    # データからリストを作成（\xE6を区切り文字として使う）
-    def dumpListData(self, romData, startAddr, endAddr):
-        startAddr = int(startAddr, 16)  # 読み取り開始位置
-        endAddr = int(endAddr, 16)  # 読み取り終了位置
-        readPos = startAddr
-        self.dataList = []
-        currentData = ""
-        self.comb.clear()
-
-        while readPos <= endAddr:
-            currentChar = romData[readPos]
-            if currentChar != "\xE6":   # 文字列の終端でなければ
-                currentData += currentChar
-            else:
-                capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
-                data = [hex(startAddr), currentData, capacity]    # 先頭アドレス，データ文字列，データ容量
-                self.dataList.append(data)
-                self.comb.addItem( hex(startAddr) )
-                self.listModel.appendRow( QtGui.QStandardItem(hex(startAddr)) )
-                startAddr = readPos + 1
-                currentData = ""
-
-            readPos += 1
-        self.currentItem = 0
-        self.onActivated(self.currentItem)
-
-    # チップ説明文モードだけ少し改変
-    def dumpChipData(self, romData, startAddr, endAddr):
-        startAddr = int(startAddr, 16)  # 読み取り開始位置
-        endAddr = int(endAddr, 16)  # 読み取り終了位置
-        readPos = startAddr
-        self.dataList = []
-        currentChip = ""
-        self.comb.clear()
-        self.itemList.clear()
-
-        while readPos <= endAddr:
-            currentChar = romData[readPos]
-            if currentChar != "\xE6":   # 文字列の終端でなければ
-                currentChip += currentChar
-            else:   # "\xE6"まで読み込んだら
-                if currentChip[0:11] == "\xE8\x07\x01\x01\xE8\x06\x01\x01\xF1\x00\x00": # 一般的なチップなら
-                    startAddr += 11 # 実際の文字列の先頭を開始位置にする（書き込むときのため）
-                    currentChip = currentChip[11:-2]    # 後ろの制御文字もカット
-                    capacity = readPos - startAddr -2
-                else:
-                    capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
-
-                chipData = [hex(startAddr), currentChip, capacity]    # 先頭アドレス，データ文字列，データ容量
-                self.dataList.append(chipData)
-                self.comb.addItem( hex(startAddr) )
-                self.itemList( hex(startAddr) )
-                startAddr = readPos + 1
-                currentChip = ""
-
-            readPos += 1
-        self.currentItem = 0
-        self.onActivated(self.currentItem)
-
-    def openFile(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self, "Open EXE6 File", os.path.expanduser('~'))   # ファイル名がQString型で返される
-        with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
-            self.romData = romFile.read()
-
-            # バージョンの判定
-            romName = self.romData[0xA0:0xAC]
-            global EXE6_Addr    # アドレスリストをグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
-            if romName == "ROCKEXE6_GXX":
-                print u"グレイガ版としてロードしました"
-                EXE6_Addr = EXE6Dict.GXX_Addr_List
-            elif romName == "ROCKEXE6_RXX":
-                print u"ファルザー版としてロードしました"
-                EXE6_Addr = EXE6Dict.RXX_Addr_List
-            else:
-                print u"ROMタイトルが識別出来ませんでした"
-                EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
-
-            # コンボボックスにモードを追加
-            self.modeComb.clear()   # ROMを二回読み込んだ場合などのためにクリアする
-            for item in range( 0, len(EXE6_Addr) ):
-                self.modeComb.addItem(EXE6_Addr[item][0])
-
-            self.dumpListData(self.romData, EXE6_Addr[0][1], EXE6_Addr[0][2])
-
     def saveFile(self):
-        filename = QtGui.QFileDialog.getSaveFileName(self, "Save EXE6 File", os.path.expanduser('~'))
+        filename = QtGui.QFileDialog.getSaveFileName(self, _("Save EXE6 File"), os.path.expanduser('~'))
         with open( unicode(filename), 'wb') as romFile:
             romFile.write(self.romData)
             print u"ファイルを保存しました"
 
-    # コンボボックスからモードを変更する処理
-    def modeActivated(self, mode):
-        self.currentMode = mode
-        if self.currentMode != 1:    # チップ説明文モード以外
-            self.dumpListData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
-        else:   # チップ説明文モード
-            self.dumpChipData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
-
-    # コンボボックスがアクティブになったとき実行
-    def onActivated(self, item):    # 第二引数にはインデックスが渡される
-        self.currentItem = item # 現在のアイテムを記憶
-        data = self.dataList[item][1]
-        txt = self.encodeByEXE6Dict(data)   # 対応するデータをエンコード
-        self.text.setText(txt)  # テキストボックスに表示
-        self.capacityLabel.setText( "書き込み可能容量: " + str(self.dataList[item][2]) + " バイト")
-
-    # 書き込みボタンが押されたとき実行
-    def writeText(self):
-        currentData = self.dataList[self.currentItem]
-        writeAddr = int(currentData[0], 16)    # 書き込み開始位置
-        capacity = currentData[2]  # 書き込み可能容量
-        qStr = self.text.toPlainText()  # Python2.xだとQStringという型でデータが返される
-        uStr = unicode(qStr)  # 一旦QStringからUnicode文字列に変換しないとダメ（めんどくさい）
-        uStr = uStr.replace("\n","")    # 改行文字も取り除く
-        #print isinstance(sStr, unicode)
-        bStr = self.decodeByEXE6Dict(uStr)  # バイナリ文字列
-
-        if len(bStr) <= capacity: # 新しい文字列データが書き込み可能なサイズなら
-            while len(bStr) < capacity: # 文字数が足りない場合は0埋め（もっとマシな書き方は・・・）
-                bStr = "\x00" + bStr
-
-            self.romData = self.romData[0:writeAddr] + bStr + self.romData[writeAddr + capacity:]    # 文字列は上書きできないので切り貼りする
-            self.modeActivated(self.currentMode)    # データのリロード
-            print u"書き込み成功"
-        else:   # 容量オーバー
-            print u"書き込み可能な容量を超えています"
-
 
 '''
 main
+
 '''
+
 def main():
     app = QtGui.QApplication(sys.argv)
     # 日本語文字コードを正常表示するための設定
