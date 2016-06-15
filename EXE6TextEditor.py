@@ -152,7 +152,17 @@ class Window(QtGui.QMainWindow):
             if currentChar != "\xE6":   # 文字列の終端でなければ
                 currentData += currentChar
             else:
-                capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
+                if self.currentMode != 1:   # チップ説明文モード以外
+                    capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
+                    data = [hex(startAddr), currentData, capacity]    # 先頭アドレス，データ文字列，データ容量
+                else:   # チップ説明文モード
+                    if currentData[0:11] == "\xE8\x07\x01\x01\xE8\x06\x01\x01\xF1\x00\x00": # 一般的なチップなら
+                        startAddr += 11 # 実際の文字列の先頭を開始位置にする（書き込むときのため）
+                        currentData = currentData[11:-2]    # 後ろの制御文字もカット
+                        capacity = readPos - startAddr -2
+                    else:
+                        capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
+
                 data = [hex(startAddr), currentData, capacity]    # 先頭アドレス，データ文字列，データ容量
                 self.dataList.append(data)
                 self.itemList.addItem( data[0] )
@@ -162,39 +172,6 @@ class Window(QtGui.QMainWindow):
             readPos += 1
 
         self.itemList.setCurrentRow(self.currentItem)   # 選択位置を保持する
-
-    # チップ説明文モードだけ少し改変
-    def dumpChipData(self, romData, startAddr, endAddr):
-        startAddr = int(startAddr, 16)  # 読み取り開始位置
-        endAddr = int(endAddr, 16)  # 読み取り終了位置
-        readPos = startAddr
-        self.dataList = []
-        currentChip = ""
-        self.comb.clear()
-        self.itemList.clear()
-
-        while readPos <= endAddr:
-            currentChar = romData[readPos]
-            if currentChar != "\xE6":   # 文字列の終端でなければ
-                currentChip += currentChar
-            else:   # "\xE6"まで読み込んだら
-                if currentChip[0:11] == "\xE8\x07\x01\x01\xE8\x06\x01\x01\xF1\x00\x00": # 一般的なチップなら
-                    startAddr += 11 # 実際の文字列の先頭を開始位置にする（書き込むときのため）
-                    currentChip = currentChip[11:-2]    # 後ろの制御文字もカット
-                    capacity = readPos - startAddr -2
-                else:
-                    capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
-
-                chipData = [hex(startAddr), currentChip, capacity]    # 先頭アドレス，データ文字列，データ容量
-                self.dataList.append(chipData)
-                self.comb.addItem( hex(startAddr) )
-                self.itemList( hex(startAddr) )
-                startAddr = readPos + 1
-                currentChip = ""
-
-            readPos += 1
-        self.currentItem = 0
-        self.onActivated(self.currentItem)
 
     # リスト内のアイテムがアクティブになったとき実行
     def itemActivated(self, item):    # 第二引数には現在のリストのインデックスが渡される
@@ -224,8 +201,8 @@ class Window(QtGui.QMainWindow):
         bStr = self.decodeByEXE6Dict(uStr)  # バイナリ文字列
 
         if len(bStr) <= capacity: # 新しい文字列データが書き込み可能なサイズなら
-            while len(bStr) < capacity: # 文字数が足りない場合は0埋め（もっとマシな書き方は・・・）
-                bStr = "\x00" + bStr
+            while len(bStr) < capacity: # 文字数が足りない場合は■で埋める
+                bStr = "\x80" + bStr
 
             self.romData = self.romData[0:writeAddr] + bStr + self.romData[writeAddr + capacity:]    # 文字列は上書きできないので切り貼りする
             self.modeActivated(self.currentMode)    # データのリロード
@@ -237,10 +214,7 @@ class Window(QtGui.QMainWindow):
     def modeActivated(self, mode):
         print "<modeActivated>"
         self.currentMode = mode
-        if self.currentMode != 1:    # チップ説明文モード以外
-            self.dumpListData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
-        else:   # チップ説明文モード
-            self.dumpChipData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
+        self.dumpListData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
 
     # 辞書に基づいてバイナリ->テキスト
     def encodeByEXE6Dict(self, string):
