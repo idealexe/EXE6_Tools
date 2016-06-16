@@ -62,6 +62,7 @@ class Window(QtGui.QMainWindow):
         fileMenu.addAction(exitAction)
 
         self.widget = QtGui.QWidget()
+        self.monoFont = QtGui.QFont("MS Gothic")
 
         self.modeLabel = QtGui.QLabel(self)
         self.modeLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignRight)   # 縦：中央，横：右寄せ
@@ -139,7 +140,7 @@ class Window(QtGui.QMainWindow):
 
     # データからリストを作成（\xE6を区切り文字として使う）
     def dumpListData(self, romData, startAddr, endAddr):
-        print "<dumpListData>"
+        #print "<dumpListData>"
         startAddr = int(startAddr, 16)  # 読み取り開始位置
         endAddr = int(endAddr, 16)  # 読み取り終了位置
         readPos = startAddr
@@ -154,7 +155,8 @@ class Window(QtGui.QMainWindow):
             else:
                 if self.currentMode != 1:   # チップ説明文モード以外
                     capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
-                    data = [hex(startAddr), currentData, capacity]    # 先頭アドレス，データ文字列，データ容量
+                    #data = [hex(startAddr), currentData, capacity]    # 先頭アドレス，データ文字列，データ容量
+                    item = QtGui.QListWidgetItem( self.encodeByEXE6Dict(currentData) )  # 一覧に追加する文字列
                 else:   # チップ説明文モード
                     if currentData[0:11] == "\xE8\x07\x01\x01\xE8\x06\x01\x01\xF1\x00\x00": # 一般的なチップなら
                         startAddr += 11 # 実際の文字列の先頭を開始位置にする（書き込むときのため）
@@ -162,10 +164,12 @@ class Window(QtGui.QMainWindow):
                         capacity = readPos - startAddr -2
                     else:
                         capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
+                    item = QtGui.QListWidgetItem( hex(startAddr) )  # 一覧に追加する先頭アドレス
 
+                item.setFont(self.monoFont)
+                self.itemList.addItem(item)
                 data = [hex(startAddr), currentData, capacity]    # 先頭アドレス，データ文字列，データ容量
                 self.dataList.append(data)
-                self.itemList.addItem( data[0] )
                 startAddr = readPos + 1
                 currentData = ""
 
@@ -175,7 +179,7 @@ class Window(QtGui.QMainWindow):
 
     # リスト内のアイテムがアクティブになったとき実行
     def itemActivated(self, item):    # 第二引数には現在のリストのインデックスが渡される
-        print "<itemActivated>"
+        #print "<itemActivated>"
         if item != -1:  # リストから選択が外れると-1を返すのでそのときは処理を行わない（保存ボタンなどを押す時のため）
             self.currentItem = item # 現在のアイテムを記憶
             #print self.currentItem
@@ -190,7 +194,7 @@ class Window(QtGui.QMainWindow):
 
     # 書き込みボタンが押されたとき実行
     def writeText(self):
-        print "<writeText>"
+        #print "<writeText>"
         currentData = self.dataList[self.currentItem]
         writeAddr = int(currentData[0], 16)    # 書き込み開始位置
         capacity = currentData[2]  # 書き込み可能容量
@@ -212,7 +216,7 @@ class Window(QtGui.QMainWindow):
 
     # コンボボックスからモードを変更する処理
     def modeActivated(self, mode):
-        print "<modeActivated>"
+        #print "<modeActivated>"
         self.currentMode = mode
         self.dumpListData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
 
@@ -271,9 +275,12 @@ class Window(QtGui.QMainWindow):
 
     def saveFile(self):
         filename = QtGui.QFileDialog.getSaveFileName(self, _("Save EXE6 File"), os.path.expanduser('~'))
-        with open( unicode(filename), 'wb') as romFile:
-            romFile.write(self.romData)
-            print u"ファイルを保存しました"
+        try:
+            with open( unicode(filename), 'wb') as romFile:
+                romFile.write(self.romData)
+                print u"ファイルを保存しました"
+        except:
+            print u"ファイルの保存をキャンセルしました"
 
 
 '''
