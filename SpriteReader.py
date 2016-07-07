@@ -180,13 +180,13 @@ class SpriteViewer(QtGui.QMainWindow):
             romName = self.romData[0xA0:0xAC]
             global EXE6_Addr    # アドレスリストをグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
             if romName == "ROCKEXE6_GXX":
-                print u"グレイガ版としてロードしました"
+                print( _(u"グレイガ版としてロードしました") )
                 EXE6_Addr = EXE6Dict.GXX_Sprite_Table
             elif romName == "ROCKEXE6_RXX":
-                print u"ファルザー版としてロードしました"
+                print( _(u"ファルザー版としてロードしました") )
                 EXE6_Addr = EXE6Dict.RXX_Addr_List
             else:
-                print u"ROMタイトルが識別出来ませんでした"
+                print( _(u"ROMタイトルが識別出来ませんでした") )
                 EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
 
             '''
@@ -345,8 +345,10 @@ class SpriteViewer(QtGui.QMainWindow):
             print( "X:\t" + str(posX) )
             posY = oamData[2]
             print( "Y:\t" + str(posY) )
+
             flag1 = bin(oamData[3])[2:].zfill(8)    # 2進数にして先頭の0bを取り除いて8桁に0埋め
             '''
+                フラグ構造（8bit）
                 B B  BBBB   BB
                 h v unused size
 
@@ -354,7 +356,7 @@ class SpriteViewer(QtGui.QMainWindow):
             objSize = flag1[-2:]    # 下位2ビット
             hFlip = int( flag1[1], 2 ) # 水平反転フラグ
             vFlip = int( flag1[0], 2 ) # 垂直反転フラグ
-            print( "Horizontal Flip:\t" + str(hFlip) )
+            print( "Horizontal Flip: " + str(hFlip) )
             print( "Vertical Flip:\t" + str(vFlip) )
             print("size:\t" + str(objSize) )
 
