@@ -348,7 +348,17 @@ class SpriteViewer(QtGui.QMainWindow):
             posY = oamData[2]
             print( "Y:\t" + str(posY) )
             flag1 = bin(oamData[3])[2:].zfill(8)    # 2進数にして先頭の0bを取り除いて8桁に0埋め
+            '''
+                B B  BBBB   BB
+                h v unused size
+
+            '''
+            print(flag1)
             objSize = flag1[-2:]    # 下位2ビット
+            hFlip = int( flag1[1], 2 ) # 水平反転フラグ
+            vFlip = int( flag1[0], 2 ) # 垂直反転フラグ
+            print( "Horizontal Flip:\t" + str(hFlip) )
+            print( "Vertical Flip:\t" + str(vFlip) )
             print("size:\t" + str(objSize) )
             flag2 = bin(oamData[4])[2:].zfill(8)
             objShape = flag2[-2:]
@@ -399,7 +409,7 @@ class SpriteViewer(QtGui.QMainWindow):
                 size 3, shape 2: 32x64
             '''
             sizeX, sizeY = objDim[objSize+objShape]
-            self.showOBJ(graphData, startTile, sizeX, sizeY, posX, posY)
+            self.showOBJ(graphData, startTile, sizeX, sizeY, posX, posY, hFlip, vFlip)
 
         print "Animation Flame Delay:\t" + str(animData[4]) + " frame"
 
@@ -453,11 +463,10 @@ class SpriteViewer(QtGui.QMainWindow):
 
     '''
         OAMを表示する
-        入力：スプライトのグラフィック，開始タイル，横サイズ，縦サイズ
+        入力：スプライトのグラフィック，開始タイル，横サイズ，縦サイズ，水平反転，垂直反転
 
     '''
-    def showOBJ(self, imgData, startTile, width, hight, posX, posY):
-        #self.graphicsScene.clear()
+    def showOBJ(self, imgData, startTile, width, hight, posX, posY, hFlip, vFlip):
         startAddr = startTile * 32  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
         width = width/8 # サイズからタイルの枚数に変換
         hight = hight/8
@@ -498,7 +507,15 @@ class SpriteViewer(QtGui.QMainWindow):
                 h[0] = np.vstack((h[0], h[i]))
         img = h[0][:, 8:, :]    # ダミー部分を切り取る（ださい）
 
-        dataImg = Image.fromarray( np.uint8(img) )
+        dataImg = Image.fromarray( np.uint8(img) )  # 色情報の行列から画像を生成
+        if hFlip == 1:
+            dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
+            print "H flip!"
+
+        if vFlip == 1:
+            dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
+            print "V Flip!"
+
         qImg = ImageQt(dataImg)
         pixmap = QtGui.QPixmap.fromImage(qImg)
         item = QtGui.QGraphicsPixmapItem(pixmap)
