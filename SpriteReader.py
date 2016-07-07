@@ -317,8 +317,6 @@ class SpriteViewer(QtGui.QMainWindow):
         palSizePtr = animData[1]
         print( "Palette Size Address:\t" + hex(palSizePtr + self.gbaAddrOffset) )
 
-        self.parsePaletteData(spriteData, palSizePtr)
-
         ptrToOAMptr = animData[3]
         print( "Address of OAM Data Pointer:\t" + hex(ptrToOAMptr + self.gbaAddrOffset) )
         oamDataPtr = spriteData[ ptrToOAMptr:ptrToOAMptr+4 ]
@@ -353,17 +351,21 @@ class SpriteViewer(QtGui.QMainWindow):
                 h v unused size
 
             '''
-            print(flag1)
             objSize = flag1[-2:]    # 下位2ビット
             hFlip = int( flag1[1], 2 ) # 水平反転フラグ
             vFlip = int( flag1[0], 2 ) # 垂直反転フラグ
             print( "Horizontal Flip:\t" + str(hFlip) )
             print( "Vertical Flip:\t" + str(vFlip) )
             print("size:\t" + str(objSize) )
+
             flag2 = bin(oamData[4])[2:].zfill(8)
             objShape = flag2[-2:]
+            palIndex = int(flag2[0:4], 2)
             print("shape:\t" + str(objShape) )
             print("")
+
+            # パレットの設定
+            self.parsePaletteData(spriteData, palSizePtr, palIndex)
 
             '''
                 フラグとサイズの関係．わかりづらい・・・
@@ -529,13 +531,13 @@ class SpriteViewer(QtGui.QMainWindow):
         処理：スプライトデータからのパレットサイズ読み込み，パレットデータ読み込み，RGBAカラー化
 
     '''
-    def parsePaletteData(self, spriteData, palSizePtr):
+    def parsePaletteData(self, spriteData, palSizePtr, palIndex):
         # パレットサイズの読み取り
         palSize = spriteData[palSizePtr:palSizePtr+4]
         palSize = struct.unpack("<L", palSize)[0]
         print( "Palette Size:\t" + hex(palSize) )
 
-        readPos = palSizePtr + 4    # パレットサイズ情報の後にパレットデータが続く
+        readPos = palSizePtr + 4 + palIndex * palSize # パレットサイズ情報の後にパレットデータが続く（インデックス番号によって開始位置をずらす）
         endAddr = readPos + palSize
 
         self.palData = []    # パレットデータを格納するリスト
