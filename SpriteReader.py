@@ -19,6 +19,13 @@ from PIL import Image
 from PIL.ImageQt import ImageQt
 _ = gettext.gettext # 後の翻訳用
 
+# 辞書のインポート
+import EXE6Dict
+CP_EXE6_1 = EXE6Dict.CP_EXE6_1
+CP_EXE6_2 = EXE6Dict.CP_EXE6_2
+CP_EXE6_1_inv = EXE6Dict.CP_EXE6_1_inv
+CP_EXE6_2_inv = EXE6Dict.CP_EXE6_2_inv
+
 # 0 ~ 255 (256状態)を0 ~ 15(16状態)で表す（RGBA）
 glay = {
 "0":[255, 255, 255, 0],
@@ -60,7 +67,6 @@ class SpriteViewer(QtGui.QMainWindow):
     def __init__(self):
         super(SpriteViewer, self).__init__()
         self.setMyself()
-        self.openFile()
 
     def setMyself(self):
         self.setWindowTitle( _("Sprite Viewer") )
@@ -79,7 +85,7 @@ class SpriteViewer(QtGui.QMainWindow):
         openAction = QtGui.QAction( _("&ファイルを開く"), self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip( _("ファイルを開く") )
-        #openAction.triggered.connect( self.openFile )
+        openAction.triggered.connect( self.openFile )
         fileMenu.addAction(openAction)
 
         # 終了
@@ -106,10 +112,10 @@ class SpriteViewer(QtGui.QMainWindow):
         self.spriteLabel.setText( _("スプライトリスト") )
         spriteVbox.addWidget(self.spriteLabel)
 
-        self.spriteList = QtGui.QListWidget(self) # スプライトのリスト
-        self.spriteList.setMaximumWidth(120)    # 横幅の最大値
-        #self.sprite.currentRowChanged.connect(self.itemActivated) # クリックされた時に実行する関数
-        spriteVbox.addWidget(self.spriteList)
+        self.guiSpriteList = QtGui.QListWidget(self) # スプライトのリスト
+        self.guiSpriteList.setMaximumWidth(120)    # 横幅の最大値
+        self.guiSpriteList.currentRowChanged.connect(self.guiSpriteItemActivated) # クリックされた時に実行する関数
+        spriteVbox.addWidget(self.guiSpriteList)
 
         # グラフィック
         viewVbox = QtGui.QVBoxLayout()
@@ -153,6 +159,16 @@ class SpriteViewer(QtGui.QMainWindow):
 
         self.show()
 
+
+    '''
+        GUIでスプライトが選択されたときに行う処理
+
+    '''
+    def guiSpriteItemActivated(self, index):
+        spriteAddr = self.spriteAddrList[index]
+        self.parseSpriteData(self.romData, spriteAddr)
+        self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
+
     '''
         GUIでアニメーションが選択されたときに行う処理
 
@@ -171,19 +187,44 @@ class SpriteViewer(QtGui.QMainWindow):
         framePtr = self.framePtrList[index]
         self.parseframeData(self.spriteData, framePtr)
 
+    '''
+        ファイルを開いた時の処理
 
+    '''
     def openFile(self):
-        with open( "./data/GXX.bin", 'rb') as romFile:
+        filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('~'))   # ファイル名がQString型で返される
+        with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
             self.romData = romFile.read()
 
-            '''
-                そのうちスプライトのアドレスを抽出する処理を書く
+            # バージョンの判定（使用する辞書を選択するため）
+            romName = self.romData[0xA0:0xAC]
+            global EXE6_Addr    # アドレスリストをグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
+            if romName == "ROCKEXE6_GXX":
+                print u"グレイガ版としてロードしました"
+                EXE6_Addr = EXE6Dict.GXX_Sprite_Table
+            elif romName == "ROCKEXE6_RXX":
+                print u"ファルザー版としてロードしました"
+                EXE6_Addr = EXE6Dict.RXX_Addr_List
+            else:
+                print u"ROMタイトルが識別出来ませんでした"
+                EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
 
             '''
-            spriteItem = QtGui.QListWidgetItem("0x1D8000")    # GUIのスプライトリストに追加するアイテムの生成
-            self.spriteList.addItem(spriteItem) # スプライトリストへ追加
-            spriteAddr = 0x1D8000    # とりあえずロックマンのスプライトを読み込むのが目標
-            self.parseSpriteData(self.romData, spriteAddr)
+                スプライトのアドレスを抽出する処理
+
+            '''
+            self.spriteAddrList = []    # スプライトの先頭アドレスを保持するリスト
+            self.guiSpriteList.clear() # スプライトリストの初期化
+            readPos = EXE6_Addr["startAddr"]
+            while readPos <= EXE6_Addr["endAddr"]:
+                spriteAddr = self.romData[readPos:readPos+4]
+                spriteAddr = spriteAddr[:3] + "\x00"  # ポインタの最下位バイトはメモリ上の位置を表す08なのでROM内の位置に変換するために00にする
+                spriteAddr = struct.unpack("<L", spriteAddr)[0]
+                readPos += 4
+
+                self.spriteAddrList.append(spriteAddr)
+                spriteItem = QtGui.QListWidgetItem( hex(spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
+                self.guiSpriteList.addItem(spriteItem) # スプライトリストへ追加
 
 
     '''

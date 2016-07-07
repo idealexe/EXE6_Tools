@@ -103,6 +103,13 @@ GXX_Addr_List = [
 ["KeyItem",  "0x75F094", "0x75F37A"],
 ["NaviCus",  "0x75FF39", "0x7600A0"]
 ]
+
+# ロックマンのスプライトのポインタ周辺をとりあえず使ってみる
+GXX_Sprite_Table = {
+"startAddr":0x032CA8,
+"endAddr":0x0347A3
+}
+
 # ファルザー版の各種アドレス
 RXX_Addr_List = [
 ["Map",      "0x6ED62C", "0x6EDCD6"],
