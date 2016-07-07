@@ -109,7 +109,7 @@ GXX_Addr_List = [
 # テーブルのポインタが示すアドレスには白玉がある．スプライトのまとまりを区切ってるのだろうか
 GXX_Sprite_Table = {
 "startAddr":0x032CA8,
-"endAddr":0x0347A3
+"endAddr":0x033963
 }
 
 # ファルザー版の各種アドレス
