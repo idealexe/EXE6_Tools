@@ -218,14 +218,17 @@ class SpriteViewer(QtGui.QMainWindow):
             readPos = EXE6_Addr["startAddr"]
             while readPos <= EXE6_Addr["endAddr"]:
                 spriteAddr = self.romData[readPos:readPos+4]
-                spriteAddr = spriteAddr[:3] + "\x00"  # ポインタの最下位バイトはメモリ上の位置を表す08なのでROM内の位置に変換するために00にする
-                spriteAddr = struct.unpack("<L", spriteAddr)[0]
+                # ポインタの最下位バイトはメモリ上の位置を表す08なのでROM内の位置に変換するために00にする
+                # 88の場合もある模様，圧縮データを表してるっぽい？
+                if spriteAddr[3] == "\x08":
+                    spriteAddr = spriteAddr[:3] + "\x00"
+                    spriteAddr = struct.unpack("<L", spriteAddr)[0]
+
+                    self.spriteAddrList.append(spriteAddr)
+                    spriteItem = QtGui.QListWidgetItem( hex(spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
+                    self.guiSpriteList.addItem(spriteItem) # スプライトリストへ追加
+
                 readPos += 4
-
-                self.spriteAddrList.append(spriteAddr)
-                spriteItem = QtGui.QListWidgetItem( hex(spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
-                self.guiSpriteList.addItem(spriteItem) # スプライトリストへ追加
-
 
     '''
         ROMデータから指定された位置にあるスプライトの情報を取り出す
@@ -335,13 +338,6 @@ class SpriteViewer(QtGui.QMainWindow):
         print( "Palette Size Address:\t" + hex(palSizePtr + self.gbaAddrOffset) )
 
         self.parsePaletteData(spriteData, palSizePtr)
-
-
-        '''
-        readPos = palSizePtr + 4    # 4バイトのサイズ情報の後にパレットデータが続く
-        palData = spriteData[readPos:readPos+palSize]
-
-        '''
 
         ptrToOAMptr = animData[3]
         print( "Address of OAM Data Pointer:\t" + hex(ptrToOAMptr + self.gbaAddrOffset) )
@@ -498,7 +494,8 @@ class SpriteViewer(QtGui.QMainWindow):
         # 色情報に変換する
         readPos = 0
         while readPos < totalSize:
-            imgArray.append(glay[imgData[readPos]])
+            currentPixel = int(imgData[readPos], 16)    # 1ドット分読み込み，文字列から数値に変換
+            imgArray.append(self.palData[currentPixel])
             readPos += 1
 
         imgArray = np.array(imgArray)   # ndarrayに変換
@@ -544,7 +541,7 @@ class SpriteViewer(QtGui.QMainWindow):
         readPos = palSizePtr + 4    # パレットサイズ情報の後にパレットデータが続く
         endAddr = readPos + palSize
 
-        palData = []    # パレットデータを格納するリスト
+        self.palData = []    # パレットデータを格納するリスト
         palCount = 0
         while readPos < endAddr:
             color = spriteData[readPos:readPos+2]   # 1色あたり16bit（2バイト）
@@ -557,9 +554,9 @@ class SpriteViewer(QtGui.QMainWindow):
             binR = int( binColor[10:15], 2 ) * 8
             #print "R: " + hex(binR) + "\tG: " + hex(binG) + "\tB: " + hex(binB)
             if palCount == 0:
-                palData.append( [binR, binG, binB, 0] ) # 最初の色は透過色
+                self.palData.append( [binR, binG, binB, 0] ) # 最初の色は透過色
             else:
-                palData.append( [binR, binG, binB, 255] )
+                self.palData.append( [binR, binG, binB, 255] )
 
             palCount += 1
 
