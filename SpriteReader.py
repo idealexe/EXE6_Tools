@@ -2,7 +2,7 @@
 # coding: utf-8
 
 '''
-    Sprite Reader by ideal.exe
+    EXE6 Sprite Reader by ideal.exe
 
 '''
 
@@ -46,16 +46,23 @@ objDim = {
 class SpriteViewer(QtGui.QMainWindow):
     def __init__(self):
         super(SpriteViewer, self).__init__()
-        self.setMyself()
+        self.setGUI()
 
-    def setMyself(self):
-        self.setWindowTitle( _("Sprite Viewer") )
+    '''
+        GUIの初期化
+
+    '''
+    def setGUI(self):
+        self.setWindowTitle( _("EXE6 Sprite Viewer") )
         self.resize(800, 450)
 
         # メニューバー
         menuBar = self.menuBar()
+        menuBar.setNativeMenuBar(False) # OS XでもWindowsと同じメニューバー形式にする
+        # ファイルメニュー
         fileMenu = menuBar.addMenu( _('&ファイル') )
-        menuBar.setNativeMenuBar(False) # OSXでもWindowsと同じメニューバー形式にする
+        # ヘルプメニュー
+        helpMenu = menuBar.addMenu( _('&ヘルプ') )
 
         # ステータスバー
         statusBar = self.statusBar()
@@ -106,8 +113,10 @@ class SpriteViewer(QtGui.QMainWindow):
         viewLabel.setText( _("スプライトビュー") )
         viewVbox.addWidget(viewLabel)
 
-        graphicsView = QtGui.QGraphicsView()
+        # スプライトを表示するためのビュー
+        graphicsView = QtGui.QGraphicsView()    # シーンを表示するためのビュー
         graphicsView.setCacheMode( QtGui.QGraphicsView.CacheBackground )
+        graphicsView.setBackgroundBrush( QtGui.QBrush(QtCore.Qt.lightGray, QtCore.Qt.CrossPattern) ) # ビュー背景の設定
         self.graphicsScene = QtGui.QGraphicsScene() # スプライトを描画するためのシーン
         self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         graphicsView.setScene(self.graphicsScene)
@@ -168,47 +177,56 @@ class SpriteViewer(QtGui.QMainWindow):
         self.parseframeData(self.spriteData, framePtr)
 
     '''
-        ファイルを開いた時の処理
+        ファイルを開くときの処理
 
     '''
     def openFile(self):
         filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('~'))   # ファイル名がQString型で返される
-        with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
-            self.romData = romFile.read()
+        try:
+            with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
+                self.romData = romFile.read()
 
-            # バージョンの判定（使用する辞書を選択するため）
-            romName = self.romData[0xA0:0xAC]
-            global EXE6_Addr    # アドレスリストをグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
-            if romName == "ROCKEXE6_GXX":
-                print( _(u"グレイガ版としてロードしました") )
-                EXE6_Addr = EXE6Dict.GXX_Sprite_Table
-            elif romName == "ROCKEXE6_RXX":
-                print( _(u"ファルザー版としてロードしました") )
-                EXE6_Addr = EXE6Dict.RXX_Addr_List
-            else:
-                print( _(u"ROMタイトルが識別出来ませんでした") )
-                EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
+        except:
+            print( _(u"ファイルの選択をキャンセルしました") )
+            return 0    # 0を返して関数を抜ける
 
-            '''
-                スプライトのアドレスを抽出する処理
+        # バージョンの判定（使用する辞書を選択するため）
+        romName = self.romData[0xA0:0xAC]
+        global EXE6_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
+        if romName == "ROCKEXE6_GXX":
+            print( _(u"グレイガ版としてロードしました") )
+            EXE6_Addr = EXE6Dict.GXX_Sprite_Table
+        elif romName == "ROCKEXE6_RXX":
+            print( _(u"ファルザー版としてロードしました") )
+            EXE6_Addr = EXE6Dict.RXX_Addr_List
+        else:
+            print( _(u"ROMタイトルが識別出来ませんでした") )
+            EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
 
-            '''
-            self.spriteAddrList = []    # スプライトの先頭アドレスを保持するリスト
-            self.guiSpriteList.clear() # スプライトリストの初期化
-            readPos = EXE6_Addr["startAddr"]
-            while readPos <= EXE6_Addr["endAddr"]:
-                spriteAddr = self.romData[readPos:readPos+4]
-                # ポインタの最下位バイトはメモリ上の位置を表す08なのでROM内の位置に変換するために00にする
-                # 88の場合もある模様，圧縮データを表してるっぽい？
-                if spriteAddr[3] == "\x08":
-                    spriteAddr = spriteAddr[:3] + "\x00"
-                    spriteAddr = struct.unpack("<L", spriteAddr)[0]
+        self.extractSpriteAddr(self.romData)
 
-                    self.spriteAddrList.append(spriteAddr)
-                    spriteItem = QtGui.QListWidgetItem( hex(spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
-                    self.guiSpriteList.addItem(spriteItem) # スプライトリストへ追加
+    '''
+        スプライトのアドレスを抽出する
 
-                readPos += 4
+    '''
+    def extractSpriteAddr(self, romData):
+        self.spriteAddrList = []    # スプライトの先頭アドレスを保持するリスト
+        self.guiSpriteList.clear() # スプライトリストの初期化
+
+        readPos = EXE6_Addr["startAddr"]
+        while readPos <= EXE6_Addr["endAddr"]:
+            spriteAddr = romData[readPos:readPos+4]
+            # ポインタの最下位バイトはメモリ上の位置を表す08なのでROM内の位置に変換するために00にする
+            # 88の場合もある模様，圧縮データを表してるっぽい？
+            if spriteAddr[3] == "\x08":
+                spriteAddr = spriteAddr[:3] + "\x00"
+                spriteAddr = struct.unpack("<L", spriteAddr)[0]
+
+                self.spriteAddrList.append(spriteAddr)
+                spriteItem = QtGui.QListWidgetItem( hex(spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
+                self.guiSpriteList.addItem(spriteItem) # スプライトリストへ追加
+
+            readPos += 4
 
     '''
         ROMデータから指定された位置にあるスプライトの情報を取り出す
