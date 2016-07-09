@@ -154,8 +154,9 @@ class SpriteViewer(QtGui.QMainWindow):
 
     '''
     def guiSpriteItemActivated(self, index):
-        spriteAddr = self.spriteAddrList[index]
-        self.parseSpriteData(self.romData, spriteAddr)
+        spriteAddr = self.spriteAddrList[index][0]
+        compFlag = self.spriteAddrList[index][1]
+        self.parseSpriteData(self.romData, spriteAddr, compFlag)
         self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
 
     '''
@@ -210,7 +211,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
     '''
     def extractSpriteAddr(self, romData):
-        self.spriteAddrList = []    # スプライトの先頭アドレスを保持するリスト
+        self.spriteAddrList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
         self.guiSpriteList.clear() # スプライトリストの初期化
 
         readPos = EXE6_Addr["startAddr"]
@@ -218,24 +219,19 @@ class SpriteViewer(QtGui.QMainWindow):
             spriteAddr = romData[readPos:readPos+4]
             # ポインタの最下位バイトはメモリ上の位置を表す08
             # 88の場合もある模様，圧縮データを表してるっぽい？
-            if spriteAddr[3] == "\x08":
-                spriteAddr = spriteAddr[:3] + "\x00"
+            if spriteAddr[3] in ["\x08", "\x88"]:
+
+                if spriteAddr[3] == "\x88":
+                    compFlag = 1
+                else:
+                    compFlag = 0
+
+                spriteAddr = spriteAddr[:3] + "\x00"    # ROM内でのアドレスに直す　例）081D8000 -> 001D8000 (00 80 1D 08 -> 00 80 1D 00)
                 spriteAddr = struct.unpack("<L", spriteAddr)[0]
 
-                self.spriteAddrList.append(spriteAddr)
-                spriteItem = QtGui.QListWidgetItem( hex(0x08000000 + spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
-                self.guiSpriteList.addItem(spriteItem) # スプライトリストへ追加
-
-            elif spriteAddr[3] == "\x88":    # 圧縮スプライトなら
-                spriteAddr = spriteAddr[:3] + "\x00"
-                spriteAddr = struct.unpack("<L", spriteAddr)[0]
-
-                uncompSize = romData[1:5]   # 圧縮フラグの後4バイトがサイズ情報
-                self.spriteData = decomp_lz77_10(romData, spriteAddr+5, uncompSize) # データの開始位置は先頭の圧縮フラグ1バイト＋サイズ情報4バイトの後
-
-                self.spriteAddrList.append(spriteAddr)
-                spriteItem = QtGui.QListWidgetItem( hex(0x88000000 + spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
-                self.guiSpriteList.addItem(spriteItem) # スプライトリストへ追加
+                self.spriteAddrList.append( [spriteAddr, compFlag] )
+                spriteItem = QtGui.QListWidgetItem( hex(spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
+                self.guiSpriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
             readPos += 4
 
@@ -244,8 +240,8 @@ class SpriteViewer(QtGui.QMainWindow):
         スプライトリストでアイテムが選択されたら実行する形を想定
 
     '''
-    def parseSpriteData(self, romData, spriteAddr):
-        if compFlag == 0:
+    def parseSpriteData(self, romData, spriteAddr, compFlag):
+        if compFlag == 0:   # 非圧縮スプライトなら
             startAddr = spriteAddr
             endAddr = startAddr + 0x100000  # スプライトの容量は得られないのでとりあえず設定
             readPos = startAddr
@@ -255,6 +251,13 @@ class SpriteViewer(QtGui.QMainWindow):
             spriteHeader = romData[startAddr:startAddr+4]   # 初めの４バイトがヘッダ情報
             self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容（ポインタもこのデータの先頭を00としている）
             self.gbaAddrOffset = 0x08000000 + startAddr + 4    # データのメモリ上での位置を表示するとき用のオフセット
+
+        elif compFlag == 1: # 圧縮スプライトなら
+            uncompSize = romData[spriteAddr+1:spriteAddr+5]
+            uncompSize = struct.unpack("<L", uncompSize)[0]
+
+            self.spriteData = self.decomp_lz77_10(romData, spriteAddr+4, uncompSize)
+            self.spriteData = self.spriteData[8:]   # ファイルサイズ情報とヘッダー部分を取り除く
 
         '''
         # ヘッダ情報の表示
@@ -544,11 +547,9 @@ class SpriteViewer(QtGui.QMainWindow):
         dataImg = Image.fromarray( np.uint8(img) )  # 色情報の行列から画像を生成
         if hFlip == 1:
             dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
-            print "H flip!"
 
         if vFlip == 1:
             dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
-            print "V Flip!"
 
         qImg = ImageQt(dataImg)
         pixmap = QtGui.QPixmap.fromImage(qImg)
@@ -602,23 +603,23 @@ class SpriteViewer(QtGui.QMainWindow):
         readPos = startAddr # 圧縮データの読み取り開始位置
 
         while len(output) < uncompSize:
-            currentChar = readBin(data, readPos)    # ブロックヘッダの読み込み
+            currentChar = data[readPos]    # ブロックヘッダの読み込み
             #print binascii.hexlify(currentChar)
-            blockHeader = ascii2bin(currentChar)    # ブロックヘッダを2進数文字列に変換
+            blockHeader = bin( struct.unpack("B", currentChar)[0] )[2:].zfill(8)   # ブロックヘッダを2進数文字列に変換
             for i in range(8):  # 8ブロックで1セット
                 # 非圧縮ブロックなら
                 if blockHeader[i] == str(0):
                     readPos += 1    # 次の読み取り位置へ
                     if readPos >= len(data):    # ここ適当
                         break
-                    currentChar = readBin(data, readPos)    # 1バイト読み込み
+                    currentChar = data[readPos]    # 1バイト読み込み
                     output += currentChar   # そのまま出力
                     writePos += 1   # 次の書き込み位置へ
                 # 圧縮ブロックなら
                 else:
                     readPos += 2
                     blockData = data[readPos-1:readPos+1]   # 2バイトをブロック情報として読み込み
-                    blockData = ascii2bin(blockData)    # ブロック情報を2進数文字列に変換
+                    blockData = bin( struct.unpack(">H", blockData)[0] )[2:].zfill(16)    # ブロック情報を2進数文字列に変換（ビッグエンディアン）
                     #print "Block Data: " + blockData
                     offs = int(blockData[4:16],2) + 1
                     #print "Backwards Offset: " + str(offs) + " bytes"
