@@ -100,7 +100,7 @@ class SpriteViewer(QtGui.QMainWindow):
         spriteVbox.addWidget(self.spriteLabel)
 
         self.guiSpriteList = QtGui.QListWidget(self) # スプライトのリスト
-        self.guiSpriteList.setMaximumWidth(120)    # 横幅の最大値
+        self.guiSpriteList.setMaximumWidth(200)    # 横幅の最大値
         self.guiSpriteList.currentRowChanged.connect(self.guiSpriteItemActivated) # クリックされた時に実行する関数
         spriteVbox.addWidget(self.guiSpriteList)
 
@@ -132,7 +132,7 @@ class SpriteViewer(QtGui.QMainWindow):
         animVbox.addWidget(self.animLabel)
 
         self.guiAnimList = QtGui.QListWidget(self) # アニメーションのリスト
-        self.guiAnimList.setMaximumWidth(120)    # 横幅の最大値
+        self.guiAnimList.setMaximumWidth(200)    # 横幅の最大値
         self.guiAnimList.currentRowChanged.connect(self.guiAnimItemActivated) # クリックされた時に実行する関数
         animVbox.addWidget(self.guiAnimList)
 
@@ -142,7 +142,7 @@ class SpriteViewer(QtGui.QMainWindow):
         animVbox.addWidget(self.frameLabel)
 
         self.guiFrameList = QtGui.QListWidget(self)
-        self.guiFrameList.setMaximumWidth(120)
+        self.guiFrameList.setMaximumWidth(200)
         self.guiFrameList.currentRowChanged.connect(self.guiFrameItemActivated) # クリックされた時に実行する関数
         animVbox.addWidget(self.guiFrameList)
 
@@ -216,14 +216,25 @@ class SpriteViewer(QtGui.QMainWindow):
         readPos = EXE6_Addr["startAddr"]
         while readPos <= EXE6_Addr["endAddr"]:
             spriteAddr = romData[readPos:readPos+4]
-            # ポインタの最下位バイトはメモリ上の位置を表す08なのでROM内の位置に変換するために00にする
+            # ポインタの最下位バイトはメモリ上の位置を表す08
             # 88の場合もある模様，圧縮データを表してるっぽい？
             if spriteAddr[3] == "\x08":
                 spriteAddr = spriteAddr[:3] + "\x00"
                 spriteAddr = struct.unpack("<L", spriteAddr)[0]
 
                 self.spriteAddrList.append(spriteAddr)
-                spriteItem = QtGui.QListWidgetItem( hex(spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
+                spriteItem = QtGui.QListWidgetItem( hex(0x08000000 + spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
+                self.guiSpriteList.addItem(spriteItem) # スプライトリストへ追加
+
+            elif spriteAddr[3] == "\x88":    # 圧縮スプライトなら
+                spriteAddr = spriteAddr[:3] + "\x00"
+                spriteAddr = struct.unpack("<L", spriteAddr)[0]
+
+                uncompSize = romData[1:5]   # 圧縮フラグの後4バイトがサイズ情報
+                self.spriteData = decomp_lz77_10(romData, spriteAddr+5, uncompSize) # データの開始位置は先頭の圧縮フラグ1バイト＋サイズ情報4バイトの後
+
+                self.spriteAddrList.append(spriteAddr)
+                spriteItem = QtGui.QListWidgetItem( hex(0x88000000 + spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
                 self.guiSpriteList.addItem(spriteItem) # スプライトリストへ追加
 
             readPos += 4
@@ -234,15 +245,16 @@ class SpriteViewer(QtGui.QMainWindow):
 
     '''
     def parseSpriteData(self, romData, spriteAddr):
-        startAddr = spriteAddr
-        endAddr = startAddr + 0x100000  # スプライトの容量は得られないのでとりあえず設定
-        readPos = startAddr
-        #print "Sprite Address:\t" + hex(startAddr) + "\n"
+        if compFlag == 0:
+            startAddr = spriteAddr
+            endAddr = startAddr + 0x100000  # スプライトの容量は得られないのでとりあえず設定
+            readPos = startAddr
+            #print "Sprite Address:\t" + hex(startAddr) + "\n"
 
-        # 使う部分だけ切り出し
-        spriteHeader = romData[startAddr:startAddr+4]   # 初めの４バイトがヘッダ情報
-        self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容（ポインタもこのデータの先頭を00としている）
-        self.gbaAddrOffset = 0x08000000 + startAddr + 4    # データのメモリ上での位置を表示するとき用のオフセット
+            # 使う部分だけ切り出し
+            spriteHeader = romData[startAddr:startAddr+4]   # 初めの４バイトがヘッダ情報
+            self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容（ポインタもこのデータの先頭を00としている）
+            self.gbaAddrOffset = 0x08000000 + startAddr + 4    # データのメモリ上での位置を表示するとき用のオフセット
 
         '''
         # ヘッダ情報の表示
@@ -579,7 +591,57 @@ class SpriteViewer(QtGui.QMainWindow):
 
             palCount += 1
 
-        #print palData
+
+    '''
+        LZ77 0x10 復号化
+
+    '''
+    def decomp_lz77_10(self, data, startAddr, uncompSize):
+        output = "" # 復号結果を格納する文字列
+        writePos = 0    # 復号データの書き込み位置
+        readPos = startAddr # 圧縮データの読み取り開始位置
+
+        while len(output) < uncompSize:
+            currentChar = readBin(data, readPos)    # ブロックヘッダの読み込み
+            #print binascii.hexlify(currentChar)
+            blockHeader = ascii2bin(currentChar)    # ブロックヘッダを2進数文字列に変換
+            for i in range(8):  # 8ブロックで1セット
+                # 非圧縮ブロックなら
+                if blockHeader[i] == str(0):
+                    readPos += 1    # 次の読み取り位置へ
+                    if readPos >= len(data):    # ここ適当
+                        break
+                    currentChar = readBin(data, readPos)    # 1バイト読み込み
+                    output += currentChar   # そのまま出力
+                    writePos += 1   # 次の書き込み位置へ
+                # 圧縮ブロックなら
+                else:
+                    readPos += 2
+                    blockData = data[readPos-1:readPos+1]   # 2バイトをブロック情報として読み込み
+                    blockData = ascii2bin(blockData)    # ブロック情報を2進数文字列に変換
+                    #print "Block Data: " + blockData
+                    offs = int(blockData[4:16],2) + 1
+                    #print "Backwards Offset: " + str(offs) + " bytes"
+                    leng = int(blockData[0:4],2) + 3
+                    #print "Copy Length: " + str(leng) + " bytes"
+                    currentChar = output[writePos - offs : writePos - offs + leng]
+                    if len(currentChar) < leng: # ここで引っかかった
+                        #print "Block Data: " + blockData
+                        #print "Backwards Offset: " + str(offs) + " bytes"
+                        #print "Copy Length: " + str(leng) + " bytes"
+                        # 存在する範囲を超えてコピーするときは直前のパターンを繰り返すと思われる
+                        #currentChar = "{0:{s}<{N}}".format(currentChar, s=currentChar[0], N = leng)
+                        currentChar = currentChar * leng # ここ適当
+                        currentChar = currentChar[0:leng]
+                        #print binascii.hexlify(currentChar)
+                    #print currentChar
+                    #print binascii.hexlify(currentChar)
+                    output += currentChar
+                    writePos += leng    # 書き込んだバイト数だけずらす
+            readPos += 1
+
+        output = output[0:uncompSize]   # 必要な部分だけ切り出し
+        return output
 
 '''
 main
@@ -587,6 +649,9 @@ main
 '''
 def main():
     app = QtGui.QApplication(sys.argv)
+    monoFont = QtGui.QFont("MS Gothic", 10) # 等幅フォント
+    app.setFont(monoFont)   # 全体のフォントを設定
+
 
     # 日本語文字コードを正常表示するための設定
     reload(sys) # モジュールをリロードしないと文字コードが変更できない
