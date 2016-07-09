@@ -464,7 +464,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
 
     '''
-        バイナリデータからタイルセットに変換する
+        バイナリデータからタイルセットに変換する（現在未使用）
 
     '''
     def bin2tilesets(self, imgData):
@@ -630,7 +630,7 @@ class SpriteViewer(QtGui.QMainWindow):
                         #print "Block Data: " + blockData
                         #print "Backwards Offset: " + str(offs) + " bytes"
                         #print "Copy Length: " + str(leng) + " bytes"
-                        # 存在する範囲を超えてコピーするときは直前のパターンを繰り返すと思われる
+                        # 存在する範囲を超えてコピーするときは直前のパターンを繰り返す
                         #currentChar = "{0:{s}<{N}}".format(currentChar, s=currentChar[0], N = leng)
                         currentChar = currentChar * leng # ここ適当
                         currentChar = currentChar[0:leng]
@@ -652,7 +652,6 @@ def main():
     app = QtGui.QApplication(sys.argv)
     monoFont = QtGui.QFont("MS Gothic", 10) # 等幅フォント
     app.setFont(monoFont)   # 全体のフォントを設定
-
 
     # 日本語文字コードを正常表示するための設定
     reload(sys) # モジュールをリロードしないと文字コードが変更できない
