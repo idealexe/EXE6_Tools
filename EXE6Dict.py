@@ -121,3 +121,8 @@ RXX_Addr_List = [
 ["KeyItem",  "0x761160", "0x761446"],
 ["NaviCus",  "0x762005", "0x76216C"]
 ]
+
+RXX_Sprite_Table = {
+"startAddr":0x032CA8,
+"endAddr":0x033963
+}
