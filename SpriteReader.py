@@ -153,6 +153,7 @@ class SpriteViewer(QtGui.QMainWindow):
         animVbox.addWidget(self.oamLabel)
 
         self.guiOAMList = QtGui.QListWidget(self)
+        self.guiOAMList.currentRowChanged.connect(self.guiOAMItemActivated) # クリックされた時に実行する関数
         animVbox.addWidget(self.guiOAMList)
 
         self.show()
@@ -186,6 +187,19 @@ class SpriteViewer(QtGui.QMainWindow):
         self.parseframeData(self.spriteData, framePtr)
 
     '''
+        GUIでOAMが選択されたときに行う処理
+
+    '''
+    def guiOAMItemActivated(self, index):
+        oam = self.oamList[index]
+        image = oam["image"]
+        item = QtGui.QGraphicsPixmapItem(image)
+        item.setOffset(oam["posX"], oam["posY"])
+        imageBounds = item.boundingRect()
+        self.graphicsScene.addRect(imageBounds)
+        #self.graphicsScene.addItem(item)
+
+    '''
         ファイルを開くときの処理
 
     '''
@@ -213,6 +227,7 @@ class SpriteViewer(QtGui.QMainWindow):
             EXE6_Addr = EXE6Dict.GXX_Sprite_Table # 一応グレイガ版の辞書に設定する
 
         self.extractSpriteAddr(self.romData)
+        self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
 
     '''
         スプライトのアドレスを抽出する
@@ -502,71 +517,9 @@ class SpriteViewer(QtGui.QMainWindow):
 
 
     '''
-        OAMを表示する
-        入力：スプライトのグラフィック，開始タイル，横サイズ，縦サイズ，水平反転，垂直反転
-
-    '''
-    def showOBJ(self, imgData, startTile, width, hight, posX, posY, hFlip, vFlip):
-        startAddr = startTile * 32  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
-        width = width/8 # サイズからタイルの枚数に変換
-        hight = hight/8
-        imgData = imgData[startAddr:]   # 使う部分を切り出し
-        imgData = binascii.hexlify(imgData).upper()   # バイナリ値をそのまま文字列にしたデータに変換
-        imgData = list(imgData) # 1文字ずつのリストに変換
-
-        # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
-        for i in range(0, len(imgData))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
-            imgData[i], imgData[i+1] = imgData[i+1], imgData[i] # これで値を入れ替えられる
-
-        totalSize = len(imgData)    # 全ドット数
-        imgArray = []
-        # 色情報に変換する
-        readPos = 0
-        while readPos < totalSize:
-            currentPixel = int(imgData[readPos], 16)    # 1ドット分読み込み，文字列から数値に変換
-            imgArray.append(self.palData[currentPixel])
-            readPos += 1
-
-        imgArray = np.array(imgArray)   # ndarrayに変換
-        imgArray = imgArray.reshape( (-1, 8, 4) )  # 横8ドットのタイルに並べ替える（-1を設定すると自動で縦の値を算出してくれる）
-
-        tileNum = width * hight  # 合計タイル数
-
-        # タイルの切り出し
-        tile = []  # pythonのリストとして先に宣言する（ndarrayとごっちゃになりやすい）
-        for i in range(0, tileNum):
-            tile.append(imgArray[i*8:i*8+8, 0:8, :])    # 8x8のタイルを切り出していく
-
-        # タイルの並び替え
-        h = []  # 水平方向に結合したタイルを格納するリスト
-        for i in range(0, hight):
-            h.append( np.zeros_like(tile[0]) )    # タイルを詰めるダミー
-            for j in range(0, width):
-                h[i] = np.hstack((h[i], tile[i*width + j]))
-            if i != 0:
-                h[0] = np.vstack((h[0], h[i]))
-        img = h[0][:, 8:, :]    # ダミー部分を切り取る（ださい）
-
-        dataImg = Image.fromarray( np.uint8(img) )  # 色情報の行列から画像を生成
-        if hFlip == 1:
-            dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
-
-        if vFlip == 1:
-            dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
-
-        qImg = ImageQt(dataImg)
-        pixmap = QtGui.QPixmap.fromImage(qImg)  # Qtの画像形式に変換
-        item = QtGui.QGraphicsPixmapItem(pixmap)
-        item.setOffset(posX,posY)
-        imageBounds = item.boundingRect()
-        self.graphicsScene.addItem(item)
-        self.graphicsScene.addRect(imageBounds)
-        #dataImg.show()
-
-    '''
         OAM情報から画像を生成する
         入力：スプライトのグラフィック，開始タイル，横サイズ，縦サイズ
-        出力：画像データ
+        出力：画像データ（QPixmap形式）
 
     '''
     def makeOAMImage(self, imgData, startTile, width, hight, hFlip, vFlip):
@@ -629,7 +582,7 @@ class SpriteViewer(QtGui.QMainWindow):
         item.setOffset(posX,posY)
         imageBounds = item.boundingRect()
         self.graphicsScene.addItem(item)
-        self.graphicsScene.addRect(imageBounds)
+        #self.graphicsScene.addRect(imageBounds)
 
 
     '''
