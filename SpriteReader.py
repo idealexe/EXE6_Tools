@@ -182,7 +182,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
     '''
     def openFile(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('~'))   # ファイル名がQString型で返される
+        filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('./'))   # ファイル名がQString型で返される
         try:
             with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
                 self.romData = romFile.read()
@@ -199,10 +199,10 @@ class SpriteViewer(QtGui.QMainWindow):
             EXE6_Addr = EXE6Dict.GXX_Sprite_Table
         elif romName == "ROCKEXE6_RXX":
             print( _(u"ファルザー版としてロードしました") )
-            EXE6_Addr = EXE6Dict.RXX_Addr_List
+            EXE6_Addr = EXE6Dict.RXX_Sprite_Table
         else:
             print( _(u"ROMタイトルが識別出来ませんでした") )
-            EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
+            EXE6_Addr = EXE6Dict.GXX_Sprite_Table # 一応グレイガ版の辞書に設定する
 
         self.extractSpriteAddr(self.romData)
 
@@ -218,10 +218,11 @@ class SpriteViewer(QtGui.QMainWindow):
         while readPos <= EXE6_Addr["endAddr"]:
             spriteAddr = romData[readPos:readPos+4]
             # ポインタの最下位バイトはメモリ上の位置を表す08
-            # 88の場合もある模様，圧縮データを表してるっぽい？
-            if spriteAddr[3] in ["\x08", "\x88"]:
+            # 88の場合もある，この場合圧縮データとして扱われる模様
+            memByte = struct.unpack("B", spriteAddr[3])[0]
+            if memByte in [0x08, 0x88]:
 
-                if spriteAddr[3] == "\x88":
+                if memByte == 0x88: # ポインタ先頭が0x88なら圧縮スプライトとして扱う
                     compFlag = 1
                 else:
                     compFlag = 0
@@ -230,7 +231,8 @@ class SpriteViewer(QtGui.QMainWindow):
                 spriteAddr = struct.unpack("<L", spriteAddr)[0]
 
                 self.spriteAddrList.append( [spriteAddr, compFlag] )
-                spriteItem = QtGui.QListWidgetItem( hex(spriteAddr) )    # GUIのスプライトリストに追加するアイテムの生成
+                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper()   # GUIのリストに表示する文字列
+                spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.guiSpriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
             readPos += 4
@@ -286,7 +288,8 @@ class SpriteViewer(QtGui.QMainWindow):
 
             animPtr = struct.unpack("<L", animPtr)[0]   # リトルエンディアンのunsigned longとして読み込む
             self.animPtrList.append(animPtr)
-            animItem = QtGui.QListWidgetItem( hex(animPtr) )    # GUIのアニメーションリストに追加するアイテムの生成
+            animPtrStr = hex(animPtr)[2:].zfill(4).upper()   # GUIに表示する文字列
+            animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
             self.guiAnimList.addItem(animItem) # アニメーションリストへ追加
 
 
@@ -305,7 +308,8 @@ class SpriteViewer(QtGui.QMainWindow):
         while True: # do while文がないので代わりに無限ループ＋breakを使う
             frameData = spriteData[animPtr:animPtr+20]
             self.framePtrList.append(animPtr)
-            frameItem = QtGui.QListWidgetItem( hex(animPtr) )    # GUIのフレームリストに追加するアイテムの生成
+            animPtrStr = hex(animPtr)[2:].zfill(4).upper()   # GUIに表示する文字列
+            frameItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのフレームリストに追加するアイテムの生成
             self.guiFrameList.addItem(frameItem) # フレームリストへ追加
 
             animPtr += 20
