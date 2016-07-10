@@ -54,7 +54,7 @@ class SpriteViewer(QtGui.QMainWindow):
     '''
     def setGUI(self):
         self.setWindowTitle( _("EXE6 Sprite Viewer") )
-        self.resize(800, 450)
+        self.resize(1000, 600)
 
         # メニューバー
         menuBar = self.menuBar()
@@ -96,7 +96,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
         self.spriteLabel = QtGui.QLabel(self)
         self.spriteLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)   # 横：左寄せ，縦：中央
-        self.spriteLabel.setText( _("スプライトリスト") )
+        self.spriteLabel.setText( _("スプライト（ポインタ）") )
         spriteVbox.addWidget(self.spriteLabel)
 
         self.guiSpriteList = QtGui.QListWidget(self) # スプライトのリスト
@@ -117,6 +117,7 @@ class SpriteViewer(QtGui.QMainWindow):
         graphicsView = QtGui.QGraphicsView()    # シーンを表示するためのビュー
         graphicsView.setCacheMode( QtGui.QGraphicsView.CacheBackground )
         graphicsView.setBackgroundBrush( QtGui.QBrush(QtCore.Qt.lightGray, QtCore.Qt.CrossPattern) ) # ビュー背景の設定
+        graphicsView.scale(2, 2)    # 縦横2倍のスケールに設定
         self.graphicsScene = QtGui.QGraphicsScene() # スプライトを描画するためのシーン
         self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         graphicsView.setScene(self.graphicsScene)
@@ -132,19 +133,27 @@ class SpriteViewer(QtGui.QMainWindow):
         animVbox.addWidget(self.animLabel)
 
         self.guiAnimList = QtGui.QListWidget(self) # アニメーションのリスト
-        self.guiAnimList.setMaximumWidth(200)    # 横幅の最大値
         self.guiAnimList.currentRowChanged.connect(self.guiAnimItemActivated) # クリックされた時に実行する関数
         animVbox.addWidget(self.guiAnimList)
 
+        # フレームリスト
         self.frameLabel = QtGui.QLabel(self)
         self.frameLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.frameLabel.setText( _("フレームリスト") )
         animVbox.addWidget(self.frameLabel)
 
         self.guiFrameList = QtGui.QListWidget(self)
-        self.guiFrameList.setMaximumWidth(200)
         self.guiFrameList.currentRowChanged.connect(self.guiFrameItemActivated) # クリックされた時に実行する関数
         animVbox.addWidget(self.guiFrameList)
+
+        # OAMリスト
+        self.oamLabel = QtGui.QLabel(self)
+        self.oamLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.oamLabel.setText( _("OAMリスト") )
+        animVbox.addWidget(self.oamLabel)
+
+        self.guiOAMList = QtGui.QListWidget(self)
+        animVbox.addWidget(self.guiOAMList)
 
         self.show()
 
@@ -165,7 +174,6 @@ class SpriteViewer(QtGui.QMainWindow):
     '''
     def guiAnimItemActivated(self, index):
         animPtr = self.animPtrList[index]
-        print "Selected Animation:\t" + hex(animPtr)
         self.parseAnimData(self.spriteData, animPtr)
         self.parseframeData(self.spriteData, animPtr)   # 先頭フレームのオブジェクトを描画
 
@@ -231,7 +239,7 @@ class SpriteViewer(QtGui.QMainWindow):
                 spriteAddr = struct.unpack("<L", spriteAddr)[0]
 
                 self.spriteAddrList.append( [spriteAddr, compFlag] )
-                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper()   # GUIのリストに表示する文字列
+                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")"   # GUIのリストに表示する文字列
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.guiSpriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
@@ -253,6 +261,7 @@ class SpriteViewer(QtGui.QMainWindow):
             spriteHeader = romData[startAddr:startAddr+4]   # 初めの４バイトがヘッダ情報
             self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容（ポインタもこのデータの先頭を00としている）
             self.gbaAddrOffset = 0x08000000 + startAddr + 4    # データのメモリ上での位置を表示するとき用のオフセット
+            self.spriteAddrOffset = spriteAddr + 4    # データのROM内での位置を表示すると器用のオフセット
 
         elif compFlag == 1: # 圧縮スプライトなら
             uncompSize = romData[spriteAddr+1:spriteAddr+5]
@@ -288,7 +297,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
             animPtr = struct.unpack("<L", animPtr)[0]   # リトルエンディアンのunsigned longとして読み込む
             self.animPtrList.append(animPtr)
-            animPtrStr = hex(animPtr)[2:].zfill(4).upper()   # GUIに表示する文字列
+            animPtrStr = hex(self.gbaAddrOffset + animPtr)[2:].zfill(6).upper() + "\t(" + hex(animPtr)[2:].zfill(4).upper() + ")"   # GUIに表示する文字列
             animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
             self.guiAnimList.addItem(animItem) # アニメーションリストへ追加
 
@@ -308,7 +317,7 @@ class SpriteViewer(QtGui.QMainWindow):
         while True: # do while文がないので代わりに無限ループ＋breakを使う
             frameData = spriteData[animPtr:animPtr+20]
             self.framePtrList.append(animPtr)
-            animPtrStr = hex(animPtr)[2:].zfill(4).upper()   # GUIに表示する文字列
+            animPtrStr = hex(self.gbaAddrOffset + animPtr)[2:].zfill(8).upper() + "\t(" + hex(animPtr)[2:].zfill(4).upper() + ")"   # GUIに表示する文字列
             frameItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのフレームリストに追加するアイテムの生成
             self.guiFrameList.addItem(frameItem) # フレームリストへ追加
 
@@ -319,6 +328,7 @@ class SpriteViewer(QtGui.QMainWindow):
                 break
 
     '''
+        1フレーム分の情報を取り出し画像を表示する
         入力：スプライトのデータとアニメーションデータの開始位置
         処理：20バイトのアニメーションデータを読み取って情報を取り出す
         出力：アニメーションデータの情報
@@ -326,8 +336,7 @@ class SpriteViewer(QtGui.QMainWindow):
     '''
     def parseframeData(self, spriteData, animPtr):
         self.graphicsScene.clear()  # 描画シーンのクリア
-        #print( "Animation Data Address:\t" + hex(animPtr) )    # スプライトファイル内でのアドレス
-        print( "Frame Data Address:\t" + hex(animPtr + self.gbaAddrOffset) ) # メモリ上のアドレス
+        #print( "Frame Data Address:\t" + hex(animPtr + self.gbaAddrOffset) ) # メモリ上のアドレス
         animData = spriteData[animPtr:animPtr+20]   # 1フレーム分ロード
         animData = struct.unpack("<LLLLHH", animData)   # データ構造に基づいて分解
         '''
@@ -341,25 +350,25 @@ class SpriteViewer(QtGui.QMainWindow):
 
         '''
         graphSizePtr = animData[0]
-        print( "Graphics Size Address:\t" + hex(graphSizePtr + self.gbaAddrOffset) )
+        #print( "Graphics Size Address:\t" + hex(graphSizePtr + self.gbaAddrOffset) )
         # 画像容量の読み取り
         graphSize = spriteData[graphSizePtr:graphSizePtr+4]
         graphSize = struct.unpack("<L", graphSize)[0]
-        print( "Graphics Size:\t" + hex(graphSize) )
+        #print( "Graphics Size:\t" + hex(graphSize) )
 
         # 画像データの読み込み
         readPos = graphSizePtr + 4  # ４バイトのサイズ情報の後に画像データが続く
         graphData = spriteData[readPos:readPos+graphSize]   # 画像のロード
 
         palSizePtr = animData[1]
-        print( "Palette Size Address:\t" + hex(palSizePtr + self.gbaAddrOffset) )
+        #print( "Palette Size Address:\t" + hex(palSizePtr + self.gbaAddrOffset) )
 
         ptrToOAMptr = animData[3]
-        print( "Address of OAM Data Pointer:\t" + hex(ptrToOAMptr + self.gbaAddrOffset) )
+        #print( "Address of OAM Data Pointer:\t" + hex(ptrToOAMptr + self.gbaAddrOffset) )
         oamDataPtr = spriteData[ ptrToOAMptr:ptrToOAMptr+4 ]
         oamDataPtr = struct.unpack("<L", oamDataPtr)[0]
-        print( "OAM Data Pointer:\t" + hex(oamDataPtr) )
-        oamDataStart = ptrToOAMptr + oamDataPtr
+        #print( "OAM Data Pointer:\t" + hex(oamDataPtr) )
+        oamDataStart = ptrToOAMptr + oamDataPtr # OAMデータの先頭アドレスはOAMポインタの先頭アドレス+ポインタの値
         readPos = oamDataStart
 
         '''
@@ -369,12 +378,20 @@ class SpriteViewer(QtGui.QMainWindow):
 
         '''
         oamCount = 0
+        self.oamList = []   # OAMの情報を格納するリスト
+        self.guiOAMList.clear() # GUIのOAMリストをクリア
         while spriteData[readPos:readPos+5] != "\xFF\xFF\xFF\xFF\xFF":
             print( "\nOAM: " + str(oamCount) )
-            oamCount += 1
 
             oamData = spriteData[readPos:readPos+5]
+            oamAddrStr = ( hex(self.gbaAddrOffset + readPos)[2:].zfill(8) + "\t(" + hex(readPos)[2:].zfill(4) + ")" ).upper()  # GUIのリストに表示する文字列
+            oamItem = QtGui.QListWidgetItem( oamAddrStr )   # GUIのOAMリストに追加するアイテムの生成
+            self.guiOAMList.addItem(oamItem) # GUIスプライトリストへ追加
+
             readPos += 5
+            oamCount += 1
+
+
             oamData = struct.unpack("BbbBB", oamData)
             startTile = oamData[0]
             print( "Starting Tile:\t" + str(startTile) )
@@ -393,9 +410,9 @@ class SpriteViewer(QtGui.QMainWindow):
             objSize = flag1[-2:]    # 下位2ビット
             hFlip = int( flag1[1], 2 ) # 水平反転フラグ
             vFlip = int( flag1[0], 2 ) # 垂直反転フラグ
-            print( "Horizontal Flip: " + str(hFlip) )
-            print( "Vertical Flip:\t" + str(vFlip) )
-            print("size:\t" + str(objSize) )
+            #print( "Horizontal Flip: " + str(hFlip) )
+            #print( "Vertical Flip:\t" + str(vFlip) )
+            #print("size:\t" + str(objSize) )
 
             flag2 = bin(oamData[4])[2:].zfill(8)
             objShape = flag2[-2:]
@@ -405,6 +422,17 @@ class SpriteViewer(QtGui.QMainWindow):
 
             # パレットの設定
             self.parsePaletteData(spriteData, palSizePtr, palIndex)
+
+            sizeX, sizeY = objDim[objSize+objShape]
+            image = self.makeOAMImage(graphData, startTile, sizeX, sizeY, hFlip, vFlip) # PILじゃないと反転出来なそうなので画像生成の時点で反転を適用する
+
+            OAM = {
+            "image":image,
+            "posX":posX,
+            "posY":posY
+            }
+            self.oamList.append(OAM)
+            self.drawOAM(OAM["image"], OAM["posX"], OAM["posY"])
 
             '''
                 フラグとサイズの関係．わかりづらい・・・
@@ -449,8 +477,7 @@ class SpriteViewer(QtGui.QMainWindow):
                 size 3, shape 1: 64x32
                 size 3, shape 2: 32x64
             '''
-            sizeX, sizeY = objDim[objSize+objShape]
-            self.showOBJ(graphData, startTile, sizeX, sizeY, posX, posY, hFlip, vFlip)
+            #self.showOBJ(graphData, startTile, sizeX, sizeY, posX, posY, hFlip, vFlip)
 
         print "Animation Flame Delay:\t" + str(animData[4]) + " frame"
 
@@ -466,40 +493,12 @@ class SpriteViewer(QtGui.QMainWindow):
         print "Animation Type:\t" + hex(animType)
         print "\n----------------------------------------\n"
 
+    '''
+        アニメーションの再生
 
     '''
-        バイナリデータからタイルセットに変換する（現在未使用）
-
-    '''
-    def bin2tilesets(self, imgData):
-        imgData = binascii.hexlify(imgData).upper()   # バイナリ値をそのまま文字にしたデータに変換
-        imgData = list(imgData) # 1文字ずつのリストに変換（入れ替えのため）
-
-        # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
-        for i in range(0, len(imgData))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
-            imgData[i], imgData[i+1] = imgData[i+1], imgData[i] # これで値を入れ替えられる
-
-        totalSize = len(imgData)    # 全ドット数
-        imgArray = []
-        # 色情報に変換する
-        sys.stdout.write("Loading...")
-        readPos = 0
-        while readPos < totalSize:
-            imgArray.append(glay[imgData[readPos]])
-            readPos += 1
-
-            if readPos % 20000 == 0:
-                sys.stdout.write(".")
-        sys.stdout.write("done\n")
-
-        imgArray = np.array(imgArray)   # ndarrayに変換
-        imgArray = imgArray.reshape( (-1, 8, 4) )
-        tileNum = width * hight  # 合計タイル数
-
-        # タイルの切り出し
-        tile = []  # pythonのリストとして先に宣言する（ndarrayとごっちゃになりやすい）
-        for i in range(0, tileNum):
-            tile.append(imgArray[i*8:i*8+8, 0:8, :])    # 8x8のタイルを切り出していく
+    def playAnimData(self):
+        pass
 
 
     '''
@@ -556,11 +555,82 @@ class SpriteViewer(QtGui.QMainWindow):
             dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
 
         qImg = ImageQt(dataImg)
-        pixmap = QtGui.QPixmap.fromImage(qImg)
+        pixmap = QtGui.QPixmap.fromImage(qImg)  # Qtの画像形式に変換
         item = QtGui.QGraphicsPixmapItem(pixmap)
         item.setOffset(posX,posY)
+        imageBounds = item.boundingRect()
         self.graphicsScene.addItem(item)
+        self.graphicsScene.addRect(imageBounds)
         #dataImg.show()
+
+    '''
+        OAM情報から画像を生成する
+        入力：スプライトのグラフィック，開始タイル，横サイズ，縦サイズ
+        出力：画像データ
+
+    '''
+    def makeOAMImage(self, imgData, startTile, width, hight, hFlip, vFlip):
+        startAddr = startTile * 32  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
+        width = width/8 # サイズからタイルの枚数に変換
+        hight = hight/8
+        imgData = imgData[startAddr:]   # 使う部分を切り出し
+        imgData = binascii.hexlify(imgData).upper()   # バイナリ値をそのまま文字列にしたデータに変換
+        imgData = list(imgData) # 1文字ずつのリストに変換
+
+        # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
+        for i in range(0, len(imgData))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
+            imgData[i], imgData[i+1] = imgData[i+1], imgData[i] # これで値を入れ替えられる
+
+        totalSize = len(imgData)    # 全ドット数
+        imgArray = []
+        # 色情報に変換する
+        readPos = 0
+        while readPos < totalSize:
+            currentPixel = int(imgData[readPos], 16)    # 1ドット分読み込み，文字列から数値に変換
+            imgArray.append(self.palData[currentPixel])
+            readPos += 1
+
+        imgArray = np.array(imgArray)   # ndarrayに変換
+        imgArray = imgArray.reshape( (-1, 8, 4) )  # 横8ドットのタイルに並べ替える（-1を設定すると自動で縦の値を算出してくれる）
+
+        tileNum = width * hight  # 合計タイル数
+
+        # タイルの切り出し
+        tile = []  # pythonのリストとして先に宣言する（ndarrayとごっちゃになりやすい）
+        for i in range(0, tileNum):
+            tile.append(imgArray[i*8:i*8+8, 0:8, :])    # 8x8のタイルを切り出していく
+
+        # タイルの並び替え
+        h = []  # 水平方向に結合したタイルを格納するリスト
+        for i in range(0, hight):
+            h.append( np.zeros_like(tile[0]) )    # タイルを詰めるダミー
+            for j in range(0, width):
+                h[i] = np.hstack((h[i], tile[i*width + j]))
+            if i != 0:
+                h[0] = np.vstack((h[0], h[i]))
+        img = h[0][:, 8:, :]    # ダミー部分を切り取る（ださい）
+
+        dataImg = Image.fromarray( np.uint8(img) )  # 色情報の行列から画像を生成（PILのImage形式）
+        if hFlip == 1:
+            dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
+
+        if vFlip == 1:
+            dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
+        qImg = ImageQt(dataImg) # QImage形式に変換
+        pixmap = QtGui.QPixmap.fromImage(qImg)  # QPixmap形式に変換
+        return pixmap
+
+    '''
+        OAMを描画する
+
+    '''
+    def drawOAM(self, image, posX, posY):
+        item = QtGui.QGraphicsPixmapItem(image)
+        item.setOffset(posX,posY)
+        imageBounds = item.boundingRect()
+        self.graphicsScene.addItem(item)
+        self.graphicsScene.addRect(imageBounds)
+
 
     '''
         パレットデータの読み取り
