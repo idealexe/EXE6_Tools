@@ -163,6 +163,15 @@ class SpriteViewer(QtGui.QMainWindow):
         self.guiOAMList.itemClicked.connect(self.guiOAMItemActivated) # クリックされた時に実行する関数
         oamVbox.addWidget(self.guiOAMList)
 
+        '''
+        # OAM情報
+        self.oamDataLabel = QtGui.QLabel(self)
+        self.oamDataLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.oamDataLabel.setText( _("OAMデータ") )
+        oamVbox.addWidget(self.oamDataLabel)
+
+        '''
+
         self.show()
 
 
