@@ -153,7 +153,7 @@ class SpriteViewer(QtGui.QMainWindow):
         animVbox.addWidget(self.oamLabel)
 
         self.guiOAMList = QtGui.QListWidget(self)
-        self.guiOAMList.currentRowChanged.connect(self.guiOAMItemActivated) # クリックされた時に実行する関数
+        self.guiOAMList.itemClicked.connect(self.guiOAMItemActivated) # クリックされた時に実行する関数
         animVbox.addWidget(self.guiOAMList)
 
         self.show()
@@ -190,14 +190,24 @@ class SpriteViewer(QtGui.QMainWindow):
         GUIでOAMが選択されたときに行う処理
 
     '''
-    def guiOAMItemActivated(self, index):
+    def guiOAMItemActivated(self, item):
+        index = self.guiOAMList.currentRow()  # 渡されるのはアイテムなのでインデックス番号は現在の行から取得する
+        if self.graphicsScene.items()[index].isVisible():
+            self.graphicsScene.items()[index].hide()    # 非表示にする
+        else:
+            self.graphicsScene.items()[index].show()    # 表示する
+
+        '''
         oam = self.oamList[index]
         image = oam["image"]
         item = QtGui.QGraphicsPixmapItem(image)
         item.setOffset(oam["posX"], oam["posY"])
         imageBounds = item.boundingRect()
-        self.graphicsScene.addRect(imageBounds)
+        print( self.graphicsScene.items()[index] )
+        #self.graphicsScene.addRect(imageBounds)
         #self.graphicsScene.addItem(item)
+
+        '''
 
     '''
         ファイルを開くときの処理
