@@ -54,7 +54,7 @@ class SpriteViewer(QtGui.QMainWindow):
     '''
     def setGUI(self):
         self.setWindowTitle( _("EXE6 Sprite Viewer") )
-        self.resize(1000, 600)
+        self.resize(1200, 600)
 
         # メニューバー
         menuBar = self.menuBar()
@@ -100,7 +100,7 @@ class SpriteViewer(QtGui.QMainWindow):
         spriteVbox.addWidget(self.spriteLabel)
 
         self.guiSpriteList = QtGui.QListWidget(self) # スプライトのリスト
-        self.guiSpriteList.setMaximumWidth(200)    # 横幅の最大値
+        self.guiSpriteList.setMinimumWidth(200)    # 横幅の最小値
         self.guiSpriteList.currentRowChanged.connect(self.guiSpriteItemActivated) # クリックされた時に実行する関数
         spriteVbox.addWidget(self.guiSpriteList)
 
@@ -115,6 +115,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
         # スプライトを表示するためのビュー
         graphicsView = QtGui.QGraphicsView()    # シーンを表示するためのビュー
+        graphicsView.setMinimumWidth(500) #（ウインドウにビューが収まっていないとsegmentation faultをおこすので最小サイズを保証する）
         graphicsView.setCacheMode( QtGui.QGraphicsView.CacheBackground )
         graphicsView.setBackgroundBrush( QtGui.QBrush(QtCore.Qt.lightGray, QtCore.Qt.CrossPattern) ) # ビュー背景の設定
         graphicsView.scale(2, 2)    # 縦横2倍のスケールに設定
@@ -133,6 +134,7 @@ class SpriteViewer(QtGui.QMainWindow):
         animVbox.addWidget(self.animLabel)
 
         self.guiAnimList = QtGui.QListWidget(self) # アニメーションのリスト
+        self.guiAnimList.setMinimumWidth(180)    # 横幅の最小値
         self.guiAnimList.currentRowChanged.connect(self.guiAnimItemActivated) # クリックされた時に実行する関数
         animVbox.addWidget(self.guiAnimList)
 
@@ -146,15 +148,20 @@ class SpriteViewer(QtGui.QMainWindow):
         self.guiFrameList.currentRowChanged.connect(self.guiFrameItemActivated) # クリックされた時に実行する関数
         animVbox.addWidget(self.guiFrameList)
 
+        # OAM
+        oamVbox = QtGui.QVBoxLayout()
+        mainHbox.addLayout(oamVbox)
+
         # OAMリスト
         self.oamLabel = QtGui.QLabel(self)
         self.oamLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.oamLabel.setText( _("OAMリスト") )
-        animVbox.addWidget(self.oamLabel)
+        oamVbox.addWidget(self.oamLabel)
 
         self.guiOAMList = QtGui.QListWidget(self)
+        self.guiOAMList.setMinimumWidth(180)    # 横幅の最小値
         self.guiOAMList.itemClicked.connect(self.guiOAMItemActivated) # クリックされた時に実行する関数
-        animVbox.addWidget(self.guiOAMList)
+        oamVbox.addWidget(self.guiOAMList)
 
         self.show()
 
