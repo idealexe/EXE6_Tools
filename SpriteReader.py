@@ -20,11 +20,7 @@ from PIL.ImageQt import ImageQt
 _ = gettext.gettext # 後の翻訳用
 
 # 辞書のインポート
-import EXE6Dict
-CP_EXE6_1 = EXE6Dict.CP_EXE6_1
-CP_EXE6_2 = EXE6Dict.CP_EXE6_2
-CP_EXE6_1_inv = EXE6Dict.CP_EXE6_1_inv
-CP_EXE6_2_inv = EXE6Dict.CP_EXE6_2_inv
+import SpriteDict
 
 # フラグと形状の対応を取る辞書[size+shape]:[x,y]
 # キーにリストが使えないのでこんなことに・・・
@@ -244,13 +240,19 @@ class SpriteViewer(QtGui.QMainWindow):
         global EXE6_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
         if romName == "ROCKEXE6_GXX":
             print( _(u"グレイガ版としてロードしました") )
-            EXE6_Addr = EXE6Dict.GXX_Sprite_Table
+            EXE6_Addr = SpriteDict.ROCKEXE6_GXX
         elif romName == "ROCKEXE6_RXX":
             print( _(u"ファルザー版としてロードしました") )
-            EXE6_Addr = EXE6Dict.RXX_Sprite_Table
+            EXE6_Addr = SpriteDict.ROCKEXE6_RXX
+        elif romName == "ROCKEXE5_TOB":
+            print( _("ブルース版としてロードしました") )
+            EXE6_Addr = SpriteDict.ROCKEXE5_TOB
+        elif romName == "ROCKEXE5_TOC":
+            print( _("カーネル版としてロードしました") )
+            EXE6_Addr = SpriteDict.ROCKEXE5_TOC
         else:
             print( _(u"ROMタイトルが識別出来ませんでした") )
-            EXE6_Addr = EXE6Dict.GXX_Sprite_Table # 一応グレイガ版の辞書に設定する
+            EXE6_Addr = SpriteDict.ROCKEXE6_GXX # 一応グレイガ版の辞書に設定する
 
         self.extractSpriteAddr(self.romData)
         self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
@@ -663,7 +665,7 @@ class SpriteViewer(QtGui.QMainWindow):
                 # 非圧縮ブロックなら
                 if blockHeader[i] == str(0):
                     readPos += 1    # 次の読み取り位置へ
-                    if readPos >= len(data):    # ここ適当
+                    if readPos >= len(data):    # 元データの範囲を超えたら終了
                         break
                     currentChar = data[readPos]    # 1バイト読み込み
                     output += currentChar   # そのまま出力
