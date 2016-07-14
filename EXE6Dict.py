@@ -104,6 +104,15 @@ GXX_Addr_List = [
 ["KeyItem",  "0x75F094", "0x75F37A"],
 ["NaviCus",  "0x75FF39", "0x7600A0"]
 ]
+
+# ロックマンのスプライトのポインタ周辺をとりあえず使ってみる
+# このアドレスの直前にポインタのテーブルっぽいものがある
+# テーブルのポインタが示すアドレスには白玉がある．スプライトのまとまりを区切ってるのだろうか
+GXX_Sprite_Table = {
+"startAddr":0x032CA8,
+"endAddr":0x033963
+}
+
 # ファルザー版の各種アドレス
 RXX_Addr_List = [
 ["Map",      "0x6ED62C", "0x6EDCD6"],
@@ -113,3 +122,8 @@ RXX_Addr_List = [
 ["KeyItem",  "0x761160", "0x761446"],
 ["NaviCus",  "0x762005", "0x76216C"]
 ]
+
+RXX_Sprite_Table = {
+"startAddr":0x032CA8,
+"endAddr":0x033963
+}

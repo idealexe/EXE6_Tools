@@ -291,7 +291,10 @@ main
 def main():
     app = QtGui.QApplication(sys.argv)
     # 日本語文字コードを正常表示するための設定
-    QtCore.QTextCodec.setCodecForCStrings( QtCore.QTextCodec.codecForName("utf-8") )
+    reload(sys) # モジュールをリロードしないと文字コードが変更できない
+    sys.setdefaultencoding("utf-8") # コンソールの出力をutf-8に設定
+    QtCore.QTextCodec.setCodecForCStrings( QtCore.QTextCodec.codecForName("utf-8") )    # GUIもutf-8に設定
+
     window = Window()
     sys.exit(app.exec_())
 
