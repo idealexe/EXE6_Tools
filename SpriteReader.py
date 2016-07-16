@@ -239,17 +239,20 @@ class SpriteViewer(QtGui.QMainWindow):
         romName = self.romData[0xA0:0xAC]
         global EXE6_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
         if romName == "ROCKEXE6_GXX":
-            print( _(u"グレイガ版としてロードしました") )
+            print( _(u"ロックマンエグゼ6 グレイガとしてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE6_GXX
         elif romName == "ROCKEXE6_RXX":
-            print( _(u"ファルザー版としてロードしました") )
+            print( _(u"ロックマンエグゼ6 ファルザーとしてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE6_RXX
         elif romName == "ROCKEXE5_TOB":
-            print( _("ブルース版としてロードしました") )
+            print( _("ロックマンエグゼ5 チームオブブルースとしてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE5_TOB
         elif romName == "ROCKEXE5_TOC":
-            print( _("カーネル版としてロードしました") )
+            print( _("ロックマンエグゼ5 チームオブカーネルとしてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE5_TOC
+        elif romName == "ROCKEXE4.5RO":
+            print( _("ロックマンエグゼ4.5としてロードしました") )
+            EXE6_Addr = SpriteDict.ROCKEXE4_5RO
         else:
             print( _(u"ROMタイトルが識別出来ませんでした") )
             EXE6_Addr = SpriteDict.ROCKEXE6_GXX # 一応グレイガ版の辞書に設定する

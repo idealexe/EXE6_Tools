@@ -23,3 +23,8 @@ ROCKEXE5_TOC = {
 "startAddr":0x0326EC,
 "endAddr":0x03314B
 }
+
+ROCKEXE4_5RO = {
+"startAddr":0x02B39C,
+"endAddr":0x02BC73
+}
