@@ -98,6 +98,7 @@ class SpriteViewer(QtGui.QMainWindow):
         self.guiSpriteList = QtGui.QListWidget(self) # スプライトのリスト
         self.guiSpriteList.setMinimumWidth(200)    # 横幅の最小値
         self.guiSpriteList.currentRowChanged.connect(self.guiSpriteItemActivated) # クリックされた時に実行する関数
+        self.guiSpriteList.itemDoubleClicked.connect(self.guiSpriteItemWClicked)    # ダブルクリックされたときに実行する関数
         spriteVbox.addWidget(self.guiSpriteList)
 
         # グラフィック
@@ -168,6 +169,23 @@ class SpriteViewer(QtGui.QMainWindow):
 
         '''
 
+        # パレット
+        palVbox = QtGui.QVBoxLayout()
+
+        self.palLabel = QtGui.QLabel(self)
+        self.palLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.palLabel.setText( _("パレット") )
+        palVbox.addWidget(self.palLabel)
+
+        self.guiPalList = QtGui.QListWidget(self)
+        self.guiPalList.setMinimumWidth(200)    # 横幅の最小値
+        self.guiPalList.setMinimumHeight(250)
+        #self.guiPalList.itemClicked.connect(self.guiOAMItemActivated) # クリックされた時に実行する関数
+        palVbox.addWidget(self.guiPalList)
+
+        oamVbox.addLayout(palVbox)
+
+        # ウインドウの表示
         self.show()
 
 
@@ -180,6 +198,16 @@ class SpriteViewer(QtGui.QMainWindow):
         compFlag = self.spriteAddrList[index][1]
         self.parseSpriteData(self.romData, spriteAddr, compFlag)
         self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
+
+
+    '''
+        GUIでスプライトがダブルクリックされたときに行う処理
+
+    '''
+    def guiSpriteItemWClicked(self, item):
+        index = self.guiSpriteList.currentRow() # 選択された行の番号を取得
+        ptrAddr = self.spriteAddrList[index][2]
+
 
     '''
         GUIでアニメーションが選択されたときに行う処理
@@ -245,13 +273,13 @@ class SpriteViewer(QtGui.QMainWindow):
             print( _(u"ロックマンエグゼ6 ファルザーとしてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE6_RXX
         elif romName == "ROCKEXE5_TOB":
-            print( _("ロックマンエグゼ5 チームオブブルースとしてロードしました") )
+            print( _(u"ロックマンエグゼ5 チームオブブルースとしてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE5_TOB
         elif romName == "ROCKEXE5_TOC":
-            print( _("ロックマンエグゼ5 チームオブカーネルとしてロードしました") )
+            print( _(u"ロックマンエグゼ5 チームオブカーネルとしてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE5_TOC
         elif romName == "ROCKEXE4.5RO":
-            print( _("ロックマンエグゼ4.5としてロードしました") )
+            print( _(u"ロックマンエグゼ4.5としてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE4_5RO
         else:
             print( _(u"ROMタイトルが識別出来ませんでした") )
@@ -262,6 +290,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
     '''
         スプライトのアドレスを抽出する
+        アドレスリストの構造は[スプライトの先頭アドレス，圧縮状態，ポインタのアドレス]
 
     '''
     def extractSpriteAddr(self, romData):
@@ -284,7 +313,7 @@ class SpriteViewer(QtGui.QMainWindow):
                 spriteAddr = spriteAddr[:3] + "\x00"    # ROM内でのアドレスに直す　例）081D8000 -> 001D8000 (00 80 1D 08 -> 00 80 1D 00)
                 spriteAddr = struct.unpack("<L", spriteAddr)[0]
 
-                self.spriteAddrList.append( [spriteAddr, compFlag] )
+                self.spriteAddrList.append( [spriteAddr, compFlag, readPos] )
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")"   # GUIのリストに表示する文字列
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.guiSpriteList.addItem(spriteItem) # GUIスプライトリストへ追加
@@ -632,6 +661,7 @@ class SpriteViewer(QtGui.QMainWindow):
         endAddr = readPos + palSize
 
         self.palData = []    # パレットデータを格納するリスト
+        self.guiPalList.clear()
         palCount = 0
         while readPos < endAddr:
             color = spriteData[readPos:readPos+2]   # 1色あたり16bit（2バイト）
@@ -645,8 +675,15 @@ class SpriteViewer(QtGui.QMainWindow):
             #print "R: " + hex(binR) + "\tG: " + hex(binG) + "\tB: " + hex(binB)
             if palCount == 0:
                 self.palData.append( [binR, binG, binB, 0] ) # 最初の色は透過色
+                #self.palData.append( [binR, binG, binB, 255] ) # 確認用
             else:
                 self.palData.append( [binR, binG, binB, 255] )
+
+            colorStr = hex(color)[2:].zfill(4).upper() + "\t(" + str(binR).rjust(3) + ", " + str(binG).rjust(3) + ", " + str(binB).rjust(3) + ")"  # GUIに表示する文字列
+            colorItem = QtGui.QListWidgetItem(colorStr)
+            colorItem.setBackgroundColor( QtGui.QColor(binR, binG, binB) )  # 背景色をパレットの色に
+            colorItem.setTextColor( QtGui.QColor(255-binR, 255-binG, 255-binB) )    # 文字は反転色
+            self.guiPalList.addItem(colorItem) # フレームリストへ追加
 
             palCount += 1
 
