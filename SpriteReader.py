@@ -4,6 +4,13 @@
 '''
     EXE6 Sprite Reader by ideal.exe
 
+
+    データ構造仕様
+
+    palData: パレットデータ辞書のリスト．OAMの生成（彩色）に使用する．
+    palData[i] := { "color":[赤, 緑, 青, α], "addr":スプライト内のアドレス }
+
+
 '''
 
 import binascii
@@ -113,7 +120,7 @@ class SpriteViewer(QtGui.QMainWindow):
         # スプライトを表示するためのビュー
         graphicsView = QtGui.QGraphicsView()    # シーンを表示するためのビュー
         graphicsView.setMinimumWidth(500) #（ウインドウにビューが収まっていないとsegmentation faultをおこすので最小サイズを保証する）
-        graphicsView.setCacheMode( QtGui.QGraphicsView.CacheBackground )
+        #graphicsView.setCacheMode( QtGui.QGraphicsView.CacheBackground )
         graphicsView.setBackgroundBrush( QtGui.QBrush(QtCore.Qt.lightGray, QtCore.Qt.CrossPattern) ) # ビュー背景の設定
         graphicsView.scale(2, 2)    # 縦横2倍のスケールに設定
         self.graphicsScene = QtGui.QGraphicsScene() # スプライトを描画するためのシーン
@@ -180,7 +187,7 @@ class SpriteViewer(QtGui.QMainWindow):
         self.guiPalList = QtGui.QListWidget(self)
         self.guiPalList.setMinimumWidth(200)    # 横幅の最小値
         self.guiPalList.setMinimumHeight(250)
-        #self.guiPalList.itemClicked.connect(self.guiOAMItemActivated) # クリックされた時に実行する関数
+        self.guiPalList.itemClicked.connect(self.guiPalItemActivated) # クリックされた時に実行する関数
         palVbox.addWidget(self.guiPalList)
 
         oamVbox.addLayout(palVbox)
@@ -190,18 +197,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
 
     '''
-        GUIでスプライトが選択されたときに行う処理
-
-    '''
-    def guiSpriteItemActivated(self, index):
-        spriteAddr = self.spriteAddrList[index][0]
-        compFlag = self.spriteAddrList[index][1]
-        self.parseSpriteData(self.romData, spriteAddr, compFlag)
-        self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
-
-
-    '''
-        GUIでスプライトがダブルクリックされたときに行う処理
+        GUIでスプライトがダブルクリックされたときに行う処理（未使用）
 
     '''
     def guiSpriteItemWClicked(self, item):
@@ -210,19 +206,11 @@ class SpriteViewer(QtGui.QMainWindow):
 
 
     '''
-        GUIでアニメーションが選択されたときに行う処理
-
-    '''
-    def guiAnimItemActivated(self, index):
-        animPtr = self.animPtrList[index]
-        self.parseAnimData(self.spriteData, animPtr)
-        self.parseframeData(self.spriteData, animPtr)   # 先頭フレームのオブジェクトを描画
-
-    '''
         GUIでフレームが選択されたときに行う処理
 
     '''
     def guiFrameItemActivated(self, index):
+        self.guiFrameList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         framePtr = self.framePtrList[index]
         self.parseframeData(self.spriteData, framePtr)
 
@@ -250,13 +238,38 @@ class SpriteViewer(QtGui.QMainWindow):
         '''
 
     '''
+        GUIで色が選択されたときに行う処理
+
+    '''
+    def guiPalItemActivated(self, item):
+        index = self.guiPalList.currentRow()
+        r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
+        writePos = self.palData[index]["addr"]  # 色データを書き込む位置
+        color = QtGui.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
+        r,g,b,a = color.getRgb()    # ダイアログでセットされた色に更新
+
+        binR = bin(r/8)[2:].zfill(5)    # 5bitカラーに変換
+        binG = bin(g/8)[2:].zfill(5)
+        binB = bin(b/8)[2:].zfill(5)
+        gbaColor = int(binB + binG + binR, 2)  # GBAのカラーコードに変換
+        colorStr = struct.pack("H", gbaColor)
+        self.spriteData = self.spriteData[:writePos] + colorStr + self.spriteData[writePos+2:]  # ロード中のスプライトデータの色を書き換える
+        #self.romData = self.romData[:writePos] + colorStr + self.romData[writePos+2:]  # ROM内の色を書き換える
+
+        animIndex = self.guiAnimList.currentRow()
+        print("animIndex: " + str(animIndex) )
+        self.guiAnimItemActivated(animIndex)
+
+
+    '''
         ファイルを開くときの処理
 
     '''
     def openFile(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('./'))   # ファイル名がQString型で返される
+        filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+
         try:
-            with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
+            with open( unicode(filename), 'rb' ) as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
                 self.romData = romFile.read()
 
         except:
@@ -320,6 +333,19 @@ class SpriteViewer(QtGui.QMainWindow):
 
             readPos += 4
 
+
+    '''
+        GUIでスプライトが選択されたときに行う処理
+
+    '''
+    def guiSpriteItemActivated(self, index):
+        self.guiSpriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        spriteAddr = self.spriteAddrList[index][0]
+        compFlag = self.spriteAddrList[index][1]
+        self.parseSpriteData(self.romData, spriteAddr, compFlag)
+        self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
+
+
     '''
         ROMデータから指定された位置にあるスプライトの情報を取り出す
         スプライトリストでアイテムが選択されたら実行する形を想定
@@ -336,6 +362,7 @@ class SpriteViewer(QtGui.QMainWindow):
             spriteHeader = romData[startAddr:startAddr+4]   # 初めの４バイトがヘッダ情報
             self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容（ポインタもこのデータの先頭を00としている）
             self.gbaAddrOffset = 0x08000000 + startAddr + 4    # データのメモリ上での位置を表示するとき用のオフセット
+            self.romAddrOffset = startAddr + 4  # データのROM内での位置を表示するとき用のオフセット
             self.spriteAddrOffset = spriteAddr + 4    # データのROM内での位置を表示すると器用のオフセット
 
         elif compFlag == 1: # 圧縮スプライトなら
@@ -378,9 +405,23 @@ class SpriteViewer(QtGui.QMainWindow):
 
 
     '''
+        GUIでアニメーションが選択されたときに行う処理
+
+    '''
+    def guiAnimItemActivated(self, index):
+        print( "AnimIndex:\t" + str(index) )
+        self.guiAnimList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        animPtr = self.animPtrList[index]
+        self.parseAnimData(self.spriteData, animPtr)
+        #self.parseframeData(self.spriteData, animPtr)   # 先頭フレームのオブジェクトを描画
+        self.guiFrameItemActivated(0)
+
+
+    '''
         指定されたアニメーションデータを読み込んで処理する
         GUIのアニメーションリストで選択されたアニメーションに対して実行する
         アニメーションデータは20バイトのデータでアニメーションの1フレームを管理する
+        この関数ではアニメーションデータが持つフレームデータをリスト化する
         1つのアニメーションのフレーム数は事前に与えられず，アニメーションデータが持つ再生タイプに基づいて逐次的にロードする模様
 
     '''
@@ -503,11 +544,13 @@ class SpriteViewer(QtGui.QMainWindow):
 
             OAM = {
             "image":image,
+            "sizeX":sizeX,
+            "sizeY":sizeY,
             "posX":posX,
             "posY":posY
             }
             self.oamList.append(OAM)
-            self.drawOAM(OAM["image"], OAM["posX"], OAM["posY"])
+            self.drawOAM(OAM["image"], OAM["sizeX"], OAM["sizeY"], OAM["posX"], OAM["posY"])
 
             '''
                 フラグとサイズの関係．わかりづらい・・・
@@ -600,7 +643,7 @@ class SpriteViewer(QtGui.QMainWindow):
         readPos = 0
         while readPos < totalSize:
             currentPixel = int(imgData[readPos], 16)    # 1ドット分読み込み，文字列から数値に変換
-            imgArray.append(self.palData[currentPixel])
+            imgArray.append(self.palData[currentPixel]["color"])
             readPos += 1
 
         imgArray = np.array(imgArray)   # ndarrayに変換
@@ -637,9 +680,9 @@ class SpriteViewer(QtGui.QMainWindow):
         OAMを描画する
 
     '''
-    def drawOAM(self, image, posX, posY):
+    def drawOAM(self, image, sizeX, sizeY, posX, posY):
         item = QtGui.QGraphicsPixmapItem(image)
-        item.setOffset(posX,posY)
+        item.setOffset(posX , posY)
         imageBounds = item.boundingRect()
         self.graphicsScene.addItem(item)
         #self.graphicsScene.addRect(imageBounds)
@@ -666,7 +709,6 @@ class SpriteViewer(QtGui.QMainWindow):
         while readPos < endAddr:
             color = spriteData[readPos:readPos+2]   # 1色あたり16bit（2バイト）
             color = struct.unpack("<H", color)[0]
-            readPos += 2
 
             binColor = bin(color)[2:].zfill(15) # GBAのオブジェクトは15bitカラー（0BBBBBGGGGGRRRRR）
             binB = int( binColor[0:5], 2 ) * 8  #   文字列化されているので数値に直す（255階調での近似色にするため8倍する）
@@ -674,10 +716,9 @@ class SpriteViewer(QtGui.QMainWindow):
             binR = int( binColor[10:15], 2 ) * 8
             #print "R: " + hex(binR) + "\tG: " + hex(binG) + "\tB: " + hex(binB)
             if palCount == 0:
-                self.palData.append( [binR, binG, binB, 0] ) # 最初の色は透過色
-                #self.palData.append( [binR, binG, binB, 255] ) # 確認用
+                self.palData.append( {"color":[binR, binG, binB, 0], "addr":readPos } ) # 最初の色は透過色
             else:
-                self.palData.append( [binR, binG, binB, 255] )
+                self.palData.append( {"color":[binR, binG, binB, 255], "addr":readPos } )
 
             colorStr = hex(color)[2:].zfill(4).upper() + "\t(" + str(binR).rjust(3) + ", " + str(binG).rjust(3) + ", " + str(binB).rjust(3) + ")"  # GUIに表示する文字列
             colorItem = QtGui.QListWidgetItem(colorStr)
@@ -686,6 +727,7 @@ class SpriteViewer(QtGui.QMainWindow):
             self.guiPalList.addItem(colorItem) # フレームリストへ追加
 
             palCount += 1
+            readPos += 2
 
 
     '''
