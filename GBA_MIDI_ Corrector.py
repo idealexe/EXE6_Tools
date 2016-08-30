@@ -63,26 +63,31 @@ for i in range(trackNum):
     readPos += dataSize
 
 # 各イベントをコントロールチェンジに書き換える
-reEvent = re.compile("LFOS|LFODL|MODT|XCMD xIECV") # 検索パターンをコンパイル
+reEvent = re.compile("LFOS|LFODL|MODT|XCMD xIECV|XCMD xIECL") # 検索パターンをコンパイル
 for i in range(trackNum):
     while reEvent.search(tracks[i]) != None:
         m = reEvent.search(tracks[i])
         eventStart = m.start() - 3  # マッチした位置の３バイト前がテキストイベントの開始位置
         n = struct.unpack("B", tracks[i][m.start()-1])[0]   # マッチした位置の１バイト前がデータ長
         eventSize = n + 3;  # イベント全体のサイズ
-        code = struct.pack("B", 0xB0 + i)
-        if m.group() == "LFOS":
-            value = int( tracks[i][m.end()+1:m.end()+3] )   # かなり決め打ち（文字列の後１つスペースを開けて値があることを仮定している）
-            cc = code + "\x15" + struct.pack("B", value)   # LFOSのコントロールチェンジは BX 15 VV （Xはチャンネル）
-        elif m.group() == "LFODL":
-            value = int( tracks[i][m.end()+1:m.end()+3] )
-            cc = code + "\x1A" + struct.pack("B", value)   # LFODLのコントロールチェンジは BX 1A VV （Xはチャンネル）
-        elif m.group() == "MODT":
-            cc = code + "\x16\x00"  # value = 0 しか見当たらないのでとりあえず
-        elif m.group() == "XCMD xIECV":
-            value = int( tracks[i][m.end()+1:m.end()+3] )
-            cc = code + "\x1E\x08\x00" + code + "\x1F" + struct.pack("B", value)
 
+        code = struct.pack("B", 0xB0 + i)
+        value = tracks[i][m.end()+1:m.end()+3]  # かなり決め打ち（文字列の後１つスペースを開けて値があることを仮定している）
+        value = re.match("\d*", value).group()  # 数字部分のみ取り出し
+        if value == "": # 値が数字ではない場合（MODTを想定）
+            value = "0"
+        value = struct.pack( "B", int(value) )
+
+        if m.group() == "LFOS":
+            cc = code + "\x15" + value   # LFOSのコントロールチェンジは BX 15 VV （Xはチャンネル）
+        elif m.group() == "LFODL":
+            cc = code + "\x1A" + value
+        elif m.group() == "MODT":
+            cc = code + "\x16" + value
+        elif m.group() == "XCMD xIECV":
+            cc = code + "\x1E\x08\x00" + code + "\x1F" + value
+        elif m.group() == "XCMD xIECL":
+            cc = code + "\x1E\x09\x00" + code + "\x1F" + value
 
         tracks[i] = tracks[i][0:eventStart] + cc + tracks[i][eventStart+eventSize:] # ここで長さが変わってしまうため前のマッチ位置が使えなくなる->whileで回す方式にした
 
