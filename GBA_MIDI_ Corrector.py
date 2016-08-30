@@ -12,6 +12,7 @@ import time
 startTime = time.time() # 実行時間計測開始
 
 import binascii
+import os.path
 import re
 import sys
 import struct
@@ -21,20 +22,19 @@ if len(sys.argv) < 2:
     print("引数が足りません")
     sys.exit()
 
-file = sys.argv[1]  # 1つめの引数をファイルパスとして格納
+f = sys.argv[1]  # 1つめの引数をファイルパスとして格納
+name, ext = os.path.splitext(f) # ファイル名と拡張子を取得
 
 # 2つめの引数があれば出力ファイル名として使う
 if len(sys.argv) == 3:
     outName = sys.argv[2]
 else:
-    outName = "out.mid"
+    outName = name + "_corr" + ext  # 標準の出力ファイル名
 
 # ファイルを開く
 try:
-    with open(file, 'rb') as midFile:   # 読み取り専用、バイナリファイルとして開く
+    with open(f, 'rb') as midFile:   # 読み取り専用、バイナリファイルとして開く
         data = midFile.read()   # データのバイナリ文字列（バイナリエディタのASCIIのとこみたいな感じ）
-        fileSize = len(data)    # ファイルサイズ
-        print( str(fileSize) + " Bytes" )
 except:
     print("ファイルを開けませんでした")
 
@@ -44,11 +44,11 @@ readPos = 0 # 読み取り位置
 headerChunkSize = 14 # ヘッダーチャンクは１４バイト
 header = struct.unpack(">4sLHHH", data[0 : headerChunkSize])
 #print(header)
-chunkType = header[0]
-chunkSize = header[1]
-midFormat = header[2]
+#chunkType = header[0]
+#chunkSize = header[1]
+#midFormat = header[2]
 trackNum = header[3]
-timeUnit = header[4]
+#timeUnit = header[4]
 header = data[0 : headerChunkSize]  # あとで結合するのでとっておく
 readPos += headerChunkSize
 
@@ -65,8 +65,11 @@ for i in range(trackNum):
 # 各イベントをコントロールチェンジに書き換える
 reEvent = re.compile("LFOS|LFODL|MODT|XCMD xIECV|XCMD xIECL") # 検索パターンをコンパイル
 for i in range(trackNum):
-    while reEvent.search(tracks[i]) != None:
+    while True:
         m = reEvent.search(tracks[i])
+        if m == None:   # マッチするパターンがなくなったらおわり
+            break
+
         eventStart = m.start() - 3  # マッチした位置の３バイト前がテキストイベントの開始位置
         n = struct.unpack("B", tracks[i][m.start()-1])[0]   # マッチした位置の１バイト前がデータ長
         eventSize = n + 3;  # イベント全体のサイズ
@@ -89,7 +92,7 @@ for i in range(trackNum):
         elif m.group() == "XCMD xIECL":
             cc = code + "\x1E\x09\x00" + code + "\x1F" + value
 
-        tracks[i] = tracks[i][0:eventStart] + cc + tracks[i][eventStart+eventSize:] # ここで長さが変わってしまうため前のマッチ位置が使えなくなる->whileで回す方式にした
+        tracks[i] = tracks[i][0:eventStart] + cc + tracks[i][eventStart+eventSize:] # ここで長さが変わってしまうため以前のマッチ位置が使えなくなる->whileで回す方式にした
 
     dataSizeStr = struct.pack(">L", len(tracks[i]) )    # データサイズを更新
     tracks[i] = "".join( ["MTrk", dataSizeStr, tracks[i]] ) # トラックチャンクを結合
@@ -105,4 +108,4 @@ except:
     print("ファイルを正しく出力できませんでした")
 
 executionTime = time.time() - startTime    # 実行時間計測終了
-print( "Execution Time:\t" + str(executionTime) + " sec" )
+print( "Execution Time:\t" + str( round(executionTime, 3) ) + " sec" )
