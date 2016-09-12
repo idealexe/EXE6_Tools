@@ -519,7 +519,7 @@ class SpriteViewer(QtGui.QMainWindow):
             flag1 = bin(oamData[3])[2:].zfill(8)    # 2進数にして先頭の0bを取り除いて8桁に0埋め
             '''
                 フラグ構造（8bit）
-                B B  BBBB   BB
+                b b  bbbb   bb
                 h v unused size
 
             '''
