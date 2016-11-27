@@ -33,17 +33,18 @@ if len(sys.argv) < 2:
     print "Usage: >python EXE6TextDumper.py ROCKEXE6"
     quit()
 
-file = sys.argv[1]  # 1つめの引数をファイルパスとして格納
+f = sys.argv[1]  # 1つめの引数をファイルパスとして格納
+name, ext = os.path.splitext(f) # ファイル名と拡張子を取得
 L = []  # 出力するデータの配列
 
 # 2つめの引数があれば出力ファイル名として使う
 if len(sys.argv) == 3:
     outName = sys.argv[2]
 else:
-    outName = "out.txt"
+    outName = name + "_text.txt"    # 標準の出力ファイル名
 
 # ファイルを開く
-with open(file, 'rb') as romFile:   # 読み取り専用、バイナリファイルとして開く
+with open(f, 'rb') as romFile:   # 読み取り専用、バイナリファイルとして開く
     data = romFile.read()   # データのバイナリ文字列（バイナリエディタのASCIIのとこみたいな感じ）
     size = len(data)    # ファイルサイズ
     print( str(size) + " Bytes" )
@@ -60,6 +61,7 @@ while readPos < size:
 
     # \xF5 次の2バイトを使う顔グラフィックの変更
     elif currentChar in ["\xF0", "\xF5"]:
+        L.append("\n" + hex(readPos) + ": ")
         L.append(CP_EXE6_1[currentChar])
         L.append(binascii.hexlify(data[readPos+1] + data[readPos+2]) + "\n")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
         readPos += 2

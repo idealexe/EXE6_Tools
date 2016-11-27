@@ -35,7 +35,7 @@ CP_EXE6_1 = {
 "\xD0":"ぜ", "\xD1":"ず", "\xD2":"じ", "\xD3":"ぞ", "\xD4":"ざ", "\xD5":"で", "\xD6":"ど", "\xD7":"づ",
 "\xD8":"だ", "\xD9":"ぢ", "\xDA":"べ", "\xDB":"ば", "\xDC":"び", "\xDD":"ぼ", "\xDE":"ぶ", "\xDF":"ぽ",
 "\xE0":"ぷ", "\xE1":"ぴ", "\xE2":"ぺ", "\xE3":"ぱ", "\xE4":"xE4",    "\xE5":"xE5",    "\xE6":"<E6:閉>\n",    "\xE7":"<E7:終端>",
-"\xE8":"<E8:開>",    "\xE9":"<E9>",    "\xEA":"xEA",    "\xEB":"xEB",    "\xEC":"<EC:Cursor>",    "\xED":"<ED:Select>\n",    "\xEE":"xEE",    "\xEF":"\n<skip?>\n",
+"\xE8":"<E8:開>",    "\xE9":"<E9:改行>\n",    "\xEA":"xEA",    "\xEB":"xEB",    "\xEC":"<EC:Cursor>",    "\xED":"<ED:Select>\n",    "\xEE":"xEE",    "\xEF":"\n<skip?>\n",
 "\xF0":"<F0:ch_speaker>",    "\xF1":"<F1:Speed>",    "\xF2":"<F2:消去>\n",    "\xF3":"xF3",    "\xF4":"<F4:Sound>",    "\xF5":"\n<F5:顔>",    "\xF6":"xF6",    "\xF7":"xF7",
 "\xF8":"xF8",    "\xF9":"xF9",    "\xFA":"xFA",    "\xFB":"xFB",    "\xFC":"xFC",    "\xFD":"xFD",    "\xFE":"xFE",    "\xFF":"xFF",
 }
