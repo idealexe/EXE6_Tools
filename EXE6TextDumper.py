@@ -11,12 +11,13 @@
 
 '''
 
-import re
-import os
-import sys
-import binascii
 import time
 startTime = time.time() # 実行時間計測開始
+
+import binascii
+import os
+import re
+import sys
 
 # 辞書のインポート
 import EXE6Dict
@@ -26,7 +27,8 @@ CP_EXE6_1_inv = EXE6Dict.CP_EXE6_1_inv
 CP_EXE6_2_inv = EXE6Dict.CP_EXE6_2_inv
 
 '''
-main
+    main
+
 '''
 # 引数が足りないよ！
 if len(sys.argv) < 2:
