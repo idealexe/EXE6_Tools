@@ -43,13 +43,27 @@ def encodeByEXE6Dict(data):
             readPos += 1  # 次の文字を
             L.append( CP_EXE6_2[ data[readPos] ] )  # 2バイト文字として出力
 
-        # \xF5 次の2バイトを使う顔グラフィックの変更
         elif currentChar in ["\xF0", "\xF5"]:
+            u""" 次の2バイトを使うコマンド
+            """
+
             #L.append("\n" + hex(readPos) + ": ")
             #L.append("\n\n## ")
             L.append(CP_EXE6_1[currentChar])
-            L.append( "[0x" + binascii.hexlify(data[readPos+1] + data[readPos+2]) + "]\n")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
+            L.append( "[0x" + binascii.hexlify(data[readPos+1] + data[readPos+2]) + "]")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
+
+            if currentChar in ["\xF0", "\xF5"]:
+                L.append("\n")
+
             readPos += 2
+
+        elif currentChar in ["\xEE"]:
+            u""" 次の3バイトを使うコマンド
+            """
+
+            L.append(CP_EXE6_1[currentChar])
+            L.append( "[0x" + binascii.hexlify(data[readPos+1:readPos+4]) + "]")
+            readPos += 3
 
         # \xE6 リスト要素の終わりに現れるようなので、\xE6が現れたら次の要素の先頭アドレスを確認できるようにする
         elif currentChar == "\xE6":
