@@ -11,104 +11,17 @@ u"""
 
 """
 
-import time
-startTime = time.time() # 実行時間計測開始
-
 import binascii
 import os
 import re
 import sys
+import time
 
-
-def encodeByEXE6Dict(data):
-    u"""ロックマンエグゼ６のテキストをダンプする
-    """
-
-    # 辞書のインポート
-    import EXE6Dict
-    CP_EXE6_1 = EXE6Dict.CP_EXE6_1
-    CP_EXE6_2 = EXE6Dict.CP_EXE6_2
-    CP_EXE6_1_inv = EXE6Dict.CP_EXE6_1_inv
-    CP_EXE6_2_inv = EXE6Dict.CP_EXE6_2_inv
-
-    readPos = 0 # 読み取るアドレス
-    L = []  # 出力するデータの配列
-
-    while readPos < len(data):
-        currentChar = data[readPos]
-
-        if currentChar == "\xE4":
-            u""" ２バイト文字フラグ
-            """
-            readPos += 1  # 次の文字を
-            L.append( CP_EXE6_2[ data[readPos] ] )  # 2バイト文字として出力
-
-        elif currentChar in ["\xF0", "\xF5"]:
-            u""" 次の2バイトを使うコマンド
-            """
-
-            #L.append("\n" + hex(readPos) + ": ")
-            #L.append("\n\n## ")
-            L.append(CP_EXE6_1[currentChar])
-            L.append( "[0x" + binascii.hexlify(data[readPos+1] + data[readPos+2]) + "]")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
-
-            if currentChar in ["\xF0", "\xF5"]:
-                L.append("\n")
-
-            readPos += 2
-
-        elif currentChar in ["\xEE"]:
-            u""" 次の3バイトを使うコマンド
-            """
-
-            L.append(CP_EXE6_1[currentChar])
-            L.append( "[0x" + binascii.hexlify(data[readPos+1:readPos+4]) + "]")
-            readPos += 3
-
-        # \xE6 リスト要素の終わりに現れるようなので、\xE6が現れたら次の要素の先頭アドレスを確認できるようにする
-        elif currentChar == "\xE6":
-            L.append(CP_EXE6_1[currentChar])
-            #L.append("\n" + hex(readPos+1) + ": ")
-            L.append("\n\n")
-
-        # テキストボックスを開く\xE8の次の1バイトは\0x00，\xE7も同様？
-        elif currentChar in ["\xE7", "\xE8"]:
-            #L.append("\n\n---\n")
-            L.append(CP_EXE6_1[currentChar])
-            readPos += 1
-            L.append( "[0x" + binascii.hexlify(data[readPos]) + "]")
-            if currentChar in ["\xE7"]:
-                L.append("\n")
-            elif currentChar in ["\xE8"]:
-                L.append("\n")
-
-        elif currentChar in ["\xE9"]:
-            u""" 改行
-            """
-            L.append(CP_EXE6_1[ currentChar])
-            L.append("\n")
-
-        elif currentChar in ["\xF2"]:
-            u""" テキストウインドウのクリア
-            """
-            L.append(CP_EXE6_1[ currentChar])
-            #L.append("\n\n---\n")
-            L.append("\n")
-
-        # 1バイト文字
-        else:
-            L.append( CP_EXE6_1[ currentChar ] )
-
-        readPos += 1
-
-        if readPos % 10000 == 0:    # 進捗表示
-            sys.stdout.write(".")
-
-    result = "".join(L)    # 配列を一つの文字列に連結
-    return result
-
+import EXE6Dict
 
 def main():
+    startTime = time.time() # 実行時間計測開始
+
     # 引数が足りないよ！
     if len(sys.argv) < 2:
         print "Usage: >python EXE6TextDumper.py ROCKEXE6"
@@ -130,7 +43,7 @@ def main():
         size = len(data)    # ファイルサイズ
         print( str(size) + " Bytes" )
 
-    result = encodeByEXE6Dict(data)
+    result = EXE6Dict.encodeByEXE6Dict(data)
 
     # ファイル出力
     with open(outName, "wb") as outFile:
