@@ -126,7 +126,7 @@ def main():
         size = len(data)    # ファイルサイズ
         print( str(size) + " Bytes" )
 
-    result = exe6TextDump(data)
+    result = encodeByEXE6Dict(data)
 
     # ファイル出力
     with open(outName, "wb") as outFile:
