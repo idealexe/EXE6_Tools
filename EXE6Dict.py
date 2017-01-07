@@ -8,6 +8,8 @@ u"""
 
 """
 
+import binascii
+
 # 1バイト文字
 CP_EXE6_1 = {
 "\x00":" ",  "\x01":"０", "\x02":"１", "\x03":"２", "\x04":"３", "\x05":"４", "\x06":"５", "\x07":"６",
@@ -134,3 +136,127 @@ RXX_Sprite_Table = {
 "startAddr":0x032CA8,
 "endAddr":0x033963
 }
+
+def encodeByEXE6Dict(data):
+    u"""バイナリ文字列をエグゼ６のテキストとしてエンコード
+    """
+
+    readPos = 0 # 読み取るアドレス
+    L = []  # 出力するデータの配列
+
+    while readPos < len(data):
+        currentChar = data[readPos]
+
+        if currentChar == "\xE4":
+            u""" ２バイト文字フラグ
+            """
+            readPos += 1  # 次の文字を
+            L.append( CP_EXE6_2[ data[readPos] ] )  # 2バイト文字として出力
+
+        elif currentChar in ["\xF0", "\xF5"]:
+            u""" 次の2バイトを使うコマンド
+            """
+
+            #L.append("\n" + hex(readPos) + ": ")
+            #L.append("\n\n## ")
+            L.append(CP_EXE6_1[currentChar])
+            L.append( "[0x" + binascii.hexlify(data[readPos+1] + data[readPos+2]) + "]")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
+
+            if currentChar in ["\xF0", "\xF5"]:
+                L.append("\n")
+
+            readPos += 2
+
+        elif currentChar in ["\xEE"]:
+            u""" 次の3バイトを使うコマンド
+            """
+
+            L.append(CP_EXE6_1[currentChar])
+            L.append( "[0x" + binascii.hexlify(data[readPos+1:readPos+4]) + "]")
+            readPos += 3
+
+        # \xE6 リスト要素の終わりに現れるようなので、\xE6が現れたら次の要素の先頭アドレスを確認できるようにする
+        elif currentChar == "\xE6":
+            L.append(CP_EXE6_1[currentChar])
+            #L.append("\n" + hex(readPos+1) + ": ")
+            L.append("\n\n")
+
+        # テキストボックスを開く\xE8の次の1バイトは\0x00，\xE7も同様？
+        elif currentChar in ["\xE7", "\xE8"]:
+            #L.append("\n\n---\n")
+            L.append(CP_EXE6_1[currentChar])
+            readPos += 1
+            L.append( "[0x" + binascii.hexlify(data[readPos]) + "]")
+            if currentChar in ["\xE7"]:
+                L.append("\n")
+            elif currentChar in ["\xE8"]:
+                L.append("\n")
+
+        elif currentChar in ["\xE9"]:
+            u""" 改行
+            """
+            L.append(CP_EXE6_1[ currentChar])
+            L.append("\n")
+
+        elif currentChar in ["\xF2"]:
+            u""" テキストウインドウのクリア
+            """
+            L.append(CP_EXE6_1[ currentChar])
+            #L.append("\n\n---\n")
+            L.append("\n")
+
+        # 1バイト文字
+        else:
+            L.append( CP_EXE6_1[ currentChar ] )
+
+        readPos += 1
+
+        if readPos % 10000 == 0:    # 進捗表示
+            sys.stdout.write(".")
+
+    result = "".join(L)    # 配列を一つの文字列に連結
+    return result
+
+
+def decodeByEXE6Dict(self, string):
+    u"""エグゼ６のテキストをバイナリ文字列にデコード
+    """
+    result = ""
+    readPos = 0
+
+    while readPos < len(string):
+        currentChar = string[readPos].encode('utf-8')   # Unicode文字列から1文字取り出してString型に変換
+
+        # 改行などは<改行>などのコマンドとして表示している
+        if currentChar == "<":
+            readPos += 1
+            while string[readPos] != ">":
+                currentChar += string[readPos]
+                readPos += 1
+            currentChar += string[readPos]
+            result += binascii.unhexlify(currentChar[1:3]) # <F5:顔>のF5だけ取り出して数値に戻す
+            readPos += 1
+            continue
+
+        # 値は[0037]などのパラメータとして表示している
+        if currentChar == "[":
+            readPos += 1
+            while string[readPos] != "]":
+                currentChar += string[readPos]
+                readPos += 1
+            currentChar += string[readPos]
+            result += binascii.unhexlify(currentChar[3:-1]) # [0xHHHH]のHHHHだけ取り出して数値に戻す
+            readPos += 1
+            continue
+
+        if currentChar in CP_EXE6_2_inv:    # 2バイト文字なら
+            result += "\xE4" + CP_EXE6_2_inv[currentChar]
+        elif currentChar in CP_EXE6_1_inv:  # 1バイト文字なら
+            result += CP_EXE6_1_inv[currentChar]
+        else:   # 辞書に存在しない文字なら
+            result += "\x80"    # ■に置き換え
+            print u"辞書に" + currentChar + "と一致する文字がありません"
+
+        readPos += 1
+
+    return result
