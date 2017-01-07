@@ -9,6 +9,7 @@ u"""
 """
 
 import binascii
+import sys
 
 # 1バイト文字
 CP_EXE6_1 = {
@@ -179,7 +180,7 @@ def encodeByEXE6Dict(data):
         elif currentChar == "\xE6":
             L.append(CP_EXE6_1[currentChar])
             #L.append("\n" + hex(readPos+1) + ": ")
-            L.append("\n\n")
+            L.append("\n\n@ "  + hex(readPos+1) + " @\n")
 
         # テキストボックスを開く\xE8の次の1バイトは\0x00，\xE7も同様？
         elif currentChar in ["\xE7", "\xE8"]:
@@ -192,17 +193,10 @@ def encodeByEXE6Dict(data):
             elif currentChar in ["\xE8"]:
                 L.append("\n")
 
-        elif currentChar in ["\xE9"]:
-            u""" 改行
+        elif currentChar in ["\xE9", "\xF2"]:
+            u""" 改行，テキストウインドウのクリア
             """
             L.append(CP_EXE6_1[ currentChar])
-            L.append("\n")
-
-        elif currentChar in ["\xF2"]:
-            u""" テキストウインドウのクリア
-            """
-            L.append(CP_EXE6_1[ currentChar])
-            #L.append("\n\n---\n")
             L.append("\n")
 
         # 1バイト文字
@@ -226,6 +220,14 @@ def decodeByEXE6Dict(self, string):
 
     while readPos < len(string):
         currentChar = string[readPos].encode('utf-8')   # Unicode文字列から1文字取り出してString型に変換
+
+        if currentChar == "@":
+            u""" コメントは@で囲んでいる
+            """
+            readPos += 1
+            while string[readPos] != "@":
+                readPos += 1
+            continue
 
         # BXなどは(BX)と表記している
         if currentChar == "(":
