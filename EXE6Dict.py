@@ -255,7 +255,7 @@ def decodeByEXE6Dict(self, string):
             result += CP_EXE6_1_inv[currentChar]
         else:   # 辞書に存在しない文字なら
             result += "\x80"    # ■に置き換え
-            print u"辞書に" + currentChar + "と一致する文字がありません"
+            print u"辞書に「" + currentChar + "」と一致する文字がありません"
 
         readPos += 1
 
