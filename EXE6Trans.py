@@ -45,12 +45,12 @@ class Window(QtGui.QMainWindow):
         binLabel.setText("バイナリ")
 
         self.txtEdit = QtGui.QTextEdit(self)
-        self.txtEdit.setFontPointSize(14)
-        self.txtEdit.setFontFamily("MS Gothic")
+        #self.txtEdit.setFontPointSize(14)
+        #self.txtEdit.setFontFamily("MS Gothic")
 
         self.binEdit = QtGui.QTextEdit(self)
-        self.binEdit.setFontPointSize(14)
-        self.binEdit.setFontFamily("MS Gothic")
+        #self.binEdit.setFontPointSize(14)
+        #self.binEdit.setFontFamily("MS Gothic")
 
         self.txtBtn = QtGui.QPushButton("txt -> bin", self)
         self.txtBtn.clicked.connect(self.txt2bin)   # ボタンを押したときに実行する関数を指定
@@ -77,15 +77,17 @@ class Window(QtGui.QMainWindow):
 
         self.widget.setLayout(vbox)
         self.setCentralWidget(self.widget)
-        self.resize(400, 300)
+        self.resize(800, 600)
         self.setWindowTitle("EXE6 Translater")
         self.show()
 
     def txt2bin(self):
         text = self.txtEdit.toPlainText()   # QString型になる
         text = unicode(text)    # Unicode型に変換
+        text = text.translate({ord("\n"):None}) # 改行を無視
         binary = self.decodeByEXE6Dict(text)
         binary = binascii.hexlify(binary).upper()
+        binary = " ".join( [binary[i:i+2] for i in xrange(0, len(binary), 2)] ) # ２文字ごとにスペースを入れて整形
         self.binEdit.setText(binary)
 
     def bin2txt(self):
@@ -124,8 +126,11 @@ class Window(QtGui.QMainWindow):
         result = ""
         readPos = 0
 
+        print string
+
         while readPos < len(string):
             currentChar = string[readPos].encode('utf-8')   # Unicode文字列から1文字取り出してString型に変換
+
             # 改行などは<改行>などのコマンドとして表示している
             if currentChar == "<":
                 readPos += 1
@@ -140,7 +145,7 @@ class Window(QtGui.QMainWindow):
                 result += CP_EXE6_1_inv[currentChar]
             else:   # 辞書に存在しない文字なら
                 result += "\x80"    # ■に置き換え
-                print u"辞書に一致する文字がありません"
+                print u"辞書に" + currentChar + "と一致する文字がありません"
 
             readPos += 1
 
@@ -154,6 +159,9 @@ main
 
 def main():
     app = QtGui.QApplication(sys.argv)
+    monoFont = QtGui.QFont("MS Gothic", 12) # 等幅フォント
+    app.setFont(monoFont)   # 全体のフォントを設定
+
     # 日本語文字コードを正常表示するための設定
     reload(sys) # モジュールをリロードしないと文字コードが変更できない
     sys.setdefaultencoding("utf-8") # コンソールの出力をutf-8に設定
