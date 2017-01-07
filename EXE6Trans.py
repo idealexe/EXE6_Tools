@@ -14,10 +14,6 @@ from PyQt4 import QtCore
 
 # 辞書のインポート
 import EXE6Dict
-CP_EXE6_1 = EXE6Dict.CP_EXE6_1
-CP_EXE6_2 = EXE6Dict.CP_EXE6_2
-CP_EXE6_1_inv = EXE6Dict.CP_EXE6_1_inv
-CP_EXE6_2_inv = EXE6Dict.CP_EXE6_2_inv
 
 
 class Window(QtGui.QMainWindow):
@@ -85,7 +81,7 @@ class Window(QtGui.QMainWindow):
         text = self.txtEdit.toPlainText()   # QString型になる
         text = unicode(text)    # Unicode型に変換
         text = text.translate({ord("\n"):None}) # 改行を無視
-        binary = self.decodeByEXE6Dict(text)
+        binary = EXE6Dict.decodeByEXE6Dict(text)
         binary = binascii.hexlify(binary).upper()
         binary = " ".join( [binary[i:i+2] for i in xrange(0, len(binary), 2)] ) # ２文字ごとにスペースを入れて整形
         self.binEdit.setText(binary)
@@ -94,57 +90,8 @@ class Window(QtGui.QMainWindow):
         binary = self.binEdit.toPlainText()
         binary = unicode(binary).translate({ord(" "):None, ord("\n"):None}) # 空白，改行を無視
         binary = binascii.unhexlify(binary)
-        text = self.encodeByEXE6Dict(binary)
+        text = EXE6Dict.encodeByEXE6Dict(binary)
         self.txtEdit.setText(text)
-
-    # 辞書に基づいてバイナリ->テキスト
-    def encodeByEXE6Dict(self, string):
-        import EXE6TextDumper
-        result = EXE6TextDumper.encodeByEXE6Dict(string)
-
-        return result
-
-    # 辞書に基づいてテキスト->バイナリ
-    def decodeByEXE6Dict(self, string):
-        result = ""
-        readPos = 0
-
-        while readPos < len(string):
-            currentChar = string[readPos].encode('utf-8')   # Unicode文字列から1文字取り出してString型に変換
-
-            # 改行などは<改行>などのコマンドとして表示している
-            if currentChar == "<":
-                readPos += 1
-                while string[readPos] != ">":
-                    currentChar += string[readPos]
-                    readPos += 1
-                currentChar += string[readPos]
-                result += binascii.unhexlify(currentChar[1:3]) # <F5:顔>のF5だけ取り出して数値に戻す
-                readPos += 1
-                continue
-
-            # 値は[0037]などのパラメータとして表示している
-            if currentChar == "[":
-                readPos += 1
-                while string[readPos] != "]":
-                    currentChar += string[readPos]
-                    readPos += 1
-                currentChar += string[readPos]
-                result += binascii.unhexlify(currentChar[3:-1]) # [0xHHHH]のHHHHだけ取り出して数値に戻す
-                readPos += 1
-                continue
-
-            if currentChar in CP_EXE6_2_inv:    # 2バイト文字なら
-                result += "\xE4" + CP_EXE6_2_inv[currentChar]
-            elif currentChar in CP_EXE6_1_inv:  # 1バイト文字なら
-                result += CP_EXE6_1_inv[currentChar]
-            else:   # 辞書に存在しない文字なら
-                result += "\x80"    # ■に置き換え
-                print u"辞書に" + currentChar + "と一致する文字がありません"
-
-            readPos += 1
-
-        return result
 
 
 '''
