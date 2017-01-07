@@ -41,7 +41,7 @@ CP_EXE6_1 = {
 "\xE0":"ぷ", "\xE1":"ぴ", "\xE2":"ぺ", "\xE3":"ぱ",
 "\xE4":"<E4>",    "\xE5":"<E5>",    "\xE6":"<E6:閉>",    "\xE7":"<E7:終端>",
 "\xE8":"<E8:開>",    "\xE9":"<E9:改行>",    "\xEA":"<EA>",    "\xEB":"<EB>",
-"\xEC":"<EC:Cursor>",    "\xED":"<ED:Select>",    "\xEE":"<EE>",    "\xEF":"<skip?>",
+"\xEC":"<EC:Cursor>",    "\xED":"<ED:Select>",    "\xEE":"<EE:Pause>",    "\xEF":"<skip?>",
 "\xF0":"<F0:ch_speaker>",    "\xF1":"<F1:Speed>",    "\xF2":"<F2:消去>",    "\xF3":"<F3>",
 "\xF4":"<F4:Sound>",    "\xF5":"<F5:顔>",    "\xF6":"<F6>",    "\xF7":"<F7>",
 "\xF8":"<F8>",    "\xF9":"<F9>",    "\xFA":"<FA>",    "\xFB":"<FB>",
