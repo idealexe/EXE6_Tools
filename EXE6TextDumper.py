@@ -46,35 +46,36 @@ def encodeByEXE6Dict(data):
         # \xF5 次の2バイトを使う顔グラフィックの変更
         elif currentChar in ["\xF0", "\xF5"]:
             #L.append("\n" + hex(readPos) + ": ")
-            L.append("\n\n## ")
+            #L.append("\n\n## ")
             L.append(CP_EXE6_1[currentChar])
-            L.append(binascii.hexlify(data[readPos+1] + data[readPos+2]) + "\n")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
+            L.append( "[0x" + binascii.hexlify(data[readPos+1] + data[readPos+2]) + "]\n")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
             readPos += 2
 
         # \xE6 リスト要素の終わりに現れるようなので、\xE6が現れたら次の要素の先頭アドレスを確認できるようにする
         elif currentChar == "\xE6":
             L.append(CP_EXE6_1[currentChar])
             #L.append("\n" + hex(readPos+1) + ": ")
-            L.append("\n\n---\n")
+            #L.append("\n\n---\n")
 
         # テキストボックスを開く\xE8の次の1バイトは\0x00，\xE7も同様？
         elif currentChar in ["\xE7", "\xE8"]:
             #L.append("\n\n---\n")
             L.append(CP_EXE6_1[currentChar])
             readPos += 1
-            #L.append(binascii.hexlify(data[readPos]) + '\n')
+            L.append( "[0x" + binascii.hexlify(data[readPos]) + "]\n")
 
         elif currentChar in ["\xE9"]:
             u""" 改行
             """
             L.append(CP_EXE6_1[ currentChar])
-            L.append("  \n")    # markdown用の改行
+            L.append("\n")
 
         elif currentChar in ["\xF2"]:
             u""" テキストウインドウのクリア
             """
             L.append(CP_EXE6_1[ currentChar])
-            L.append("\n\n---\n")
+            #L.append("\n\n---\n")
+            L.append("\n")
 
         # 1バイト文字
         else:
@@ -88,10 +89,7 @@ def encodeByEXE6Dict(data):
     result = "".join(L)    # 配列を一つの文字列に連結
     return result
 
-'''
-    main
 
-'''
 def main():
     # 引数が足りないよ！
     if len(sys.argv) < 2:
