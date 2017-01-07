@@ -90,7 +90,7 @@ class Window(QtGui.QMainWindow):
 
     def bin2txt(self):
         binary = self.binEdit.toPlainText()
-        binary = unicode(binary)
+        binary = unicode(binary).translate({ord(" "):None}) # 空白を無視
         binary = binascii.unhexlify(binary)
         text = self.encodeByEXE6Dict(binary)
         self.txtEdit.setText(text)
