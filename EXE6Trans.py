@@ -92,41 +92,22 @@ class Window(QtGui.QMainWindow):
 
     def bin2txt(self):
         binary = self.binEdit.toPlainText()
-        binary = unicode(binary).translate({ord(" "):None}) # 空白を無視
+        binary = unicode(binary).translate({ord(" "):None, ord("\n"):None}) # 空白，改行を無視
         binary = binascii.unhexlify(binary)
         text = self.encodeByEXE6Dict(binary)
         self.txtEdit.setText(text)
 
     # 辞書に基づいてバイナリ->テキスト
     def encodeByEXE6Dict(self, string):
-        result = ""
-        readPos = 0
+        import EXE6TextDumper
+        result = EXE6TextDumper.encodeByEXE6Dict(string)
 
-        while readPos < len(string):
-            # 2バイトフラグなら
-            if string[readPos] == "\xE4":
-                readPos += 1  # 次の文字を
-                result += CP_EXE6_2[ string[readPos] ] # 2バイト文字として出力
-            # 会話文解析用
-            elif string[readPos] == "\xF0" or string[readPos] == "\xF5":
-                result += CP_EXE6_1[ string[readPos] ]
-                result += CP_EXE6_1[ string[readPos+1] ] + CP_EXE6_1[ string[readPos+2] ] + "\n"
-                readPos += 2
-            elif string[readPos] == "\xE6":
-                result += CP_EXE6_1[ string[readPos] ]
-            # 通常の1バイト文字
-            else:
-                result += CP_EXE6_1[ string[readPos] ]
-
-            readPos += 1
         return result
 
     # 辞書に基づいてテキスト->バイナリ
     def decodeByEXE6Dict(self, string):
         result = ""
         readPos = 0
-
-        print string
 
         while readPos < len(string):
             currentChar = string[readPos].encode('utf-8')   # Unicode文字列から1文字取り出してString型に変換
@@ -138,6 +119,20 @@ class Window(QtGui.QMainWindow):
                     currentChar += string[readPos]
                     readPos += 1
                 currentChar += string[readPos]
+                result += binascii.unhexlify(currentChar[1:3]) # <F5:顔>のF5だけ取り出して数値に戻す
+                readPos += 1
+                continue
+
+            # 値は[0037]などのパラメータとして表示している
+            if currentChar == "[":
+                readPos += 1
+                while string[readPos] != "]":
+                    currentChar += string[readPos]
+                    readPos += 1
+                currentChar += string[readPos]
+                result += binascii.unhexlify(currentChar[3:-1]) # [0xHHHH]のHHHHだけ取り出して数値に戻す
+                readPos += 1
+                continue
 
             if currentChar in CP_EXE6_2_inv:    # 2バイト文字なら
                 result += "\xE4" + CP_EXE6_2_inv[currentChar]
