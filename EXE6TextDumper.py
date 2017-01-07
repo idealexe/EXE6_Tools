@@ -69,14 +69,18 @@ def encodeByEXE6Dict(data):
         elif currentChar == "\xE6":
             L.append(CP_EXE6_1[currentChar])
             #L.append("\n" + hex(readPos+1) + ": ")
-            #L.append("\n\n---\n")
+            L.append("\n\n")
 
         # テキストボックスを開く\xE8の次の1バイトは\0x00，\xE7も同様？
         elif currentChar in ["\xE7", "\xE8"]:
             #L.append("\n\n---\n")
             L.append(CP_EXE6_1[currentChar])
             readPos += 1
-            L.append( "[0x" + binascii.hexlify(data[readPos]) + "]\n")
+            L.append( "[0x" + binascii.hexlify(data[readPos]) + "]")
+            if currentChar in ["\xE7"]:
+                L.append("\n")
+            elif currentChar in ["\xE8"]:
+                L.append("\n")
 
         elif currentChar in ["\xE9"]:
             u""" 改行
