@@ -17,10 +17,10 @@
 
 '''
 
-import re
-import os
-import sys
 import gettext
+import os
+import re
+import sys
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 _ = gettext.gettext # 後の翻訳用
