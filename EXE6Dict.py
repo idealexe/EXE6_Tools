@@ -212,7 +212,7 @@ def encodeByEXE6Dict(data):
     return result
 
 
-def decodeByEXE6Dict(self, string):
+def decodeByEXE6Dict(string):
     u"""エグゼ６のテキストをバイナリ文字列にデコード
     """
     result = ""
@@ -224,9 +224,12 @@ def decodeByEXE6Dict(self, string):
         if currentChar == "@":
             u""" コメントは@で囲んでいる
             """
+            #print "detect @ " + str(readPos)
             readPos += 1
             while string[readPos] != "@":
                 readPos += 1
+            #print "close @ " + str(readPos)
+            readPos += 1
             continue
 
         # BXなどは(BX)と表記している
