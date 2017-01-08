@@ -9,6 +9,7 @@ u""" LZ77 decompressor by ideal.exe
 
 
 import os
+import re
 import struct
 import sys
 import time
@@ -25,13 +26,13 @@ def detectLZ77(romData):
     searchStep = 0x4
 
     matchList = []
-    candidateIter = re.finditer("\x10", romData)    # LZ77圧縮データの先頭は0x10
+    candidateIter = re.finditer("\x10(?P<size>...)\x00\x00(?P=size)", romData)    # LZ77圧縮データの先頭は10 XX YY ZZ 00 00 XX YY ZZになる
     for match in candidateIter:
         matchAddr = match.start()
         uncompSize = struct.unpack('l', romData[matchAddr+1 : matchAddr+4] + "\x00")[0] # 次3バイトが展開後のサイズ（4バイトに合わせないとunpack出来ないので"\x00"をつけている）
         # キリが良い位置にあってサイズが妥当なものを抽出
         if (matchAddr >= 0x700000 and matchAddr % searchStep == 0 and minSize <= uncompSize <= maxSize):
-            #print( hex(matchAddr) + "\t" + str(uncompSize) + " Bytes" )
+            print( hex(matchAddr) + "\t" + str(uncompSize) + " Bytes" )
             matchList.append( {"startAddr":matchAddr, "uncompSize":uncompSize} )
 
     return matchList
@@ -41,7 +42,7 @@ def decompLZ77_10(data, startAddr):
     u"""
         LZ77(0x10)圧縮されたデータの復号
         参考：http://florian.nouwt.com/wiki/index.php/LZ77_(Compression_Format)
-        
+
     """
 
     uncompSize = struct.unpack('l', data[startAddr+1 : startAddr+4] + "\x00")[0]
