@@ -154,7 +154,7 @@ def encodeByEXE6Dict(data):
             readPos += 1  # 次の文字を
             L.append( CP_EXE6_2[ data[readPos] ] )  # 2バイト文字として出力
 
-        elif currentChar in ["\xF0", "\xF5"]:
+        elif currentChar in ["\xF0", "\xF1", "\xF5"]:
             u""" 次の2バイトを使うコマンド
             """
 
@@ -163,7 +163,7 @@ def encodeByEXE6Dict(data):
             L.append(CP_EXE6_1[currentChar])
             L.append( "[0x" + binascii.hexlify(data[readPos+1] + data[readPos+2]) + "]")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
 
-            if currentChar in ["\xF0", "\xF5"]:
+            if currentChar in ["\xF0", "\xF1", "\xF5"]:
                 L.append("\n")
 
             readPos += 2
