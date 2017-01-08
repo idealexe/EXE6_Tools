@@ -21,8 +21,8 @@ def detectLZ77(romData):
 
     """
 
-    minSize = 100  # bytes
-    maxSize = 10000
+    minSize = 0x100  # bytes
+    maxSize = 0x10000
     searchStep = 0x4
 
     matchList = []
@@ -31,7 +31,7 @@ def detectLZ77(romData):
         matchAddr = match.start()
         uncompSize = struct.unpack('l', romData[matchAddr+1 : matchAddr+4] + "\x00")[0] # 次3バイトが展開後のサイズ（4バイトに合わせないとunpack出来ないので"\x00"をつけている）
         # キリが良い位置にあってサイズが妥当なものを抽出
-        if (matchAddr >= 0x700000 and matchAddr % searchStep == 0 and minSize <= uncompSize <= maxSize):
+        if (matchAddr >= 0x600000 and matchAddr % searchStep == 0 and minSize <= uncompSize <= maxSize):
             print( hex(matchAddr) + "\t" + str(uncompSize) + " Bytes" )
             matchList.append( {"startAddr":matchAddr, "uncompSize":uncompSize} )
 
