@@ -46,7 +46,7 @@ def decompLZ77_10(data, startAddr):
     """
 
     uncompSize = struct.unpack('l', data[startAddr+1 : startAddr+4] + "\x00")[0]
-    print( hex(startAddr) + "\t" + str(uncompSize) + " Bytes" )
+    #print( hex(startAddr) + "\t" + str(uncompSize) + " Bytes" )
 
     def ascii2bin(a):
         u"""

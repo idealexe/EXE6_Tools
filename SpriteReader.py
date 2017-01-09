@@ -80,7 +80,7 @@ class SpriteViewer(QtGui.QMainWindow):
         # 終了
         exitAction = QtGui.QAction( _("&終了"), self)
         exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip( _("アプリケーションを終了する") )
+        exitAction.setStatusTip( _(u"アプリケーションを終了する") )
         exitAction.triggered.connect( QtGui.qApp.quit )
         fileMenu.addAction(exitAction)
 
@@ -98,7 +98,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
         self.spriteLabel = QtGui.QLabel(self)
         self.spriteLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)   # 横：左寄せ，縦：中央
-        self.spriteLabel.setText( _("スプライト（ポインタ）") )
+        self.spriteLabel.setText( _(u"スプライト（ポインタ）") )
         spriteVbox.addWidget(self.spriteLabel)
 
         self.guiSpriteList = QtGui.QListWidget(self) # スプライトのリスト
@@ -113,7 +113,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
         viewLabel = QtGui.QLabel(self)
         viewLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)   # 横：左寄せ，縦：中央
-        viewLabel.setText( _("スプライトビュー") )
+        viewLabel.setText( _(u"スプライトビュー") )
         viewVbox.addWidget(viewLabel)
 
         # スプライトを表示するためのビュー
@@ -133,7 +133,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
         self.animLabel = QtGui.QLabel(self)
         self.animLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)   # 横：左寄せ，縦：中央
-        self.animLabel.setText( _("アニメーションリスト") )
+        self.animLabel.setText( _(u"アニメーションリスト") )
         animVbox.addWidget(self.animLabel)
 
         self.guiAnimList = QtGui.QListWidget(self) # アニメーションのリスト
@@ -144,7 +144,7 @@ class SpriteViewer(QtGui.QMainWindow):
         # フレームリスト
         self.frameLabel = QtGui.QLabel(self)
         self.frameLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.frameLabel.setText( _("フレームリスト") )
+        self.frameLabel.setText( _(u"フレームリスト") )
         animVbox.addWidget(self.frameLabel)
 
         self.guiFrameList = QtGui.QListWidget(self)
@@ -158,7 +158,7 @@ class SpriteViewer(QtGui.QMainWindow):
         # OAMリスト
         self.oamLabel = QtGui.QLabel(self)
         self.oamLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.oamLabel.setText( _("OAMリスト") )
+        self.oamLabel.setText( _(u"OAMリスト") )
         oamVbox.addWidget(self.oamLabel)
 
         self.guiOAMList = QtGui.QListWidget(self)
@@ -180,7 +180,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
         self.palLabel = QtGui.QLabel(self)
         self.palLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.palLabel.setText( _("パレット") )
+        self.palLabel.setText( _(u"パレット") )
         palVbox.addWidget(self.palLabel)
 
         self.guiPalList = QtGui.QListWidget(self)
@@ -194,13 +194,195 @@ class SpriteViewer(QtGui.QMainWindow):
         # ウインドウの表示
         self.show()
 
-
-    def guiSpriteItemWClicked(self, item):
-        u''' GUIでスプライトがダブルクリックされたときに行う処理（未使用）
+    def openFile(self):
+        u''' ファイルを開くときの処理
         '''
 
-        index = self.guiSpriteList.currentRow() # 選択された行の番号を取得
-        ptrAddr = self.spriteAddrList[index][2]
+        filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+
+        try:
+            with open( unicode(filename), 'rb' ) as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
+                self.romData = romFile.read()
+
+        except:
+            print( _(u"ファイルの選択をキャンセルしました") )
+            return 0    # 0を返して関数を抜ける
+
+
+        # バージョンの判定（使用する辞書を選択するため）
+        romName = self.romData[0xA0:0xAC]
+        global EXE6_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
+        if romName == "ROCKEXE6_GXX":
+            print( _(u"ロックマンエグゼ6 グレイガとしてロードしました") )
+            EXE6_Addr = SpriteDict.ROCKEXE6_GXX
+        elif romName == "ROCKEXE6_RXX":
+            print( _(u"ロックマンエグゼ6 ファルザーとしてロードしました") )
+            EXE6_Addr = SpriteDict.ROCKEXE6_RXX
+        elif romName == "ROCKEXE5_TOB":
+            print( _(u"ロックマンエグゼ5 チームオブブルースとしてロードしました") )
+            EXE6_Addr = SpriteDict.ROCKEXE5_TOB
+        elif romName == "ROCKEXE5_TOC":
+            print( _(u"ロックマンエグゼ5 チームオブカーネルとしてロードしました") )
+            EXE6_Addr = SpriteDict.ROCKEXE5_TOC
+        elif romName == "ROCKEXE4.5RO":
+            print( _(u"ロックマンエグゼ4.5としてロードしました") )
+            EXE6_Addr = SpriteDict.ROCKEXE4_5RO
+        else:
+            print( _(u"ROMタイトルが識別出来ませんでした") )
+            EXE6_Addr = SpriteDict.ROCKEXE6_GXX # 一応グレイガ版の辞書に設定する
+
+        self.extractSpriteAddr(self.romData)
+        #self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
+
+
+    def extractSpriteAddr(self, romData):
+        u''' スプライトのアドレスを抽出する
+
+            アドレスリストの構造は[スプライトの先頭アドレス，圧縮状態，ポインタのアドレス]
+        '''
+
+        self.spriteAddrList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
+        self.guiSpriteList.clear() # スプライトリストの初期化
+
+        readPos = EXE6_Addr["startAddr"]
+        while readPos <= EXE6_Addr["endAddr"]:
+            spriteAddr = romData[readPos:readPos+4]
+            memByte = struct.unpack("B", spriteAddr[3])[0]
+
+            if memByte in [0x08, 0x88]:
+                u""" ポインタの最下位バイトはメモリ上の位置を表す0x08
+
+                    0x88の場合は圧縮データとして扱われる模様
+                """
+
+                if memByte == 0x88: # ポインタ先頭が0x88なら圧縮スプライトとして扱う
+                    compFlag = 1
+                else:
+                    compFlag = 0
+
+                spriteAddr = spriteAddr[:3] + "\x00"    # ROM内でのアドレスに直す　例）081D8000 -> 001D8000 (00 80 1D 08 -> 00 80 1D 00)
+                spriteAddr = struct.unpack("<L", spriteAddr)[0]
+
+                self.spriteAddrList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "readPos":readPos} )
+                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")"   # GUIのリストに表示する文字列
+                spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
+                self.guiSpriteList.addItem(spriteItem) # GUIスプライトリストへ追加
+
+            readPos += 4
+
+
+    def guiSpriteItemActivated(self, index):
+        u''' GUIでスプライトが選択されたときに行う処理
+        '''
+
+        self.guiSpriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        spriteAddr = self.spriteAddrList[index]["spriteAddr"]
+        compFlag = self.spriteAddrList[index]["compFlag"]
+        self.parseSpriteData(self.romData, spriteAddr, compFlag)
+        self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
+        print("\nend\n=================================================================\n\n")
+
+
+    def parseSpriteData(self, romData, spriteAddr, compFlag):
+        u''' ROMデータから指定された位置にあるスプライトの情報を取り出す
+
+            スプライトリストでアイテムが選択されたら実行する形を想定
+        '''
+        print compFlag
+
+        if compFlag == 0:   # 非圧縮スプライトなら
+            startAddr = spriteAddr
+            endAddr = startAddr + 0x100000  # スプライトのサイズは得られないのでとりあえず設定
+            readPos = startAddr
+            #print "Sprite Address:\t" + hex(startAddr) + "\n"
+
+            # 使う部分だけ切り出し
+            spriteHeader = romData[startAddr:startAddr+4]   # 初めの４バイトがヘッダ情報
+            self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容
+
+            """
+            self.gbaAddrOffset = 0x08000000 + startAddr + 4    # データのメモリ上での位置を表示するとき用のオフセット
+            self.romAddrOffset = startAddr + 4  # データのROM内での位置を表示するとき用のオフセット
+            self.spriteAddrOffset = spriteAddr + 4    # データのROM内での位置を表示するとき用のオフセット
+            """
+
+        elif compFlag == 1: # 圧縮スプライトなら
+            spriteData = LZ77Util.decompLZ77_10(romData, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
+            self.spriteData = spriteData
+        else:
+            return
+
+        '''
+        # ヘッダ情報の表示
+        header = struct.unpack("BBBB", spriteHeader)
+        print "[header]"
+        print "Random: " + hex(header[0])
+        print "Const1: " + hex(header[1])
+        print "Const2: " + hex(header[2])
+        print "Number of Animations: " + str(header[3])
+        print "\n"
+        '''
+
+        readPos = 0 # スプライトデータの先頭から読み込む
+        #print "[Animation Pointers]"
+        animDataStart = self.spriteData[readPos:readPos+4]
+        animDataStart = readPos + struct.unpack("<L", animDataStart)[0]
+
+        # アニメーションポインタのリスト生成
+        self.animPtrList = []
+        self.guiAnimList.clear()   # 表示用リストの初期化
+
+        while readPos < animDataStart:
+            animPtr = self.spriteData[readPos:readPos+4] # ポインタは4バイト
+            readPos += 4
+
+            animPtr = struct.unpack("<L", animPtr)[0]   # リトルエンディアンのunsigned longとして読み込む
+            self.animPtrList.append(animPtr)
+            animPtrStr = hex(animPtr)[2:].zfill(6).upper() # GUIに表示する文字列
+            animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
+            self.guiAnimList.addItem(animItem) # アニメーションリストへ追加
+
+
+    def guiAnimItemActivated(self, index):
+        u''' GUIでアニメーションが選択されたときに行う処理
+        '''
+
+        if index == -1: # GUIの選択位置によっては-1が渡されることがある？
+            return
+
+        print( "AnimIndex:\t" + str(index) )
+        self.guiAnimList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        animPtr = self.animPtrList[index]
+        self.parseAnimData(self.spriteData, animPtr)
+        self.guiFrameItemActivated(0)
+
+
+    def parseAnimData(self, spriteData, animPtr):
+        u''' 指定されたアニメーションデータを読み込んで処理する
+
+            GUIのアニメーションリストで選択されたアニメーションに対して実行する
+            アニメーションデータは20バイトのデータでアニメーションの1フレームを管理する
+            この関数ではアニメーションデータが持つフレームデータをリスト化する
+            1つのアニメーションのフレーム数は事前に与えられず，アニメーションデータが持つ再生タイプに基づいて逐次的にロードする模様
+        '''
+
+        self.graphicsScene.clear()   # 描画シーンのクリア
+        self.guiFrameList.clear()   # フレームリストのクリア
+        frameCount = 0
+        self.framePtrList = []
+
+        while True: # do while文がないので代わりに無限ループ＋breakを使う
+            frameData = spriteData[animPtr:animPtr+20]
+            self.framePtrList.append(animPtr)
+            animPtrStr = hex(animPtr)[2:].zfill(8).upper()  # GUIに表示する文字列
+            frameItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのフレームリストに追加するアイテムの生成
+            self.guiFrameList.addItem(frameItem) # フレームリストへ追加
+
+            animPtr += 20
+            frameCount += 1
+
+            if frameData[-2:] in ["\x80\x00","\xC0\x00"]: # 終端フレームならループを終了
+                break
 
 
     def guiFrameItemActivated(self, index):
@@ -210,6 +392,15 @@ class SpriteViewer(QtGui.QMainWindow):
         self.guiFrameList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         framePtr = self.framePtrList[index]
         self.parseframeData(self.spriteData, framePtr)
+
+
+    def guiSpriteItemWClicked(self, item):
+        u''' GUIでスプライトがダブルクリックされたときに行う処理（未使用）
+        '''
+
+        index = self.guiSpriteList.currentRow() # 選択された行の番号を取得
+        ptrAddr = self.spriteAddrList[index][2]
+
 
     def guiOAMItemActivated(self, item):
         u''' GUIでOAMが選択されたときに行う処理
@@ -254,192 +445,6 @@ class SpriteViewer(QtGui.QMainWindow):
         animIndex = self.guiAnimList.currentRow()
         print("animIndex: " + str(animIndex) )
         self.guiAnimItemActivated(animIndex)
-
-
-    def openFile(self):
-        u''' ファイルを開くときの処理
-        '''
-
-        filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
-
-        try:
-            with open( unicode(filename), 'rb' ) as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
-                self.romData = romFile.read()
-
-        except:
-            print( _(u"ファイルの選択をキャンセルしました") )
-            return 0    # 0を返して関数を抜ける
-
-        # バージョンの判定（使用する辞書を選択するため）
-        romName = self.romData[0xA0:0xAC]
-        global EXE6_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
-        if romName == "ROCKEXE6_GXX":
-            print( _(u"ロックマンエグゼ6 グレイガとしてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE6_GXX
-        elif romName == "ROCKEXE6_RXX":
-            print( _(u"ロックマンエグゼ6 ファルザーとしてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE6_RXX
-        elif romName == "ROCKEXE5_TOB":
-            print( _(u"ロックマンエグゼ5 チームオブブルースとしてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE5_TOB
-        elif romName == "ROCKEXE5_TOC":
-            print( _(u"ロックマンエグゼ5 チームオブカーネルとしてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE5_TOC
-        elif romName == "ROCKEXE4.5RO":
-            print( _(u"ロックマンエグゼ4.5としてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE4_5RO
-        else:
-            print( _(u"ROMタイトルが識別出来ませんでした") )
-            EXE6_Addr = SpriteDict.ROCKEXE6_GXX # 一応グレイガ版の辞書に設定する
-
-        self.extractSpriteAddr(self.romData)
-        self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
-
-
-    def extractSpriteAddr(self, romData):
-        u''' スプライトのアドレスを抽出する
-
-            アドレスリストの構造は[スプライトの先頭アドレス，圧縮状態，ポインタのアドレス]
-        '''
-
-        self.spriteAddrList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
-        self.guiSpriteList.clear() # スプライトリストの初期化
-
-        readPos = EXE6_Addr["startAddr"]
-        while readPos <= EXE6_Addr["endAddr"]:
-            spriteAddr = romData[readPos:readPos+4]
-            # ポインタの最下位バイトはメモリ上の位置を表す08
-            # 88の場合もある，この場合圧縮データとして扱われる模様
-            memByte = struct.unpack("B", spriteAddr[3])[0]
-            if memByte in [0x08, 0x88]:
-
-                if memByte == 0x88: # ポインタ先頭が0x88なら圧縮スプライトとして扱う
-                    compFlag = 1
-                else:
-                    compFlag = 0
-
-                spriteAddr = spriteAddr[:3] + "\x00"    # ROM内でのアドレスに直す　例）081D8000 -> 001D8000 (00 80 1D 08 -> 00 80 1D 00)
-                spriteAddr = struct.unpack("<L", spriteAddr)[0]
-
-                self.spriteAddrList.append( [spriteAddr, compFlag, readPos] )
-                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")"   # GUIのリストに表示する文字列
-                spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
-                self.guiSpriteList.addItem(spriteItem) # GUIスプライトリストへ追加
-
-            readPos += 4
-
-
-    def guiSpriteItemActivated(self, index):
-        u''' GUIでスプライトが選択されたときに行う処理
-        '''
-
-        self.guiSpriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
-        spriteAddr = self.spriteAddrList[index][0]
-        compFlag = self.spriteAddrList[index][1]
-        self.parseSpriteData(self.romData, spriteAddr, compFlag)
-        self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
-
-
-    def parseSpriteData(self, romData, spriteAddr, compFlag):
-        u''' ROMデータから指定された位置にあるスプライトの情報を取り出す
-
-            スプライトリストでアイテムが選択されたら実行する形を想定
-        '''
-
-        if compFlag == 0:   # 非圧縮スプライトなら
-            startAddr = spriteAddr
-            endAddr = startAddr + 0x100000  # スプライトの容量は得られないのでとりあえず設定
-            readPos = startAddr
-            #print "Sprite Address:\t" + hex(startAddr) + "\n"
-
-            # 使う部分だけ切り出し
-            spriteHeader = romData[startAddr:startAddr+4]   # 初めの４バイトがヘッダ情報
-            self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容（ポインタもこのデータの先頭を00としている）
-            self.gbaAddrOffset = 0x08000000 + startAddr + 4    # データのメモリ上での位置を表示するとき用のオフセット
-            self.romAddrOffset = startAddr + 4  # データのROM内での位置を表示するとき用のオフセット
-            self.spriteAddrOffset = spriteAddr + 4    # データのROM内での位置を表示するとき用のオフセット
-
-        elif compFlag == 1: # 圧縮スプライトなら
-        """
-            uncompSize = romData[spriteAddr+1:spriteAddr+5]
-            uncompSize = struct.unpack("<L", uncompSize)[0]
-
-            #self.spriteData = self.decomp_lz77_10(romData, spriteAddr+4, uncompSize)
-            """
-            self.sptiteData = LZ77Util.decompLZ77_10(romData, spriteAddr+4)
-            self.spriteData = self.spriteData[4:]   # ファイルサイズ情報とヘッダー部分を取り除く
-
-        '''
-        # ヘッダ情報の表示
-        header = struct.unpack("BBBB", spriteHeader)
-        print "[header]"
-        print "Random: " + hex(header[0])
-        print "Const1: " + hex(header[1])
-        print "Const2: " + hex(header[2])
-        print "Number of Animations: " + str(header[3])
-        print "\n"
-        '''
-
-        readPos = 0 # スプライトデータの先頭から読み込む
-        # ポインタ領域の長さは最初のポインタ-4（最初のポインタからそのポインタが示すアニメーションデータの開始アドレスまでがポインタ領域になる）
-        # ↑普通に最初のポインタと同じ値になると思う
-        #print "[Animation Pointers]"
-        animDataStart = self.spriteData[readPos:readPos+4]
-        animDataStart = readPos + struct.unpack("<L", animDataStart)[0]
-
-        # アニメーションポインタのリスト生成
-        self.animPtrList = []
-        self.guiAnimList.clear()   # 表示用リストの初期化
-        while readPos < animDataStart:
-            animPtr = self.spriteData[readPos:readPos+4] # ポインタは4バイト
-            readPos += 4
-
-            animPtr = struct.unpack("<L", animPtr)[0]   # リトルエンディアンのunsigned longとして読み込む
-            self.animPtrList.append(animPtr)
-            animPtrStr = hex(self.gbaAddrOffset + animPtr)[2:].zfill(6).upper() + "\t(" + hex(animPtr)[2:].zfill(4).upper() + ")"   # GUIに表示する文字列
-            animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
-            self.guiAnimList.addItem(animItem) # アニメーションリストへ追加
-
-
-    def guiAnimItemActivated(self, index):
-        u''' GUIでアニメーションが選択されたときに行う処理
-        '''
-        if index != -1:
-            print( "AnimIndex:\t" + str(index) )
-            self.guiAnimList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
-            animPtr = self.animPtrList[index]
-            self.parseAnimData(self.spriteData, animPtr)
-            #self.parseframeData(self.spriteData, animPtr)   # 先頭フレームのオブジェクトを描画
-            self.guiFrameItemActivated(0)
-        else:
-            pass
-
-
-    def parseAnimData(self, spriteData, animPtr):
-        u''' 指定されたアニメーションデータを読み込んで処理する
-
-            GUIのアニメーションリストで選択されたアニメーションに対して実行する
-            アニメーションデータは20バイトのデータでアニメーションの1フレームを管理する
-            この関数ではアニメーションデータが持つフレームデータをリスト化する
-            1つのアニメーションのフレーム数は事前に与えられず，アニメーションデータが持つ再生タイプに基づいて逐次的にロードする模様
-        '''
-
-        self.graphicsScene.clear()   # 描画シーンのクリア
-        self.guiFrameList.clear()   # フレームリストのクリア
-        frameCount = 0
-        self.framePtrList = []
-        while True: # do while文がないので代わりに無限ループ＋breakを使う
-            frameData = spriteData[animPtr:animPtr+20]
-            self.framePtrList.append(animPtr)
-            animPtrStr = hex(self.gbaAddrOffset + animPtr)[2:].zfill(8).upper() + "\t(" + hex(animPtr)[2:].zfill(4).upper() + ")"   # GUIに表示する文字列
-            frameItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのフレームリストに追加するアイテムの生成
-            self.guiFrameList.addItem(frameItem) # フレームリストへ追加
-
-            animPtr += 20
-            frameCount += 1
-
-            if frameData[-2:] in ["\x80\x00","\xC0\x00"]: # 終端フレームならループを終了
-                break
 
 
     def parseframeData(self, spriteData, animPtr):
@@ -499,7 +504,7 @@ class SpriteViewer(QtGui.QMainWindow):
             print( "\nOAM: " + str(oamCount) )
 
             oamData = spriteData[readPos:readPos+5]
-            oamAddrStr = ( hex(self.gbaAddrOffset + readPos)[2:].zfill(8) + "\t(" + hex(readPos)[2:].zfill(4) + ")" ).upper()  # GUIのリストに表示する文字列
+            oamAddrStr = ( hex(readPos)[2:].zfill(8)).upper()  # GUIのリストに表示する文字列
             oamItem = QtGui.QListWidgetItem( oamAddrStr )   # GUIのOAMリストに追加するアイテムの生成
             self.guiOAMList.addItem(oamItem) # GUIスプライトリストへ追加
 
