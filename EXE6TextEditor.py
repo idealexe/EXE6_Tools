@@ -1,11 +1,9 @@
 #!/usr/bin/python
 # coding: utf-8
 
-'''
-    EXE6_TextEditor by ideal.exe
+u''' EXE6_TextEditor by ideal.exe
 
     ※開発中のプログラムなので危険です。必ずデータのバックアップを取った状態で使用してください。
-
     開発環境はWindows10 + Python2.7.11 + PyQt4
     現在対応しているデータは日本語版グレイガ，ファルザーです
     >python EXE6TextEditor.py でGUIが開きます
@@ -17,6 +15,7 @@
 
 '''
 
+
 import gettext
 import os
 import re
@@ -27,10 +26,6 @@ _ = gettext.gettext # 後の翻訳用
 
 # 辞書のインポート
 import EXE6Dict
-CP_EXE6_1 = EXE6Dict.CP_EXE6_1
-CP_EXE6_2 = EXE6Dict.CP_EXE6_2
-CP_EXE6_1_inv = EXE6Dict.CP_EXE6_1_inv
-CP_EXE6_2_inv = EXE6Dict.CP_EXE6_2_inv
 
 
 class Window(QtGui.QMainWindow):
@@ -53,7 +48,7 @@ class Window(QtGui.QMainWindow):
 
         # ステータスバー
         statusBar = self.statusBar()
-        statusBar.showMessage( _("ファイルを選択してください") )
+        statusBar.showMessage( _(u"ファイルを選択してください") )
 
         # メニューバー
         menuBar = self.menuBar()
@@ -66,7 +61,7 @@ class Window(QtGui.QMainWindow):
 
         self.modeLabel = QtGui.QLabel(self)
         self.modeLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignRight)   # 縦：中央，横：右寄せ
-        self.modeLabel.setText( _("編集するデータ") )
+        self.modeLabel.setText( _(u"編集するデータ") )
 
         self.modeComb = QtGui.QComboBox(self)   # モード選択用コンボボックス
         self.modeComb.activated.connect(self.modeActivated)
@@ -107,7 +102,7 @@ class Window(QtGui.QMainWindow):
 
         self.widget.setLayout(vbox)
         self.setCentralWidget(self.widget)
-        self.resize(400, 400)
+        self.resize(500, 500)
         self.setWindowTitle( _("EXE6 Text Editor") )
         self.show()
 
@@ -156,7 +151,7 @@ class Window(QtGui.QMainWindow):
                 if self.currentMode != 1:   # チップ説明文モード以外
                     capacity = readPos - startAddr # 読み込み終了位置から読み込み開始位置を引けばデータ容量
                     #data = [hex(startAddr), currentData, capacity]    # 先頭アドレス，データ文字列，データ容量
-                    item = QtGui.QListWidgetItem( self.encodeByEXE6Dict(currentData) )  # 一覧に追加する文字列
+                    item = QtGui.QListWidgetItem( EXE6Dict.encodeByEXE6Dict(currentData) )  # 一覧に追加する文字列
                 else:   # チップ説明文モード
                     if currentData[0:11] == "\xE8\x07\x01\x01\xE8\x06\x01\x01\xF1\x00\x00": # 一般的なチップなら
                         startAddr += 11 # 実際の文字列の先頭を開始位置にする（書き込むときのため）
@@ -186,7 +181,7 @@ class Window(QtGui.QMainWindow):
 
             currentData = self.dataList[self.currentItem]
             txt = currentData[1]
-            txt = self.encodeByEXE6Dict(txt)   # 対応するデータをエンコード
+            txt = EXE6Dict.encodeByEXE6Dict(txt)   # 対応するデータをエンコード
             self.text.setText(txt)  # テキストボックスに表示
             self.capacityLabel.setText( "書き込み可能容量: " + str(currentData[2]) + " バイト")
         else:
@@ -202,7 +197,8 @@ class Window(QtGui.QMainWindow):
         uStr = unicode(qStr)  # 一旦QStringからUnicode文字列に変換しないとダメ（めんどくさい）
         uStr = uStr.replace("\n","")    # 改行文字も取り除く
         #print isinstance(sStr, unicode)
-        bStr = self.decodeByEXE6Dict(uStr)  # バイナリ文字列
+        #bStr = self.decodeByEXE6Dict(uStr)  # バイナリ文字列
+        bStr = EXE6Dict.decodeByEXE6Dict(uStr)
 
         if len(bStr) <= capacity: # 新しい文字列データが書き込み可能なサイズなら
             while len(bStr) < capacity: # 文字数が足りない場合は■で埋める
@@ -220,58 +216,6 @@ class Window(QtGui.QMainWindow):
         self.currentMode = mode
         self.dumpListData(self.romData, EXE6_Addr[mode][1], EXE6_Addr[mode][2])
 
-    # 辞書に基づいてバイナリ->テキスト
-    def encodeByEXE6Dict(self, string):
-        result = ""
-        readPos = 0
-
-        while readPos < len(string):
-            # 2バイトフラグなら
-            if string[readPos] == "\xE4":
-                readPos += 1  # 次の文字を
-                result += CP_EXE6_2[ string[readPos] ] # 2バイト文字として出力
-            # 会話文解析用
-            elif string[readPos] == "\xF0" or string[readPos] == "\xF5":
-                result += CP_EXE6_1[ string[readPos] ]
-                result += CP_EXE6_1[ string[readPos+1] ] + CP_EXE6_1[ string[readPos+2] ] + "\n"
-                readPos += 2
-            elif string[readPos] == "\xE6":
-                result += CP_EXE6_1[ string[readPos] ]
-            elif string[readPos] == "\xE9":
-                result += CP_EXE6_1[ string[readPos] ] + "\n"   # 辞書の方に改行を入れると一致検索が面倒
-            # 通常の1バイト文字
-            else:
-                result += CP_EXE6_1[ string[readPos] ]
-
-            readPos += 1
-        return result
-
-    # 辞書に基づいてテキスト->バイナリ
-    def decodeByEXE6Dict(self, string):
-        result = ""
-        readPos = 0
-
-        while readPos < len(string):
-            currentChar = string[readPos].encode('utf-8')   # Unicode文字列から1文字取り出してString型に変換
-            # 改行などは<改行>などのコマンドとして表示している
-            if currentChar == "<":
-                readPos += 1
-                while string[readPos] != ">":
-                    currentChar += string[readPos]
-                    readPos += 1
-                currentChar += string[readPos]
-
-            if currentChar in CP_EXE6_2_inv:    # 2バイト文字なら
-                result += "\xE4" + CP_EXE6_2_inv[currentChar]
-            elif currentChar in CP_EXE6_1_inv:  # 1バイト文字なら
-                result += CP_EXE6_1_inv[currentChar]
-            else:   # 辞書に存在しない文字なら
-                result += "\x80"    # ■に置き換え
-                print u"辞書に一致する文字がありません"
-
-            readPos += 1
-
-        return result
 
     def saveFile(self):
         filename = QtGui.QFileDialog.getSaveFileName(self, _("Save EXE6 File"), os.path.expanduser('~'))
