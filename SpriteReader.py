@@ -357,15 +357,17 @@ class SpriteViewer(QtGui.QMainWindow):
             self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容（ポインタもこのデータの先頭を00としている）
             self.gbaAddrOffset = 0x08000000 + startAddr + 4    # データのメモリ上での位置を表示するとき用のオフセット
             self.romAddrOffset = startAddr + 4  # データのROM内での位置を表示するとき用のオフセット
-            self.spriteAddrOffset = spriteAddr + 4    # データのROM内での位置を表示すると器用のオフセット
+            self.spriteAddrOffset = spriteAddr + 4    # データのROM内での位置を表示するとき用のオフセット
 
         elif compFlag == 1: # 圧縮スプライトなら
+        """
             uncompSize = romData[spriteAddr+1:spriteAddr+5]
             uncompSize = struct.unpack("<L", uncompSize)[0]
 
             #self.spriteData = self.decomp_lz77_10(romData, spriteAddr+4, uncompSize)
+            """
             self.sptiteData = LZ77Util.decompLZ77_10(romData, spriteAddr+4)
-            self.spriteData = self.spriteData[8:]   # ファイルサイズ情報とヘッダー部分を取り除く
+            self.spriteData = self.spriteData[4:]   # ファイルサイズ情報とヘッダー部分を取り除く
 
         '''
         # ヘッダ情報の表示
@@ -402,13 +404,15 @@ class SpriteViewer(QtGui.QMainWindow):
     def guiAnimItemActivated(self, index):
         u''' GUIでアニメーションが選択されたときに行う処理
         '''
-
-        print( "AnimIndex:\t" + str(index) )
-        self.guiAnimList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
-        animPtr = self.animPtrList[index]
-        self.parseAnimData(self.spriteData, animPtr)
-        #self.parseframeData(self.spriteData, animPtr)   # 先頭フレームのオブジェクトを描画
-        self.guiFrameItemActivated(0)
+        if index != -1:
+            print( "AnimIndex:\t" + str(index) )
+            self.guiAnimList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+            animPtr = self.animPtrList[index]
+            self.parseAnimData(self.spriteData, animPtr)
+            #self.parseframeData(self.spriteData, animPtr)   # 先頭フレームのオブジェクトを描画
+            self.guiFrameItemActivated(0)
+        else:
+            pass
 
 
     def parseAnimData(self, spriteData, animPtr):
@@ -694,6 +698,8 @@ class SpriteViewer(QtGui.QMainWindow):
         palSize = spriteData[palSizePtr:palSizePtr+4]
         palSize = struct.unpack("<L", palSize)[0]
         print( "Palette Size:\t" + hex(palSize) )
+        if palSize != 0x20:  # サイズがおかしい場合は無視
+            return
 
         readPos = palSizePtr + 4 + palIndex * palSize # パレットサイズ情報の後にパレットデータが続く（インデックス番号によって開始位置をずらす）
         endAddr = readPos + palSize
