@@ -5,6 +5,8 @@ u"""
     ロックマンエグゼ６の文字コードや各種アドレスの辞書
 
     ロックマンエグゼ６用文字コード対応表（http://www65.atwiki.jp/mmnbhack/pages/17.html）を少し改変
+    エンコードでは文字コード対応表に基づく変換に加えて，解析のために独自の整形を行います．
+    デコードではこれらの整形を行ったテキストが正しく元のバイナリと一致するように変換されます．
 
 """
 
@@ -139,7 +141,7 @@ RXX_Sprite_Table = {
 }
 
 def encodeByEXE6Dict(data):
-    u"""バイナリ文字列をエグゼ６のテキストとしてエンコード
+    u""" バイナリ文字列をエグゼ６のテキストとしてエンコード
     """
 
     readPos = 0 # 読み取るアドレス
@@ -161,19 +163,18 @@ def encodeByEXE6Dict(data):
             #L.append("\n" + hex(readPos) + ": ")
             #L.append("\n\n## ")
             L.append(CP_EXE6_1[currentChar])
-            L.append( "[0x" + binascii.hexlify(data[readPos+1] + data[readPos+2]) + "]")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
-
-            if currentChar in ["\xF0", "\xF1", "\xF5"]:
-                L.append("\n")
+            L.append( "[0x" + binascii.hexlify(data[readPos+1:readPos+1+2]) + "]")    # 文字コードの値をそのまま文字列として出力（'\xAB' -> "AB"）
+            L.append("\n")
 
             readPos += 2
 
         elif currentChar in ["\xEE"]:
             u""" 次の3バイトを使うコマンド
             """
-
             L.append(CP_EXE6_1[currentChar])
-            L.append( "[0x" + binascii.hexlify(data[readPos+1:readPos+4]) + "]")
+            L.append( "[0x" + binascii.hexlify(data[readPos+1:readPos+1+3]) + "]")
+            L.append("\n")
+
             readPos += 3
 
         # \xE6 リスト要素の終わりに現れるようなので、\xE6が現れたら次の要素の先頭アドレスを確認できるようにする
@@ -213,8 +214,9 @@ def encodeByEXE6Dict(data):
 
 
 def decodeByEXE6Dict(string):
-    u"""エグゼ６のテキストをバイナリ文字列にデコード
+    u""" エグゼ６のテキストをバイナリ文字列にデコード
     """
+
     result = ""
     readPos = 0
 
