@@ -232,7 +232,7 @@ class SpriteViewer(QtGui.QMainWindow):
             EXE6_Addr = SpriteDict.ROCKEXE6_GXX # 一応グレイガ版の辞書に設定する
 
         self.extractSpriteAddr(self.romData)
-        #self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
+        self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
 
 
     def extractSpriteAddr(self, romData):
@@ -275,12 +275,14 @@ class SpriteViewer(QtGui.QMainWindow):
         u''' GUIでスプライトが選択されたときに行う処理
         '''
 
-        self.guiSpriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        self.graphicsScene.clear()  # 描画シーンのクリア
+        #self.guiSpriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        # ↑この変更もハンドリングされてしまうのでダメ
         spriteAddr = self.spriteAddrList[index]["spriteAddr"]
+        print( "Serected Sprite:\t" + hex(spriteAddr) )
         compFlag = self.spriteAddrList[index]["compFlag"]
         self.parseSpriteData(self.romData, spriteAddr, compFlag)
         self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
-        print("\nend\n=================================================================\n\n")
 
 
     def parseSpriteData(self, romData, spriteAddr, compFlag):
@@ -288,7 +290,6 @@ class SpriteViewer(QtGui.QMainWindow):
 
             スプライトリストでアイテムが選択されたら実行する形を想定
         '''
-        print compFlag
 
         if compFlag == 0:   # 非圧縮スプライトなら
             startAddr = spriteAddr
@@ -300,33 +301,16 @@ class SpriteViewer(QtGui.QMainWindow):
             spriteHeader = romData[startAddr:startAddr+4]   # 初めの４バイトがヘッダ情報
             self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容
 
-            """
-            self.gbaAddrOffset = 0x08000000 + startAddr + 4    # データのメモリ上での位置を表示するとき用のオフセット
-            self.romAddrOffset = startAddr + 4  # データのROM内での位置を表示するとき用のオフセット
-            self.spriteAddrOffset = spriteAddr + 4    # データのROM内での位置を表示するとき用のオフセット
-            """
-
         elif compFlag == 1: # 圧縮スプライトなら
             spriteData = LZ77Util.decompLZ77_10(romData, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
             self.spriteData = spriteData
+
         else:
             return
 
-        '''
-        # ヘッダ情報の表示
-        header = struct.unpack("BBBB", spriteHeader)
-        print "[header]"
-        print "Random: " + hex(header[0])
-        print "Const1: " + hex(header[1])
-        print "Const2: " + hex(header[2])
-        print "Number of Animations: " + str(header[3])
-        print "\n"
-        '''
-
         readPos = 0 # スプライトデータの先頭から読み込む
-        #print "[Animation Pointers]"
         animDataStart = self.spriteData[readPos:readPos+4]
-        animDataStart = readPos + struct.unpack("<L", animDataStart)[0]
+        animDataStart = struct.unpack("<L", animDataStart)[0]
 
         # アニメーションポインタのリスト生成
         self.animPtrList = []
@@ -350,9 +334,10 @@ class SpriteViewer(QtGui.QMainWindow):
         if index == -1: # GUIの選択位置によっては-1が渡されることがある？
             return
 
-        print( "AnimIndex:\t" + str(index) )
-        self.guiAnimList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        #self.guiAnimList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        self.graphicsScene.clear()  # 描画シーンのクリア
         animPtr = self.animPtrList[index]
+        print( "Serected Anim:\t" + str(index) + " (" + hex(animPtr) + ")" )
         self.parseAnimData(self.spriteData, animPtr)
         self.guiFrameItemActivated(0)
 
@@ -366,10 +351,9 @@ class SpriteViewer(QtGui.QMainWindow):
             1つのアニメーションのフレーム数は事前に与えられず，アニメーションデータが持つ再生タイプに基づいて逐次的にロードする模様
         '''
 
-        self.graphicsScene.clear()   # 描画シーンのクリア
+        self.framePtrList = []
         self.guiFrameList.clear()   # フレームリストのクリア
         frameCount = 0
-        self.framePtrList = []
 
         while True: # do while文がないので代わりに無限ループ＋breakを使う
             frameData = spriteData[animPtr:animPtr+20]
@@ -389,62 +373,12 @@ class SpriteViewer(QtGui.QMainWindow):
         u''' GUIでフレームが選択されたときに行う処理
         '''
 
+        if index == -1:
+            return
+
         self.guiFrameList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         framePtr = self.framePtrList[index]
         self.parseframeData(self.spriteData, framePtr)
-
-
-    def guiSpriteItemWClicked(self, item):
-        u''' GUIでスプライトがダブルクリックされたときに行う処理（未使用）
-        '''
-
-        index = self.guiSpriteList.currentRow() # 選択された行の番号を取得
-        ptrAddr = self.spriteAddrList[index][2]
-
-
-    def guiOAMItemActivated(self, item):
-        u''' GUIでOAMが選択されたときに行う処理
-        '''
-
-        index = self.guiOAMList.currentRow()  # 渡されるのはアイテムなのでインデックス番号は現在の行から取得する
-        if self.graphicsScene.items()[index].isVisible():
-            self.graphicsScene.items()[index].hide()    # 非表示にする
-        else:
-            self.graphicsScene.items()[index].show()    # 表示する
-
-        '''
-        oam = self.oamList[index]
-        image = oam["image"]
-        item = QtGui.QGraphicsPixmapItem(image)
-        item.setOffset(oam["posX"], oam["posY"])
-        imageBounds = item.boundingRect()
-        print( self.graphicsScene.items()[index] )
-        #self.graphicsScene.addRect(imageBounds)
-        #self.graphicsScene.addItem(item)
-
-        '''
-
-    def guiPalItemActivated(self, item):
-        u''' GUIで色が選択されたときに行う処理
-        '''
-
-        index = self.guiPalList.currentRow()
-        r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
-        writePos = self.palData[index]["addr"]  # 色データを書き込む位置
-        color = QtGui.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
-        r,g,b,a = color.getRgb()    # ダイアログでセットされた色に更新
-
-        binR = bin(r/8)[2:].zfill(5)    # 5bitカラーに変換
-        binG = bin(g/8)[2:].zfill(5)
-        binB = bin(b/8)[2:].zfill(5)
-        gbaColor = int(binB + binG + binR, 2)  # GBAのカラーコードに変換
-        colorStr = struct.pack("H", gbaColor)
-        self.spriteData = self.spriteData[:writePos] + colorStr + self.spriteData[writePos+2:]  # ロード中のスプライトデータの色を書き換える
-        #self.romData = self.romData[:writePos] + colorStr + self.romData[writePos+2:]  # ROM内の色を書き換える
-
-        animIndex = self.guiAnimList.currentRow()
-        print("animIndex: " + str(animIndex) )
-        self.guiAnimItemActivated(animIndex)
 
 
     def parseframeData(self, spriteData, animPtr):
@@ -456,10 +390,10 @@ class SpriteViewer(QtGui.QMainWindow):
         '''
 
         self.graphicsScene.clear()  # 描画シーンのクリア
-        #print( "Frame Data Address:\t" + hex(animPtr + self.gbaAddrOffset) ) # メモリ上のアドレス
         animData = spriteData[animPtr:animPtr+20]   # 1フレーム分ロード
         animData = struct.unpack("<LLLLHH", animData)   # データ構造に基づいて分解
-        '''
+
+        u'''
             20バイトで1フレーム
             4バイト：画像サイズがあるアドレスへのポインタ
             4バイト：パレットサイズがあるアドレスへのポインタ
@@ -470,7 +404,7 @@ class SpriteViewer(QtGui.QMainWindow):
 
         '''
         graphSizePtr = animData[0]
-        #print( "Graphics Size Address:\t" + hex(graphSizePtr + self.gbaAddrOffset) )
+
         # 画像容量の読み取り
         graphSize = spriteData[graphSizePtr:graphSizePtr+4]
         graphSize = struct.unpack("<L", graphSize)[0]
@@ -481,10 +415,9 @@ class SpriteViewer(QtGui.QMainWindow):
         graphData = spriteData[readPos:readPos+graphSize]   # 画像のロード
 
         palSizePtr = animData[1]
-        #print( "Palette Size Address:\t" + hex(palSizePtr + self.gbaAddrOffset) )
 
         ptrToOAMptr = animData[3]
-        #print( "Address of OAM Data Pointer:\t" + hex(ptrToOAMptr + self.gbaAddrOffset) )
+
         oamDataPtr = spriteData[ ptrToOAMptr:ptrToOAMptr+4 ]
         oamDataPtr = struct.unpack("<L", oamDataPtr)[0]
         #print( "OAM Data Pointer:\t" + hex(oamDataPtr) )
@@ -501,7 +434,7 @@ class SpriteViewer(QtGui.QMainWindow):
         self.oamList = []   # OAMの情報を格納するリスト
         self.guiOAMList.clear() # GUIのOAMリストをクリア
         while spriteData[readPos:readPos+5] != "\xFF\xFF\xFF\xFF\xFF":
-            print( "\nOAM: " + str(oamCount) )
+            #print( "\nOAM: " + str(oamCount) )
 
             oamData = spriteData[readPos:readPos+5]
             oamAddrStr = ( hex(readPos)[2:].zfill(8)).upper()  # GUIのリストに表示する文字列
@@ -514,11 +447,11 @@ class SpriteViewer(QtGui.QMainWindow):
 
             oamData = struct.unpack("BbbBB", oamData)
             startTile = oamData[0]
-            print( "Starting Tile:\t" + str(startTile) )
+            #print( "Starting Tile:\t" + str(startTile) )
             posX = oamData[1]
-            print( "X:\t" + str(posX) )
+            #print( "X:\t" + str(posX) )
             posY = oamData[2]
-            print( "Y:\t" + str(posY) )
+            #print( "Y:\t" + str(posY) )
 
             flag1 = bin(oamData[3])[2:].zfill(8)    # 2進数にして先頭の0bを取り除いて8桁に0埋め
             '''
@@ -537,8 +470,8 @@ class SpriteViewer(QtGui.QMainWindow):
             flag2 = bin(oamData[4])[2:].zfill(8)
             objShape = flag2[-2:]
             palIndex = int(flag2[0:4], 2)
-            print("shape:\t" + str(objShape) )
-            print("")
+            #print("shape:\t" + str(objShape) )
+            #print("")
 
             # パレットの設定
             self.parsePaletteData(spriteData, palSizePtr, palIndex)
@@ -601,7 +534,7 @@ class SpriteViewer(QtGui.QMainWindow):
             '''
             #self.showOBJ(graphData, startTile, sizeX, sizeY, posX, posY, hFlip, vFlip)
 
-        print "Animation Flame Delay:\t" + str(animData[4]) + " frame"
+        #print "Animation Flame Delay:\t" + str(animData[4]) + " frame"
 
         animType = animData[5]
         '''
@@ -612,8 +545,62 @@ class SpriteViewer(QtGui.QMainWindow):
             アニメーションの最後のフレームは0x80か0xC0
 
         '''
-        print "Animation Type:\t" + hex(animType)
-        print "\n----------------------------------------\n"
+        #print "Animation Type:\t" + hex(animType)
+        #print "\n----------------------------------------\n"
+
+
+    def guiSpriteItemWClicked(self, item):
+        u''' GUIでスプライトがダブルクリックされたときに行う処理（未使用）
+        '''
+
+        index = self.guiSpriteList.currentRow() # 選択された行の番号を取得
+        ptrAddr = self.spriteAddrList[index][2]
+
+
+    def guiOAMItemActivated(self, item):
+        u''' GUIでOAMが選択されたときに行う処理
+        '''
+
+        index = self.guiOAMList.currentRow()  # 渡されるのはアイテムなのでインデックス番号は現在の行から取得する
+        if self.graphicsScene.items()[index].isVisible():
+            self.graphicsScene.items()[index].hide()    # 非表示にする
+        else:
+            self.graphicsScene.items()[index].show()    # 表示する
+
+        '''
+        oam = self.oamList[index]
+        image = oam["image"]
+        item = QtGui.QGraphicsPixmapItem(image)
+        item.setOffset(oam["posX"], oam["posY"])
+        imageBounds = item.boundingRect()
+        print( self.graphicsScene.items()[index] )
+        #self.graphicsScene.addRect(imageBounds)
+        #self.graphicsScene.addItem(item)
+
+        '''
+
+    def guiPalItemActivated(self, item):
+        u''' GUIで色が選択されたときに行う処理
+        '''
+
+        index = self.guiPalList.currentRow()
+        r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
+        writePos = self.palData[index]["addr"]  # 色データを書き込む位置
+        color = QtGui.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
+        r,g,b,a = color.getRgb()    # ダイアログでセットされた色に更新
+
+        binR = bin(r/8)[2:].zfill(5)    # 5bitカラーに変換
+        binG = bin(g/8)[2:].zfill(5)
+        binB = bin(b/8)[2:].zfill(5)
+        gbaColor = int(binB + binG + binR, 2)  # GBAのカラーコードに変換
+        colorStr = struct.pack("H", gbaColor)
+        self.spriteData = self.spriteData[:writePos] + colorStr + self.spriteData[writePos+2:]  # ロード中のスプライトデータの色を書き換える
+        #self.romData = self.romData[:writePos] + colorStr + self.romData[writePos+2:]  # ROM内の色を書き換える
+
+        animIndex = self.guiAnimList.currentRow()
+        print("animIndex: " + str(animIndex) )
+        self.guiAnimItemActivated(animIndex)
+
 
     '''
         アニメーションの再生
@@ -702,7 +689,7 @@ class SpriteViewer(QtGui.QMainWindow):
         # パレットサイズの読み取り
         palSize = spriteData[palSizePtr:palSizePtr+4]
         palSize = struct.unpack("<L", palSize)[0]
-        print( "Palette Size:\t" + hex(palSize) )
+        #print( "Palette Size:\t" + hex(palSize) )
         if palSize != 0x20:  # サイズがおかしい場合は無視
             return
 
