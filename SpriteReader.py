@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-'''
-    EXE6 Sprite Reader by ideal.exe
+u''' EXE6 Sprite Reader by ideal.exe
 
 
     データ構造仕様
@@ -10,8 +9,8 @@
     palData: パレットデータ辞書のリスト．OAMの生成（彩色）に使用する．
     palData[i] := { "color":[赤, 緑, 青, α], "addr":スプライト内のアドレス }
 
-
 '''
+
 
 import binascii
 import gettext
@@ -28,6 +27,7 @@ _ = gettext.gettext # 後の翻訳用
 
 # 辞書のインポート
 import SpriteDict
+import LZ77Util
 
 # フラグと形状の対応を取る辞書[size+shape]:[x,y]
 # キーにリストが使えないのでこんなことに・・・
@@ -51,11 +51,10 @@ class SpriteViewer(QtGui.QMainWindow):
         super(SpriteViewer, self).__init__()
         self.setGUI()
 
-    '''
-        GUIの初期化
-
-    '''
     def setGUI(self):
+        u""" GUIの初期化
+        """
+
         self.setWindowTitle( _("EXE6 Sprite Viewer") )
         self.resize(1200, 600)
 
@@ -196,29 +195,26 @@ class SpriteViewer(QtGui.QMainWindow):
         self.show()
 
 
-    '''
-        GUIでスプライトがダブルクリックされたときに行う処理（未使用）
-
-    '''
     def guiSpriteItemWClicked(self, item):
+        u''' GUIでスプライトがダブルクリックされたときに行う処理（未使用）
+        '''
+
         index = self.guiSpriteList.currentRow() # 選択された行の番号を取得
         ptrAddr = self.spriteAddrList[index][2]
 
 
-    '''
-        GUIでフレームが選択されたときに行う処理
-
-    '''
     def guiFrameItemActivated(self, index):
+        u''' GUIでフレームが選択されたときに行う処理
+        '''
+
         self.guiFrameList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         framePtr = self.framePtrList[index]
         self.parseframeData(self.spriteData, framePtr)
 
-    '''
-        GUIでOAMが選択されたときに行う処理
-
-    '''
     def guiOAMItemActivated(self, item):
+        u''' GUIでOAMが選択されたときに行う処理
+        '''
+
         index = self.guiOAMList.currentRow()  # 渡されるのはアイテムなのでインデックス番号は現在の行から取得する
         if self.graphicsScene.items()[index].isVisible():
             self.graphicsScene.items()[index].hide()    # 非表示にする
@@ -237,11 +233,10 @@ class SpriteViewer(QtGui.QMainWindow):
 
         '''
 
-    '''
-        GUIで色が選択されたときに行う処理
-
-    '''
     def guiPalItemActivated(self, item):
+        u''' GUIで色が選択されたときに行う処理
+        '''
+
         index = self.guiPalList.currentRow()
         r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
         writePos = self.palData[index]["addr"]  # 色データを書き込む位置
@@ -261,11 +256,10 @@ class SpriteViewer(QtGui.QMainWindow):
         self.guiAnimItemActivated(animIndex)
 
 
-    '''
-        ファイルを開くときの処理
-
-    '''
     def openFile(self):
+        u''' ファイルを開くときの処理
+        '''
+
         filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
 
         try:
@@ -301,12 +295,13 @@ class SpriteViewer(QtGui.QMainWindow):
         self.extractSpriteAddr(self.romData)
         self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
 
-    '''
-        スプライトのアドレスを抽出する
-        アドレスリストの構造は[スプライトの先頭アドレス，圧縮状態，ポインタのアドレス]
 
-    '''
     def extractSpriteAddr(self, romData):
+        u''' スプライトのアドレスを抽出する
+
+            アドレスリストの構造は[スプライトの先頭アドレス，圧縮状態，ポインタのアドレス]
+        '''
+
         self.spriteAddrList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
         self.guiSpriteList.clear() # スプライトリストの初期化
 
@@ -334,11 +329,10 @@ class SpriteViewer(QtGui.QMainWindow):
             readPos += 4
 
 
-    '''
-        GUIでスプライトが選択されたときに行う処理
-
-    '''
     def guiSpriteItemActivated(self, index):
+        u''' GUIでスプライトが選択されたときに行う処理
+        '''
+
         self.guiSpriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         spriteAddr = self.spriteAddrList[index][0]
         compFlag = self.spriteAddrList[index][1]
@@ -346,12 +340,12 @@ class SpriteViewer(QtGui.QMainWindow):
         self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
 
 
-    '''
-        ROMデータから指定された位置にあるスプライトの情報を取り出す
-        スプライトリストでアイテムが選択されたら実行する形を想定
-
-    '''
     def parseSpriteData(self, romData, spriteAddr, compFlag):
+        u''' ROMデータから指定された位置にあるスプライトの情報を取り出す
+
+            スプライトリストでアイテムが選択されたら実行する形を想定
+        '''
+
         if compFlag == 0:   # 非圧縮スプライトなら
             startAddr = spriteAddr
             endAddr = startAddr + 0x100000  # スプライトの容量は得られないのでとりあえず設定
@@ -369,7 +363,8 @@ class SpriteViewer(QtGui.QMainWindow):
             uncompSize = romData[spriteAddr+1:spriteAddr+5]
             uncompSize = struct.unpack("<L", uncompSize)[0]
 
-            self.spriteData = self.decomp_lz77_10(romData, spriteAddr+4, uncompSize)
+            #self.spriteData = self.decomp_lz77_10(romData, spriteAddr+4, uncompSize)
+            self.sptiteData = LZ77Util.decompLZ77_10(romData, spriteAddr+4)
             self.spriteData = self.spriteData[8:]   # ファイルサイズ情報とヘッダー部分を取り除く
 
         '''
@@ -404,11 +399,10 @@ class SpriteViewer(QtGui.QMainWindow):
             self.guiAnimList.addItem(animItem) # アニメーションリストへ追加
 
 
-    '''
-        GUIでアニメーションが選択されたときに行う処理
-
-    '''
     def guiAnimItemActivated(self, index):
+        u''' GUIでアニメーションが選択されたときに行う処理
+        '''
+
         print( "AnimIndex:\t" + str(index) )
         self.guiAnimList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         animPtr = self.animPtrList[index]
@@ -417,15 +411,15 @@ class SpriteViewer(QtGui.QMainWindow):
         self.guiFrameItemActivated(0)
 
 
-    '''
-        指定されたアニメーションデータを読み込んで処理する
-        GUIのアニメーションリストで選択されたアニメーションに対して実行する
-        アニメーションデータは20バイトのデータでアニメーションの1フレームを管理する
-        この関数ではアニメーションデータが持つフレームデータをリスト化する
-        1つのアニメーションのフレーム数は事前に与えられず，アニメーションデータが持つ再生タイプに基づいて逐次的にロードする模様
-
-    '''
     def parseAnimData(self, spriteData, animPtr):
+        u''' 指定されたアニメーションデータを読み込んで処理する
+
+            GUIのアニメーションリストで選択されたアニメーションに対して実行する
+            アニメーションデータは20バイトのデータでアニメーションの1フレームを管理する
+            この関数ではアニメーションデータが持つフレームデータをリスト化する
+            1つのアニメーションのフレーム数は事前に与えられず，アニメーションデータが持つ再生タイプに基づいて逐次的にロードする模様
+        '''
+
         self.graphicsScene.clear()   # 描画シーンのクリア
         self.guiFrameList.clear()   # フレームリストのクリア
         frameCount = 0
@@ -443,14 +437,15 @@ class SpriteViewer(QtGui.QMainWindow):
             if frameData[-2:] in ["\x80\x00","\xC0\x00"]: # 終端フレームならループを終了
                 break
 
-    '''
-        1フレーム分の情報を取り出し画像を表示する
-        入力：スプライトのデータとアニメーションデータの開始位置
-        処理：20バイトのアニメーションデータを読み取って情報を取り出す
-        出力：アニメーションデータの情報
 
-    '''
     def parseframeData(self, spriteData, animPtr):
+        u''' 1フレーム分の情報を取り出し画像を表示する
+
+            入力：スプライトのデータとアニメーションデータの開始位置
+            処理：20バイトのアニメーションデータを読み取って情報を取り出す
+            出力：アニメーションデータの情報
+        '''
+
         self.graphicsScene.clear()  # 描画シーンのクリア
         #print( "Frame Data Address:\t" + hex(animPtr + self.gbaAddrOffset) ) # メモリ上のアドレス
         animData = spriteData[animPtr:animPtr+20]   # 1フレーム分ロード
@@ -619,13 +614,13 @@ class SpriteViewer(QtGui.QMainWindow):
         pass
 
 
-    '''
-        OAM情報から画像を生成する
-        入力：スプライトのグラフィック，開始タイル，横サイズ，縦サイズ
-        出力：画像データ（QPixmap形式）
-
-    '''
     def makeOAMImage(self, imgData, startTile, width, hight, hFlip, vFlip):
+        u''' OAM情報から画像を生成する
+
+            入力：スプライトのグラフィック，開始タイル，横サイズ，縦サイズ
+            出力：画像データ（QPixmap形式）
+        '''
+
         startAddr = startTile * 32  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
         width = width/8 # サイズからタイルの枚数に変換
         hight = hight/8
@@ -676,11 +671,11 @@ class SpriteViewer(QtGui.QMainWindow):
         pixmap = QtGui.QPixmap.fromImage(qImg)  # QPixmap形式に変換
         return pixmap
 
-    '''
-        OAMを描画する
 
-    '''
     def drawOAM(self, image, sizeX, sizeY, posX, posY):
+        u''' OAMを描画する
+        '''
+
         item = QtGui.QGraphicsPixmapItem(image)
         item.setOffset(posX , posY)
         imageBounds = item.boundingRect()
@@ -688,13 +683,13 @@ class SpriteViewer(QtGui.QMainWindow):
         #self.graphicsScene.addRect(imageBounds)
 
 
-    '''
-        パレットデータの読み取り
-        入力：スプライトデータ，パレットサイズのアドレス
-        処理：スプライトデータからのパレットサイズ読み込み，パレットデータ読み込み，RGBAカラー化
-
-    '''
     def parsePaletteData(self, spriteData, palSizePtr, palIndex):
+        u''' パレットデータの読み取り
+
+            入力：スプライトデータ，パレットサイズのアドレス
+            処理：スプライトデータからのパレットサイズ読み込み，パレットデータ読み込み，RGBAカラー化
+        '''
+
         # パレットサイズの読み取り
         palSize = spriteData[palSizePtr:palSizePtr+4]
         palSize = struct.unpack("<L", palSize)[0]
@@ -729,57 +724,6 @@ class SpriteViewer(QtGui.QMainWindow):
             palCount += 1
             readPos += 2
 
-
-    '''
-        LZ77 0x10 復号化
-
-    '''
-    def decomp_lz77_10(self, data, startAddr, uncompSize):
-        output = "" # 復号結果を格納する文字列
-        writePos = 0    # 復号データの書き込み位置
-        readPos = startAddr # 圧縮データの読み取り開始位置
-
-        while len(output) < uncompSize:
-            currentChar = data[readPos]    # ブロックヘッダの読み込み
-            #print binascii.hexlify(currentChar)
-            blockHeader = bin( struct.unpack("B", currentChar)[0] )[2:].zfill(8)   # ブロックヘッダを2進数文字列に変換
-            for i in range(8):  # 8ブロックで1セット
-                # 非圧縮ブロックなら
-                if blockHeader[i] == str(0):
-                    readPos += 1    # 次の読み取り位置へ
-                    if readPos >= len(data):    # 元データの範囲を超えたら終了
-                        break
-                    currentChar = data[readPos]    # 1バイト読み込み
-                    output += currentChar   # そのまま出力
-                    writePos += 1   # 次の書き込み位置へ
-                # 圧縮ブロックなら
-                else:
-                    readPos += 2
-                    blockData = data[readPos-1:readPos+1]   # 2バイトをブロック情報として読み込み
-                    blockData = bin( struct.unpack(">H", blockData)[0] )[2:].zfill(16)    # ブロック情報を2進数文字列に変換（ビッグエンディアン）
-                    #print "Block Data: " + blockData
-                    offs = int(blockData[4:16],2) + 1
-                    #print "Backwards Offset: " + str(offs) + " bytes"
-                    leng = int(blockData[0:4],2) + 3
-                    #print "Copy Length: " + str(leng) + " bytes"
-                    currentChar = output[writePos - offs : writePos - offs + leng]
-                    if len(currentChar) < leng: # ここで引っかかった
-                        #print "Block Data: " + blockData
-                        #print "Backwards Offset: " + str(offs) + " bytes"
-                        #print "Copy Length: " + str(leng) + " bytes"
-                        # 存在する範囲を超えてコピーするときは直前のパターンを繰り返す
-                        #currentChar = "{0:{s}<{N}}".format(currentChar, s=currentChar[0], N = leng)
-                        currentChar = currentChar * leng # ここ適当
-                        currentChar = currentChar[0:leng]
-                        #print binascii.hexlify(currentChar)
-                    #print currentChar
-                    #print binascii.hexlify(currentChar)
-                    output += currentChar
-                    writePos += leng    # 書き込んだバイト数だけずらす
-            readPos += 1
-
-        output = output[0:uncompSize]   # 必要な部分だけ切り出し
-        return output
 
 '''
 main
