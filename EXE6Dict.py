@@ -11,6 +11,7 @@ u"""
 """
 
 import binascii
+import struct
 import sys
 
 # 1バイト文字
@@ -104,6 +105,7 @@ half = {
 "U":"\x72",    "V":"\x73",    "W":"\x74",    "X":"\x75",    "Y":"\x76",
 "Z":"\x77",    "*":"\x78",    "-":"\x79",    "=":"\x7B",    ":":"\x7C",
 "%":"\x7D",    "?":"\x7E",    "+":"\x7F",    "!":"\x83",    "&":"\x86",
+"　":"\x00"
 }
 CP_EXE6_1_inv.update(half)
 
@@ -760,6 +762,9 @@ def encodeByEXE6Dict(data):
             u""" 次の2バイトを使うコマンド
             """
 
+            if currentChar in ["\xF5"]:
+                L.append("\n")
+
             #L.append("\n" + hex(readPos) + ": ")
             #L.append("\n\n## ")
             L.append(CP_EXE6_1[currentChar])
@@ -875,3 +880,47 @@ def decodeByEXE6Dict(string):
         readPos += 1
 
     return result
+
+
+def exeDataUnpack(data):
+    u""" ロックマンエグゼでよく使われてる形式のデータをアンパックする
+
+        [2Byte:１コ目のデータのオフセット][2Byte:２コ目のデータのオフセット]・・・・
+        ・
+        ・
+        ・
+        ・
+        [nByte:１コ目のデータ]・・・・
+    """
+
+    offs = []   # データのオフセット
+    firstDataOffs = struct.unpack('H', data[0:2])[0]    # １つ目のデータの開始位置（オフセットテーブルの終端＋１）
+
+    for i in xrange(0, firstDataOffs, 2):
+        offs.append( struct.unpack('H', data[i:i+2])[0] )   # オフセットは２バイト
+
+    L = []
+    for j in xrange(0, len(offs)):
+        if j < len(offs)-1:
+            L.append(data[offs[j]:offs[j+1]])
+        else:
+            L.append(data[offs[j]:])    # 最後のデータはオフセットからデータ末尾まで
+
+    return L
+
+
+def exeDataPack(L):
+    u""" データ配列をロックマンエグゼでよく使われてる形式にパックする
+    """
+
+    offs = []
+
+    for i in xrange(0, len(L)):
+        if i == 0:
+            offs.append( len(L) * 2 )   # １つ目のオフセット値はテーブルサイズ（データ数ｘ２バイト）
+        else:
+            offs.append( offs[i-1] + len(L[i-1]) )
+
+    offsTable = "".join( [struct.pack('H', o) for o in offs] )
+    data = offsTable + "".join(L)
+    return data
