@@ -237,8 +237,6 @@ class SpriteViewer(QtGui.QMainWindow):
 
     def extractSpriteAddr(self, romData):
         u''' スプライトのアドレスを抽出する
-
-            アドレスリストの構造は[スプライトの先頭アドレス，圧縮状態，ポインタのアドレス]
         '''
 
         self.spriteAddrList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
@@ -262,8 +260,12 @@ class SpriteViewer(QtGui.QMainWindow):
 
                 spriteAddr = spriteAddr[:3] + "\x00"    # ROM内でのアドレスに直す　例）081D8000 -> 001D8000 (00 80 1D 08 -> 00 80 1D 00)
                 spriteAddr = struct.unpack("<L", spriteAddr)[0]
+                if spriteAddr in [0x4EA2E4, 0x4EA9DC]:    # 白玉を除く
+                    readPos += 4
+                    continue
 
                 self.spriteAddrList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "readPos":readPos} )
+
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")"   # GUIのリストに表示する文字列
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.guiSpriteList.addItem(spriteItem) # GUIスプライトリストへ追加
@@ -576,7 +578,6 @@ class SpriteViewer(QtGui.QMainWindow):
         print( self.graphicsScene.items()[index] )
         #self.graphicsScene.addRect(imageBounds)
         #self.graphicsScene.addItem(item)
-
         '''
 
     def guiPalItemActivated(self, item):
