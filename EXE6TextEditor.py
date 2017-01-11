@@ -107,7 +107,7 @@ class Window(QtGui.QMainWindow):
         self.show()
 
     def openFile(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('~'))   # ファイル名がQString型で返される
+        filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('./'))   # ファイル名がQString型で返される
         with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
             self.romData = romFile.read()
 

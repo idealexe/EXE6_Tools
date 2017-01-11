@@ -1,11 +1,10 @@
 #!/usr/bin/python
 # coding: utf-8
 
-'''
-    GBA MIDI Corrector by idealexe
+u''' GBA MIDI Corrector by idealexe
+
     Sappyで出力した標準形式のMIDIデータをmid2agb.exeで正しく変換できるようにするプログラム
     （ループは手作業で・・・）
-
 '''
 
 import time

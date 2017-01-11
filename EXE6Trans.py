@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-'''
-    EXE6 Translater by ideal.exe
+u''' EXE6 Translater by ideal.exe
 '''
 
 import re
@@ -93,11 +92,6 @@ class Window(QtGui.QMainWindow):
         text = EXE6Dict.encodeByEXE6Dict(binary)
         self.txtEdit.setText(text)
 
-
-'''
-main
-
-'''
 
 def main():
     app = QtGui.QApplication(sys.argv)

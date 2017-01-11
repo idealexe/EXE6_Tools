@@ -4,22 +4,14 @@
 u''' EXE6 Text Editor2 by ideal.exe
 '''
 
-
-import binascii
-import gettext
-import os
-import re
-import sys
-import struct
-import numpy as np
 from PyQt4 import QtGui
 from PyQt4 import QtCore
-from PIL import Image
-from PIL.ImageQt import ImageQt
+import os
+import gettext
+import sys
 _ = gettext.gettext # 後の翻訳用
 
 import EXE6Dict
-import LZ77Util
 
 
 class TalkEditor(QtGui.QMainWindow):
