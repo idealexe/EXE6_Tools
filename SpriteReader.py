@@ -102,7 +102,7 @@ class SpriteViewer(QtGui.QMainWindow):
         spriteVbox.addWidget(self.spriteLabel)
 
         self.guiSpriteList = QtGui.QListWidget(self) # スプライトのリスト
-        self.guiSpriteList.setMinimumWidth(200)    # 横幅の最小値
+        self.guiSpriteList.setMinimumWidth(400)    # 横幅の最小値
         self.guiSpriteList.currentRowChanged.connect(self.guiSpriteItemActivated) # クリックされた時に実行する関数
         self.guiSpriteList.itemDoubleClicked.connect(self.guiSpriteItemWClicked)    # ダブルクリックされたときに実行する関数
         spriteVbox.addWidget(self.guiSpriteList)
@@ -266,7 +266,8 @@ class SpriteViewer(QtGui.QMainWindow):
 
                 self.spriteAddrList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "readPos":readPos} )
 
-                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")"   # GUIのリストに表示する文字列
+                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")\t" + \
+                                    SpriteDict.GXX_Sprite_List[hex(spriteAddr)]   # GUIのリストに表示する文字列
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.guiSpriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
