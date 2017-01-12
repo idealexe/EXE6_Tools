@@ -102,14 +102,20 @@ class TalkEditor(QtGui.QMainWindow):
         self.show()
 
 
-    def openFile(self):
+    def openFile(self, *args):
         u''' ファイルを開くときの処理
         '''
 
-        filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 Talk File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+        if len(args) < 1:
+            u""" 引数がなければ
+            """
+            filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 Talk File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+            filename = unicode(filename)
+        else:
+            filename = args[0]
 
         try:
-            with open( unicode(filename), 'rb' ) as talkFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
+            with open( filename, 'rb' ) as talkFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
                 self.talkData = talkFile.read()
 
         except:
@@ -176,6 +182,9 @@ def main():
     QtCore.QTextCodec.setCodecForCStrings( QtCore.QTextCodec.codecForName("utf-8") )    # GUIもutf-8に設定
 
     talkEditor = TalkEditor()
+    # 引数があったら
+    if len(sys.argv) >= 2:
+        talkEditor.openFile(sys.argv[1])    # 一つ目の引数をファイル名として開く
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
