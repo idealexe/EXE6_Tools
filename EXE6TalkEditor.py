@@ -1,7 +1,11 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u''' EXE6 Text Editor2 by ideal.exe
+u''' EXE6 Talk Editor by ideal.exe
+
+    ロックマンエグゼ６の会話データを編集できるプログラム
+    編集したデータのサイズに合わせてオフセットテーブルを再構築するので
+    元のデータサイズを超えた会話を作成できます
 '''
 
 from PyQt4 import QtGui
@@ -25,6 +29,7 @@ class TalkEditor(QtGui.QMainWindow):
         """
 
         self.setWindowTitle( _("EXE6 Talk Editor") )
+        self.setWindowIcon(QtGui.QIcon("icon.png"))
         self.resize(600, 600)
 
         # メニューバー
@@ -112,10 +117,12 @@ class TalkEditor(QtGui.QMainWindow):
             filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 Talk File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
             filename = unicode(filename)
         else:
+            u""" 引数があるときはそのファイルを開く
+            """
             filename = args[0]
 
         try:
-            with open( filename, 'rb' ) as talkFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
+            with open( filename, 'rb' ) as talkFile:
                 self.talkData = talkFile.read()
 
         except:
@@ -126,6 +133,9 @@ class TalkEditor(QtGui.QMainWindow):
 
 
     def parseTalkData(self):
+        u""" 会話データを解析してGUIのリストにセットする
+        """
+
         L = EXE6Dict.exeDataUnpack(self.talkData)
         self.guiItemList.clear()
         self.itemList = L
@@ -136,6 +146,9 @@ class TalkEditor(QtGui.QMainWindow):
 
 
     def guiItemActivated(self, index):
+        u""" GUIでリストアイテムが選択されたときの処理
+        """
+
         #print unicode( EXE6Dict.encodeByEXE6Dict(self.itemList[index]) )
 
         if index == -1:
@@ -148,6 +161,9 @@ class TalkEditor(QtGui.QMainWindow):
 
 
     def writeText(self):
+        u""" 書き込みボタンが押されたときの処理
+        """
+
         text = self.textEdit.toPlainText()   # QString型になる
         text = unicode(text)    # Unicode型に変換
         text = text.translate({ord("\n"):None}) # 改行を無視
@@ -159,6 +175,9 @@ class TalkEditor(QtGui.QMainWindow):
 
 
     def saveFile(self):
+        u""" ファイルを保存するときの処理
+        """
+
         filename = QtGui.QFileDialog.getSaveFileName(self, _("Save EXE6 Talk File"), os.path.expanduser('./'))
         try:
             with open( unicode(filename), 'wb') as talkFile:
@@ -169,9 +188,6 @@ class TalkEditor(QtGui.QMainWindow):
 
 
 def main():
-    u""" main
-    """
-
     app = QtGui.QApplication(sys.argv)
     monoFont = QtGui.QFont("MS Gothic", 10) # 等幅フォント
     app.setFont(monoFont)   # 全体のフォントを設定
