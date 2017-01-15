@@ -3,8 +3,6 @@
 
 u''' EXE6_TextEditor by ideal.exe
 
-    ※開発中のプログラムなので危険です。必ずデータのバックアップを取った状態で使用してください。
-    開発環境はWindows10 + Python2.7.11 + PyQt4
     現在対応しているデータは日本語版グレイガ，ファルザーです
     >python EXE6TextEditor.py でGUIが開きます
     File メニューから対応しているROMデータを開きます
@@ -34,27 +32,36 @@ class Window(QtGui.QMainWindow):
         self.setMyself()
 
     def setMyself(self):
-        # 終了
-        exitAction = QtGui.QAction( _("&Exit"), self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip( _("Exit Application") )
-        exitAction.triggered.connect( QtGui.qApp.quit )
+        # メニューバー
+        menuBar = self.menuBar()
+        fileMenu = menuBar.addMenu( _('&File') )
 
         # ファイルを開く
         openAction = QtGui.QAction( _("&Open EXE6 File"), self)
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip( _("Open GBA File") )
         openAction.triggered.connect( self.openFile )
+        fileMenu.addAction(openAction)
+
+        # 名前をつけて保存
+        saveAction = QtGui.QAction( _("&名前をつけて保存"), self)
+        saveAction.setShortcut('Ctrl+S')
+        saveAction.setStatusTip( _("ファイルを保存") )
+        saveAction.triggered.connect( self.saveFile )
+        fileMenu.addAction(saveAction)
+
+        # 終了
+        exitAction = QtGui.QAction( _("&Exit"), self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.setStatusTip( _("Exit Application") )
+        exitAction.triggered.connect( QtGui.qApp.quit )
+        fileMenu.addAction(exitAction)
 
         # ステータスバー
         statusBar = self.statusBar()
         statusBar.showMessage( _(u"ファイルを選択してください") )
 
-        # メニューバー
-        menuBar = self.menuBar()
-        fileMenu = menuBar.addMenu( _('&File') )
-        fileMenu.addAction(openAction)
-        fileMenu.addAction(exitAction)
+
 
         self.widget = QtGui.QWidget()
         self.monoFont = QtGui.QFont("MS Gothic")
@@ -106,32 +113,46 @@ class Window(QtGui.QMainWindow):
         self.setWindowTitle( _("EXE6 Text Editor") )
         self.show()
 
-    def openFile(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('./'))   # ファイル名がQString型で返される
-        with open( unicode(filename), 'rb') as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
-            self.romData = romFile.read()
+    def openFile(self, *args):
+        if args[0] == False:
+            u""" 引数がなければファイルメニューを開く
+            """
+            filename = QtGui.QFileDialog.getOpenFileName(self, _("Open EXE6 File"), os.path.expanduser('./'))   # ファイル名がQString型で返される
+            filename = unicode(filename)
+        else:
+            u""" 引数があればファイル名として使う
+            """
+            filename = args[0]
 
-            # バージョンの判定（使用する辞書を選択するため）
-            romName = self.romData[0xA0:0xAC]
-            global EXE6_Addr    # アドレスリストをグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
-            if romName == "ROCKEXE6_GXX":
-                print u"グレイガ版としてロードしました"
-                EXE6_Addr = EXE6Dict.GXX_Addr_List
-            elif romName == "ROCKEXE6_RXX":
-                print u"ファルザー版としてロードしました"
-                EXE6_Addr = EXE6Dict.RXX_Addr_List
-            else:
-                print u"ROMタイトルが識別出来ませんでした"
-                EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
+        try:
+            with open( filename, 'rb' ) as romFile:
+                self.romData = romFile.read()
 
-            # コンボボックスにモードを追加
-            self.modeComb.clear()   # ROMを二回読み込んだ場合などのためにクリアする
-            for item in range( 0, len(EXE6_Addr) ):
-                self.modeComb.addItem(EXE6_Addr[item][0])
-            self.currentMode = 0    # モードの初期化
-            self.currentItem = 0
+        except:
+            print( _(u"ファイルの選択をキャンセルしました") )
+            return 0    # 0を返して関数を抜ける
 
-            self.dumpListData(self.romData, EXE6_Addr[0][1], EXE6_Addr[0][2])
+        # バージョンの判定（使用する辞書を選択するため）
+        romName = self.romData[0xA0:0xAC]
+        global EXE6_Addr    # アドレスリストをグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
+        if romName == "ROCKEXE6_GXX":
+            print u"グレイガ版としてロードしました"
+            EXE6_Addr = EXE6Dict.GXX_Addr_List
+        elif romName == "ROCKEXE6_RXX":
+            print u"ファルザー版としてロードしました"
+            EXE6_Addr = EXE6Dict.RXX_Addr_List
+        else:
+            print u"ROMタイトルが識別出来ませんでした"
+            EXE6_Addr = EXE6Dict.GXX_Addr_List # 一応グレイガ版の辞書に設定する
+
+        # コンボボックスにモードを追加
+        self.modeComb.clear()   # ROMを二回読み込んだ場合などのためにクリアする
+        for item in range( 0, len(EXE6_Addr) ):
+            self.modeComb.addItem(EXE6_Addr[item][0])
+        self.currentMode = 0    # モードの初期化
+        self.currentItem = 0
+
+        self.dumpListData(self.romData, EXE6_Addr[0][1], EXE6_Addr[0][2])
 
     # データからリストを作成（\xE6を区切り文字として使う）
     def dumpListData(self, romData, startAddr, endAddr):
@@ -231,16 +252,22 @@ class Window(QtGui.QMainWindow):
 main
 
 '''
-
 def main():
     app = QtGui.QApplication(sys.argv)
+    monoFont = QtGui.QFont("MS Gothic", 10) # 等幅フォント
+    app.setFont(monoFont)   # 全体のフォントを設定
+
     # 日本語文字コードを正常表示するための設定
     reload(sys) # モジュールをリロードしないと文字コードが変更できない
     sys.setdefaultencoding("utf-8") # コンソールの出力をutf-8に設定
     QtCore.QTextCodec.setCodecForCStrings( QtCore.QTextCodec.codecForName("utf-8") )    # GUIもutf-8に設定
 
     window = Window()
+    # 引数があったら
+    if len(sys.argv) >= 2:
+        window.openFile(sys.argv[1])    # 一つ目の引数をファイル名として開く
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()
