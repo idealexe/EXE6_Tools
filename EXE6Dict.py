@@ -91,8 +91,8 @@ CP_EXE6_2 = {
 }
 
 # 逆引き辞書
-CP_EXE6_1_inv = {v:k for k, v in CP_EXE6_1.items()}
-CP_EXE6_2_inv = {v:k for k, v in CP_EXE6_2.items()}
+CP_EXE6_1_inv = { v:k for k, v in CP_EXE6_1.items() }
+CP_EXE6_2_inv = { v:k for k, v in CP_EXE6_2.items() }
 
 # テキストからバイナリに変換するときに半角にも対応する
 half = {
@@ -111,23 +111,33 @@ CP_EXE6_1_inv.update(half)
 
 # グレイガ版の各種アドレス[名前, 先頭アドレス, 終端アドレス]
 GXX_Addr_List = [
-["Map",      "0x6EB560", "0x6EBC09"],
-["ChipText", "0x70C36E", "0x7102A2"],
-["Enemy",    "0x710FFE", "0x71163F"],
-["Navi",     "0x7117B0", "0x711B7F"],
-["KeyItem",  "0x75F094", "0x75F37A"],
-["NaviCus",  "0x75FF39", "0x7600A0"]
+["マップ名",      "0x6EB560", "0x6EBC09"],
+["チップテキスト", "0x70C36E", "0x7102A2"],
+["エネミー名",    "0x710FFE", "0x71163F"],
+["ナビ名",     "0x7117B0", "0x711B7F"],
+["キーアイテム名",  "0x75F094", "0x75F37A"],
+["ナビカス名",  "0x75FF39", "0x7600A0"]
 ]
 
-# ロックマンのスプライトのポインタ周辺をとりあえず使ってみる
-# このアドレスの直前にポインタのテーブルっぽいものがある
-# テーブルのポインタが示すアドレスには白玉がある．スプライトのまとまりを区切ってるのだろうか
-GXX_Sprite_Table = {
-"startAddr":0x032CA8,
-"endAddr":0x033963
-}
-
-
+GXX_TextDataList = [
+{"description":"オープニング１", "addr":0x7B27E4, "pointerAddr":0x846C0},
+{"description":"オープニング２", "addr":0x7B2D5C, "pointerAddr":0x847E4},
+{"description":"オープニング３", "addr":0x7B33F4, "pointerAddr":0x84934},
+{"description":"アイリスとロボット犬１", "addr":0x7B3514, "pointerAddr":0x849F3},
+{"description":"チュートリアル戦闘前", "addr":0x7B3658, "pointerAddr":0x84B1C},
+{"description":"チュートリアル戦闘１", "addr":0x7135E0, "pointerAddr":0x27FE4},
+{"description":"チュートリアル戦闘１勝利", "addr":0x7B3774, "pointerAddr":0x84C5B},
+{"description":"チュートリアル戦闘２", "addr":0x713D30, "pointerAddr":0x27FE8},
+{"description":"チュートリアル戦闘２勝利", "addr":0x7B37EC, "pointerAddr":0x84D27},
+{"description":"チュートリアル戦闘３", "addr":0x71428C, "pointerAddr":0x27FEC},
+{"description":"チュートリアル戦闘３勝利", "addr":0x7B3868, "pointerAddr":0x84DFF},
+{"description":"アイリスとロボット犬２", "addr":0x7B394C, "pointerAddr":0x84EB4},
+{"description":"", "addr":0, "pointerAddr":0},
+{"description":"", "addr":0, "pointerAddr":0},
+{"description":"", "addr":0, "pointerAddr":0},
+{"description":"", "addr":0, "pointerAddr":0},
+{"description":"", "addr":0, "pointerAddr":0}
+]
 
 # ファルザー版の各種アドレス
 RXX_Addr_List = [
@@ -138,11 +148,6 @@ RXX_Addr_List = [
 ["KeyItem",  "0x761160", "0x761446"],
 ["NaviCus",  "0x762005", "0x76216C"]
 ]
-
-RXX_Sprite_Table = {
-"startAddr":0x032CA8,
-"endAddr":0x033963
-}
 
 def encodeByEXE6Dict(data):
     u""" バイナリ文字列をエグゼ６のテキストとしてエンコード
@@ -287,6 +292,7 @@ def decodeByEXE6Dict(string):
 def exeDataUnpack(data):
     u""" ロックマンエグゼでよく使われてる形式のデータをアンパックする
 
+        無圧縮のzipと同じ構造？
         [2Byte:１コ目のデータのオフセット][2Byte:２コ目のデータのオフセット]・・・・
         ・
         ・
