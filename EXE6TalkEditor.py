@@ -6,6 +6,7 @@ u''' EXE6 Talk Editor by ideal.exe
     ロックマンエグゼ６の会話データを編集できるプログラム
     編集したデータのサイズに合わせてオフセットテーブルを再構築するので
     元のデータサイズを超えた会話を作成できます
+    ※展開した会話データにヘッダ（４バイト）がついている場合は取り除いてから読み込んでください
 '''
 
 from PyQt4 import QtGui
@@ -111,11 +112,11 @@ class TalkEditor(QtGui.QMainWindow):
         u''' ファイルを開くときの処理
         '''
 
-        if len(args) < 1:
-            u""" 引数がなければ
+        if args[0] == False:
+            u""" 引数がなければファイルメニューを開く
             """
             filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 Talk File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
-            filename = unicode(filename)
+            filename = unicode(filename)    # QStringからUnicodeになおす
         else:
             u""" 引数があるときはそのファイルを開く
             """
