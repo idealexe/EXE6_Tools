@@ -210,17 +210,23 @@ class SpriteViewer(QtGui.QMainWindow):
             filename = unicode(filename)
 
         try:
-            with open( filename, 'rb' ) as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
+            with open( filename, 'rb' ) as romFile:
                 self.romData = romFile.read()
-
         except:
             print( _(u"ファイルの選択をキャンセルしました") )
-            return 0    # 0を返して関数を抜ける
+            return 0    # 中断
 
+        if self.setDict(self.romData) == -1:
+            return 0
+        self.extractSpriteAddr(self.romData)
+        self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
 
-        # バージョンの判定（使用する辞書を選択するため）
+    def setDict(self, romData):
+        u""" バージョンを判定し使用する辞書をセットする
+        """
+
         romName = self.romData[0xA0:0xAC]
-        global EXE6_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒）
+        global EXE6_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒なので）
         if romName == "ROCKEXE6_GXX":
             print( _(u"ロックマンエグゼ6 グレイガとしてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE6_GXX
@@ -237,11 +243,8 @@ class SpriteViewer(QtGui.QMainWindow):
             print( _(u"ロックマンエグゼ4.5としてロードしました") )
             EXE6_Addr = SpriteDict.ROCKEXE4_5RO
         else:
-            print( _(u"ROMタイトルが識別出来ませんでした") )
-            EXE6_Addr = SpriteDict.ROCKEXE6_GXX # 一応グレイガ版の辞書に設定する
-
-        self.extractSpriteAddr(self.romData)
-        self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
+            print( _(u"対応していないバージョンです" ) )
+            return -1   # error
 
 
     def extractSpriteAddr(self, romData):
