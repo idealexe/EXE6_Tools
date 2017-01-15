@@ -56,6 +56,7 @@ class SpriteViewer(QtGui.QMainWindow):
         """
 
         self.setWindowTitle( _("EXE6 Sprite Viewer") )
+        self.setWindowIcon(QtGui.QIcon("icon.png"))
         self.resize(1200, 600)
 
         # メニューバー
@@ -194,14 +195,22 @@ class SpriteViewer(QtGui.QMainWindow):
         # ウインドウの表示
         self.show()
 
-    def openFile(self):
+    def openFile(self, *args):
         u''' ファイルを開くときの処理
         '''
 
-        filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+        if args[0] != False:
+            u""" 引数がある場合はそれをファイル名にする
+            """
+            filename = args[0]
+        else:
+            u""" 引数がない場合はファイルを開く
+            """
+            filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE6 File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+            filename = unicode(filename)
 
         try:
-            with open( unicode(filename), 'rb' ) as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
+            with open( filename, 'rb' ) as romFile: # Unicodeにエンコードしないとファイル名に2バイト文字があるときに死ぬ
                 self.romData = romFile.read()
 
         except:
@@ -740,6 +749,9 @@ def main():
     QtCore.QTextCodec.setCodecForCStrings( QtCore.QTextCodec.codecForName("utf-8") )    # GUIもutf-8に設定
 
     spriteViewer = SpriteViewer()
+    if len(sys.argv) >= 2:
+        spriteViewer.openFile(sys.argv[1])
+
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
