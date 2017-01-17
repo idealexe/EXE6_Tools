@@ -6,13 +6,13 @@ u''' EXE6 Talk Editor by ideal.exe
     ロックマンエグゼ６の会話データを編集できるプログラム
     編集したデータのサイズに合わせてオフセットテーブルを再構築するので
     元のデータサイズを超えた会話を作成できます
-    ※展開した会話データにヘッダ（４バイト）がついている場合は取り除いてから読み込んでください
 '''
 
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import os
 import gettext
+import struct
 import sys
 _ = gettext.gettext # 後の翻訳用
 
@@ -136,6 +136,11 @@ class TalkEditor(QtGui.QMainWindow):
     def parseTalkData(self):
         u""" 会話データを解析してGUIのリストにセットする
         """
+
+        if len(self.talkData) == struct.unpack("H", self.talkData[1:3])[0]:
+            u""" ヘッダがついているか判定する（偶然一致する可能性も０ではない）
+            """
+            self.talkData = self.talkData[4:]
 
         L = EXE6Dict.exeDataUnpack(self.talkData)
         self.guiItemList.clear()
