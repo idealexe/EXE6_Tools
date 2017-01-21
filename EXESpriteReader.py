@@ -51,13 +51,14 @@ class SpriteReader(QtGui.QMainWindow):
         QtGui.QWidget.__init__(self, parent)
         self.ui = designer.Ui_MainWindow()
         self.ui.setupUi(self)
+        self.ui.graphicsView.scale(2,2) # なぜかQt Designer上で設定できない
 
 
     def openFile(self, *args):
         u''' ファイルを開くときの処理
         '''
 
-        if args[0] != False:
+        if len(args) != 0:
             u""" 引数がある場合はそれをファイル名にする
             """
             filename = args[0]
@@ -79,27 +80,28 @@ class SpriteReader(QtGui.QMainWindow):
         self.extractSpriteAddr(self.romData)
         self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
 
+
     def setDict(self, romData):
         u""" バージョンを判定し使用する辞書をセットする
         """
 
         romName = self.romData[0xA0:0xAC]
-        global EXE6_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒なので）
+        global EXE_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒なので）
         if romName == "ROCKEXE6_GXX":
             print( _(u"ロックマンエグゼ6 グレイガとしてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE6_GXX
+            EXE_Addr = SpriteDict.ROCKEXE6_GXX
         elif romName == "ROCKEXE6_RXX":
             print( _(u"ロックマンエグゼ6 ファルザーとしてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE6_RXX
+            EXE_Addr = SpriteDict.ROCKEXE6_RXX
         elif romName == "ROCKEXE5_TOB":
             print( _(u"ロックマンエグゼ5 チームオブブルースとしてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE5_TOB
+            EXE_Addr = SpriteDict.ROCKEXE5_TOB
         elif romName == "ROCKEXE5_TOC":
             print( _(u"ロックマンエグゼ5 チームオブカーネルとしてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE5_TOC
+            EXE_Addr = SpriteDict.ROCKEXE5_TOC
         elif romName == "ROCKEXE4.5RO":
             print( _(u"ロックマンエグゼ4.5としてロードしました") )
-            EXE6_Addr = SpriteDict.ROCKEXE4_5RO
+            EXE_Addr = SpriteDict.ROCKEXE4_5RO
         else:
             print( _(u"対応していないバージョンです" ) )
             return -1   # error
@@ -110,10 +112,10 @@ class SpriteReader(QtGui.QMainWindow):
         '''
 
         self.spriteAddrList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
-        self.guiSpriteList.clear() # スプライトリストの初期化
+        self.ui.spriteList.clear() # スプライトリストの初期化
 
-        readPos = EXE6_Addr["startAddr"]
-        while readPos <= EXE6_Addr["endAddr"]:
+        readPos = EXE_Addr["startAddr"]
+        while readPos <= EXE_Addr["endAddr"]:
             spriteAddr = romData[readPos:readPos+4]
             memByte = struct.unpack("B", spriteAddr[3])[0]
 
@@ -130,16 +132,16 @@ class SpriteReader(QtGui.QMainWindow):
 
                 spriteAddr = spriteAddr[:3] + "\x00"    # ROM内でのアドレスに直す　例）081D8000 -> 001D8000 (00 80 1D 08 -> 00 80 1D 00)
                 spriteAddr = struct.unpack("<L", spriteAddr)[0]
-                if spriteAddr in [0x4EA2E4, 0x4EA9DC]:    # 白玉を除く
+                if spriteAddr in [0x4EA2E4, 0x4EA9DC, 0x506328]:    # 白玉等を除く
                     readPos += 4
                     continue
 
                 self.spriteAddrList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "readPos":readPos} )
 
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")\t" + \
-                                    SpriteDict.GXX_Sprite_List[hex(spriteAddr)]   # GUIのリストに表示する文字列
+                                    unicode( SpriteDict.GXX_Sprite_List[hex(spriteAddr)] )  # GUIのリストに表示する文字列
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
-                self.guiSpriteList.addItem(spriteItem) # GUIスプライトリストへ追加
+                self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
             readPos += 4
 
@@ -148,8 +150,10 @@ class SpriteReader(QtGui.QMainWindow):
         u''' GUIでスプライトが選択されたときに行う処理
         '''
 
-        self.graphicsScene.clear()  # 描画シーンのクリア
-        #self.guiSpriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        self.graphicsScene = QtGui.QGraphicsScene() # スプライトを描画するためのシーン
+        self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
+        self.ui.graphicsView.setScene(self.graphicsScene)
+        #self.ui.spriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         # ↑この変更もハンドリングされてしまうのでダメ
         spriteAddr = self.spriteAddrList[index]["spriteAddr"]
         print( "Serected Sprite:\t" + hex(spriteAddr) )
@@ -187,7 +191,7 @@ class SpriteReader(QtGui.QMainWindow):
 
         # アニメーションポインタのリスト生成
         self.animPtrList = []
-        self.guiAnimList.clear()   # 表示用リストの初期化
+        self.ui.animList.clear()   # 表示用リストの初期化
 
         while readPos < animDataStart:
             animPtr = self.spriteData[readPos:readPos+4] # ポインタは4バイト
@@ -197,7 +201,7 @@ class SpriteReader(QtGui.QMainWindow):
             self.animPtrList.append(animPtr)
             animPtrStr = hex(animPtr)[2:].zfill(6).upper() # GUIに表示する文字列
             animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
-            self.guiAnimList.addItem(animItem) # アニメーションリストへ追加
+            self.ui.animList.addItem(animItem) # アニメーションリストへ追加
 
 
     def guiAnimItemActivated(self, index):
@@ -225,7 +229,7 @@ class SpriteReader(QtGui.QMainWindow):
         '''
 
         self.framePtrList = []
-        self.guiFrameList.clear()   # フレームリストのクリア
+        self.ui.frameList.clear()   # フレームリストのクリア
         frameCount = 0
 
         while True: # do while文がないので代わりに無限ループ＋breakを使う
@@ -233,7 +237,7 @@ class SpriteReader(QtGui.QMainWindow):
             self.framePtrList.append(animPtr)
             animPtrStr = hex(animPtr)[2:].zfill(8).upper()  # GUIに表示する文字列
             frameItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのフレームリストに追加するアイテムの生成
-            self.guiFrameList.addItem(frameItem) # フレームリストへ追加
+            self.ui.frameList.addItem(frameItem) # フレームリストへ追加
 
             animPtr += 20
             frameCount += 1
@@ -249,7 +253,7 @@ class SpriteReader(QtGui.QMainWindow):
         if index == -1:
             return
 
-        self.guiFrameList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        self.ui.frameList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         framePtr = self.framePtrList[index]
         self.parseframeData(self.spriteData, framePtr)
 
@@ -305,14 +309,14 @@ class SpriteReader(QtGui.QMainWindow):
         '''
         oamCount = 0
         self.oamList = []   # OAMの情報を格納するリスト
-        self.guiOAMList.clear() # GUIのOAMリストをクリア
+        self.ui.oamList.clear() # GUIのOAMリストをクリア
         while spriteData[readPos:readPos+5] != "\xFF\xFF\xFF\xFF\xFF":
             #print( "\nOAM: " + str(oamCount) )
 
             oamData = spriteData[readPos:readPos+5]
             oamAddrStr = ( hex(readPos)[2:].zfill(8)).upper()  # GUIのリストに表示する文字列
             oamItem = QtGui.QListWidgetItem( oamAddrStr )   # GUIのOAMリストに追加するアイテムの生成
-            self.guiOAMList.addItem(oamItem) # GUIスプライトリストへ追加
+            self.ui.oamList.addItem(oamItem) # GUIスプライトリストへ追加
 
             readPos += 5
             oamCount += 1
@@ -426,7 +430,7 @@ class SpriteReader(QtGui.QMainWindow):
         u''' GUIでスプライトがダブルクリックされたときに行う処理（未使用）
         '''
 
-        index = self.guiSpriteList.currentRow() # 選択された行の番号を取得
+        index = self.ui.spriteList.currentRow() # 選択された行の番号を取得
         ptrAddr = self.spriteAddrList[index][2]
 
 
@@ -569,7 +573,7 @@ class SpriteReader(QtGui.QMainWindow):
         endAddr = readPos + palSize
 
         self.palData = []    # パレットデータを格納するリスト
-        self.guiPalList.clear()
+        self.ui.palList.clear()
         palCount = 0
         while readPos < endAddr:
             color = spriteData[readPos:readPos+2]   # 1色あたり16bit（2バイト）
@@ -589,7 +593,7 @@ class SpriteReader(QtGui.QMainWindow):
             colorItem = QtGui.QListWidgetItem(colorStr)
             colorItem.setBackgroundColor( QtGui.QColor(binR, binG, binB) )  # 背景色をパレットの色に
             colorItem.setTextColor( QtGui.QColor(255-binR, 255-binG, 255-binB) )    # 文字は反転色
-            self.guiPalList.addItem(colorItem) # フレームリストへ追加
+            self.ui.palList.addItem(colorItem) # フレームリストへ追加
 
             palCount += 1
             readPos += 2
@@ -609,7 +613,7 @@ def main():
     spriteReader = SpriteReader();
     spriteReader.show()
     if len(sys.argv) >= 2:
-        spriteViewer.openFile(sys.argv[1])
+        spriteReader.openFile(sys.argv[1])
 
     sys.exit(app.exec_())
 
