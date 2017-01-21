@@ -19,7 +19,7 @@
      <rect>
       <x>10</x>
       <y>0</y>
-      <width>1181</width>
+      <width>1201</width>
       <height>551</height>
      </rect>
     </property>
@@ -37,7 +37,7 @@
         <widget class="QListWidget" name="spriteList">
          <property name="minimumSize">
           <size>
-           <width>300</width>
+           <width>320</width>
            <height>0</height>
           </size>
          </property>
@@ -171,6 +171,7 @@
      <string>ファイル</string>
     </property>
     <addaction name="openAction"/>
+    <addaction name="openSpriteAction"/>
     <addaction name="saveAction"/>
     <addaction name="exitAction"/>
    </widget>
@@ -228,6 +229,11 @@
     <string>このツールについて</string>
    </property>
   </action>
+  <action name="openSpriteAction">
+   <property name="text">
+    <string>スプライトを開く</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections>
@@ -238,8 +244,8 @@
    <slot>openFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>70</x>
-     <y>76</y>
+     <x>-1</x>
+     <y>-1</y>
     </hint>
     <hint type="destinationlabel">
      <x>399</x>
@@ -295,11 +301,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>openSpriteAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>openSprite()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
   <slot>guiSpriteItemActivated(int)</slot>
   <slot>guiAnimItemActivated(int)</slot>
   <slot>guiFrameItemActivated(int)</slot>
+  <slot>openSprite()</slot>
  </slots>
 </ui>

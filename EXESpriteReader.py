@@ -80,26 +80,49 @@ class SpriteReader(QtGui.QMainWindow):
         self.extractSpriteAddr(self.romData)
         self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
 
+    def openSprite(self):
+        filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE Sprite File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+        filename = unicode(filename)
+
+        try:
+            with open( filename, 'rb' ) as romFile:
+                self.romData = romFile.read()
+        except:
+            print( _(u"ファイルの選択をキャンセルしました") )
+            return 0    # 中断
+
+        self.spriteAddrList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
+        self.ui.spriteList.clear() # スプライトリストの初期化
+        self.spriteAddrList.append( {"spriteAddr":0, "compFlag":0, "readPos":0} )
+
+        spriteAddrStr = "Opend Sprite"  # GUIのリストに表示する文字列
+        spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
+        self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
+        self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
+
 
     def setDict(self, romData):
         u""" バージョンを判定し使用する辞書をセットする
         """
 
-        romName = self.romData[0xA0:0xAC]
+        self.romName = self.romData[0xA0:0xAC]
         global EXE_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒なので）
-        if romName == "ROCKEXE6_GXX":
-            print( _(u"ロックマンエグゼ6 グレイガとしてロードしました") )
+        if self.romName == "ROCKEXE6_GXX":
+            print( _(u"ロックマンエグゼ6 グレイガ jpとしてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE6_GXX
-        elif romName == "ROCKEXE6_RXX":
+        elif self.romName == "MEGAMAN6_GXX":
+            print( _(u"ロックマンエグゼ6 グレイガ enとしてロードしました") )
+            EXE_Addr = SpriteDict.MEGAMAN6_GXX
+        elif self.romName == "ROCKEXE6_RXX":
             print( _(u"ロックマンエグゼ6 ファルザーとしてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE6_RXX
-        elif romName == "ROCKEXE5_TOB":
+        elif self.romName == "ROCKEXE5_TOB":
             print( _(u"ロックマンエグゼ5 チームオブブルースとしてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE5_TOB
-        elif romName == "ROCKEXE5_TOC":
+        elif self.romName == "ROCKEXE5_TOC":
             print( _(u"ロックマンエグゼ5 チームオブカーネルとしてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE5_TOC
-        elif romName == "ROCKEXE4.5RO":
+        elif self.romName == "ROCKEXE4.5RO":
             print( _(u"ロックマンエグゼ4.5としてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE4_5RO
         else:
@@ -138,8 +161,10 @@ class SpriteReader(QtGui.QMainWindow):
 
                 self.spriteAddrList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "readPos":readPos} )
 
-                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")\t" + \
-                                    unicode( SpriteDict.GXX_Sprite_List[hex(spriteAddr)] )  # GUIのリストに表示する文字列
+                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")\t"  # GUIのリストに表示する文字列
+                if self.romName == "ROCKEXE6_GXX":
+                    spriteAddrStr += unicode( SpriteDict.GXX_Sprite_List[hex(spriteAddr)] )
+                    
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
@@ -159,7 +184,7 @@ class SpriteReader(QtGui.QMainWindow):
         print( "Serected Sprite:\t" + hex(spriteAddr) )
         compFlag = self.spriteAddrList[index]["compFlag"]
         self.parseSpriteData(self.romData, spriteAddr, compFlag)
-        self.guiAnimItemActivated(0)    # 先頭のアニメーションを選択したことにして表示
+        self.guiAnimItemActivated(0)
 
 
     def parseSpriteData(self, romData, spriteAddr, compFlag):
@@ -340,9 +365,11 @@ class SpriteReader(QtGui.QMainWindow):
             objSize = flag1[-2:]    # 下位2ビット
             hFlip = int( flag1[1], 2 ) # 水平反転フラグ
             vFlip = int( flag1[0], 2 ) # 垂直反転フラグ
-            #print( "Horizontal Flip: " + str(hFlip) )
-            #print( "Vertical Flip:\t" + str(vFlip) )
-            #print("size:\t" + str(objSize) )
+            """
+            print( "Horizontal Flip: " + str(hFlip) )
+            print( "Vertical Flip:\t" + str(vFlip) )
+            print("size:\t" + str(objSize) )
+            """
 
             flag2 = bin(oamData[4])[2:].zfill(8)
             objShape = flag2[-2:]
@@ -354,7 +381,7 @@ class SpriteReader(QtGui.QMainWindow):
             self.parsePaletteData(spriteData, palSizePtr, palIndex)
 
             sizeX, sizeY = objDim[objSize+objShape]
-            image = self.makeOAMImage(graphData, startTile, sizeX, sizeY, hFlip, vFlip) # PILじゃないと反転出来なそうなので画像生成の時点で反転を適用する
+            image = self.makeOAMImage(graphData, startTile, sizeX, sizeY, hFlip, vFlip)
 
             OAM = {
             "image":image,
@@ -528,7 +555,7 @@ class SpriteReader(QtGui.QMainWindow):
         for i in range(0, hight):
             h.append( np.zeros_like(tile[0]) )    # タイルを詰めるダミー
             for j in range(0, width):
-                h[i] = np.hstack((h[i], tile[i*width + j]))
+                h[i] = np.hstack( (h[i], tile[i*width + j]) )
             if i != 0:
                 h[0] = np.vstack((h[0], h[i]))
         img = h[0][:, 8:, :]    # ダミー部分を切り取る（ださい）
@@ -566,8 +593,9 @@ class SpriteReader(QtGui.QMainWindow):
         palSize = spriteData[palSizePtr:palSizePtr+4]
         palSize = struct.unpack("<L", palSize)[0]
         #print( "Palette Size:\t" + hex(palSize) )
-        if palSize != 0x20:  # サイズがおかしい場合は無視
-            return
+        if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x20にしてることもあったので無視
+            #return
+            palSize = 0x20
 
         readPos = palSizePtr + 4 + palIndex * palSize # パレットサイズ情報の後にパレットデータが続く（インデックス番号によって開始位置をずらす）
         endAddr = readPos + palSize
