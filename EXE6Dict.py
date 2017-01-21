@@ -136,6 +136,14 @@ GXX_TextDataList = [
 {"description":"", "addr":0, "pointerAddr":0},
 {"description":"", "addr":0, "pointerAddr":0},
 {"description":"", "addr":0, "pointerAddr":0},
+{"description":"マップ名", "addr":0x6EB378, "pointerAddr":0},
+{"description":"チップ名１", "addr":0x70B2F4, "pointerAddr":0},
+{"description":"チップ名２", "addr":0x70BC4C, "pointerAddr":0},
+{"description":"チップ説明１", "addr":0x70C164, "pointerAddr":0},
+{"description":"チップ説明２", "addr":0x70EBF0, "pointerAddr":0},
+{"description":"チップ説明３", "addr":0x710064, "pointerAddr":0},
+{"description":"", "addr":0, "pointerAddr":0},
+{"description":"", "addr":0, "pointerAddr":0},
 {"description":"", "addr":0, "pointerAddr":0}
 ]
 
@@ -292,7 +300,6 @@ def decodeByEXE6Dict(string):
 def exeDataUnpack(data):
     u""" ロックマンエグゼでよく使われてる形式のデータをアンパックする
 
-        無圧縮のzipと同じ構造？
         [2Byte:１コ目のデータのオフセット][2Byte:２コ目のデータのオフセット]・・・・
         ・
         ・

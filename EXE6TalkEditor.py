@@ -82,7 +82,7 @@ class TalkEditor(QtGui.QMainWindow):
 
         # アイテムリストは後でアクセスするのでselfで作成
         self.guiItemList = QtGui.QListWidget(self) # スプライトのリスト
-        self.guiItemList.setMinimumWidth(100)    # 横幅の最小値
+        self.guiItemList.setMinimumWidth(300)    # 横幅の最小値
         self.guiItemList.currentRowChanged.connect(self.guiItemActivated) # クリックされた時に実行する関数
         #self.guiItemList.itemDoubleClicked.connect(self.guiItemItemWClicked)    # ダブルクリックされたときに実行する関数
         itemVbox.addWidget(self.guiItemList)
@@ -147,7 +147,7 @@ class TalkEditor(QtGui.QMainWindow):
         self.itemList = L
 
         for i in xrange( len(L) ):
-            item = QtGui.QListWidgetItem( str(i).zfill(3) )
+            item = QtGui.QListWidgetItem( str(i).zfill(3) + ": " + EXE6Dict.encodeByEXE6Dict(L[i]).translate(None, "\n") )
             self.guiItemList.addItem(item)
 
 

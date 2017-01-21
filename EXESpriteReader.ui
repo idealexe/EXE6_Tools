@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ロックマンエグゼ スプライトリーダー by ideal</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QWidget" name="horizontalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>0</y>
+      <width>1181</width>
+      <height>551</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="baseHLayout">
+     <item>
+      <layout class="QVBoxLayout" name="spriteLayout">
+       <item>
+        <widget class="QLabel" name="labelSprite">
+         <property name="text">
+          <string>スプライト</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="spriteList">
+         <property name="minimumSize">
+          <size>
+           <width>300</width>
+           <height>0</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="graphicsLayout">
+       <item>
+        <widget class="QLabel" name="graphicsLabel">
+         <property name="text">
+          <string>スプライトビュー</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGraphicsView" name="graphicsView">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>500</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="backgroundBrush">
+          <brush brushstyle="CrossPattern">
+           <color alpha="255">
+            <red>200</red>
+            <green>220</green>
+            <blue>240</blue>
+           </color>
+          </brush>
+         </property>
+         <property name="foregroundBrush">
+          <brush brushstyle="NoBrush">
+           <color alpha="255">
+            <red>0</red>
+            <green>0</green>
+            <blue>0</blue>
+           </color>
+          </brush>
+         </property>
+         <property name="interactive">
+          <bool>false</bool>
+         </property>
+         <property name="resizeAnchor">
+          <enum>QGraphicsView::NoAnchor</enum>
+         </property>
+         <property name="viewportUpdateMode">
+          <enum>QGraphicsView::FullViewportUpdate</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="animLayout">
+       <item>
+        <widget class="QLabel" name="animLabel">
+         <property name="text">
+          <string>アニメーション</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="animList"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="frameLabel">
+         <property name="text">
+          <string>フレーム</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="frameList"/>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="oamLayout">
+       <item>
+        <widget class="QLabel" name="oamLabel">
+         <property name="text">
+          <string>OAM</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="oamList"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="palLabel">
+         <property name="text">
+          <string>パレット</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="palList">
+         <property name="minimumSize">
+          <size>
+           <width>200</width>
+           <height>0</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1200</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="fileMenu">
+    <property name="title">
+     <string>ファイル</string>
+    </property>
+    <addaction name="openAction"/>
+    <addaction name="saveAction"/>
+    <addaction name="exitAction"/>
+   </widget>
+   <widget class="QMenu" name="spriteMenu">
+    <property name="title">
+     <string>スプライト</string>
+    </property>
+    <addaction name="dumpAction"/>
+    <addaction name="replaceAction"/>
+   </widget>
+   <widget class="QMenu" name="helpMenu">
+    <property name="title">
+     <string>ヘルプ</string>
+    </property>
+    <addaction name="linkAction"/>
+    <addaction name="aboutAction"/>
+   </widget>
+   <addaction name="fileMenu"/>
+   <addaction name="spriteMenu"/>
+   <addaction name="helpMenu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="openAction">
+   <property name="text">
+    <string>ROMファイルを開く</string>
+   </property>
+  </action>
+  <action name="saveAction">
+   <property name="text">
+    <string>名前をつけて保存</string>
+   </property>
+  </action>
+  <action name="exitAction">
+   <property name="text">
+    <string>終了</string>
+   </property>
+  </action>
+  <action name="dumpAction">
+   <property name="text">
+    <string>ダンプ</string>
+   </property>
+  </action>
+  <action name="replaceAction">
+   <property name="text">
+    <string>置き換え</string>
+   </property>
+  </action>
+  <action name="linkAction">
+   <property name="text">
+    <string>リンク</string>
+   </property>
+  </action>
+  <action name="aboutAction">
+   <property name="text">
+    <string>このツールについて</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>openAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>openFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>70</x>
+     <y>76</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spriteList</sender>
+   <signal>currentRowChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiSpriteItemActivated(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>305</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>animList</sender>
+   <signal>currentRowChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiAnimItemActivated(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>904</x>
+     <y>167</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>frameList</sender>
+   <signal>currentRowChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiFrameItemActivated(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>904</x>
+     <y>443</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>openFile()</slot>
+  <slot>guiSpriteItemActivated(int)</slot>
+  <slot>guiAnimItemActivated(int)</slot>
+  <slot>guiFrameItemActivated(int)</slot>
+ </slots>
+</ui>
