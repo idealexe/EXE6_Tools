@@ -46,154 +46,12 @@ objDim = {
 "1110":[32,64]
 }
 
-class SpriteViewer(QtGui.QMainWindow):
-    def __init__(self):
-        super(SpriteViewer, self).__init__()
-        self.setGUI()
+class SpriteReader(QtGui.QMainWindow):
+    def __init__(self, parent=None):
+        QtGui.QWidget.__init__(self, parent)
+        self.ui = designer.Ui_MainWindow()
+        self.ui.setupUi(self)
 
-    def setGUI(self):
-        u""" GUIの初期化
-        """
-
-        self.setWindowTitle( _("EXE6 Sprite Viewer") )
-        self.setWindowIcon(QtGui.QIcon("icon.png"))
-        self.resize(1200, 600)
-
-        # メニューバー
-        menuBar = self.menuBar()
-        menuBar.setNativeMenuBar(False) # OS XでもWindowsと同じメニューバー形式にする
-        # ファイルメニュー
-        fileMenu = menuBar.addMenu( _('&ファイル') )
-        # ヘルプメニュー
-        helpMenu = menuBar.addMenu( _('&ヘルプ') )
-
-        # ステータスバー
-        statusBar = self.statusBar()
-        #statusBar.showMessage( _("ファイルを選択してください") )
-
-        # ファイルを開く
-        openAction = QtGui.QAction( _("&ファイルを開く"), self)
-        openAction.setShortcut('Ctrl+O')
-        openAction.setStatusTip( _("ファイルを開く") )
-        openAction.triggered.connect( self.openFile )
-        fileMenu.addAction(openAction)
-
-        # 終了
-        exitAction = QtGui.QAction( _("&終了"), self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip( _(u"アプリケーションを終了する") )
-        exitAction.triggered.connect( QtGui.qApp.quit )
-        fileMenu.addAction(exitAction)
-
-        # ウィジェット
-        self.widget = QtGui.QWidget()
-        self.setCentralWidget(self.widget)
-
-        # レイアウト
-        mainHbox = QtGui.QHBoxLayout()
-        self.widget.setLayout(mainHbox)
-
-        # スプライトリスト
-        spriteVbox = QtGui.QVBoxLayout()
-        mainHbox.addLayout(spriteVbox)
-
-        self.spriteLabel = QtGui.QLabel(self)
-        self.spriteLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)   # 横：左寄せ，縦：中央
-        self.spriteLabel.setText( _(u"スプライト（ポインタ）") )
-        spriteVbox.addWidget(self.spriteLabel)
-
-        self.guiSpriteList = QtGui.QListWidget(self) # スプライトのリスト
-        self.guiSpriteList.setMinimumWidth(400)    # 横幅の最小値
-        self.guiSpriteList.currentRowChanged.connect(self.guiSpriteItemActivated) # クリックされた時に実行する関数
-        self.guiSpriteList.itemDoubleClicked.connect(self.guiSpriteItemWClicked)    # ダブルクリックされたときに実行する関数
-        spriteVbox.addWidget(self.guiSpriteList)
-
-        # グラフィック
-        viewVbox = QtGui.QVBoxLayout()
-        mainHbox.addLayout(viewVbox)
-
-        viewLabel = QtGui.QLabel(self)
-        viewLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)   # 横：左寄せ，縦：中央
-        viewLabel.setText( _(u"スプライトビュー") )
-        viewVbox.addWidget(viewLabel)
-
-        # スプライトを表示するためのビュー
-        graphicsView = QtGui.QGraphicsView()    # シーンを表示するためのビュー
-        graphicsView.setMinimumWidth(500) #（ウインドウにビューが収まっていないとsegmentation faultをおこすので最小サイズを保証する）
-        #graphicsView.setCacheMode( QtGui.QGraphicsView.CacheBackground )
-        graphicsView.setBackgroundBrush( QtGui.QBrush(QtCore.Qt.lightGray, QtCore.Qt.CrossPattern) ) # ビュー背景の設定
-        graphicsView.scale(2, 2)    # 縦横2倍のスケールに設定
-        self.graphicsScene = QtGui.QGraphicsScene() # スプライトを描画するためのシーン
-        self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
-        graphicsView.setScene(self.graphicsScene)
-        viewVbox.addWidget(graphicsView)
-
-        # アニメーションリスト
-        animVbox = QtGui.QVBoxLayout()
-        mainHbox.addLayout(animVbox)
-
-        self.animLabel = QtGui.QLabel(self)
-        self.animLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)   # 横：左寄せ，縦：中央
-        self.animLabel.setText( _(u"アニメーションリスト") )
-        animVbox.addWidget(self.animLabel)
-
-        self.guiAnimList = QtGui.QListWidget(self) # アニメーションのリスト
-        self.guiAnimList.setMinimumWidth(180)    # 横幅の最小値
-        self.guiAnimList.currentRowChanged.connect(self.guiAnimItemActivated) # クリックされた時に実行する関数
-        animVbox.addWidget(self.guiAnimList)
-
-        # フレームリスト
-        self.frameLabel = QtGui.QLabel(self)
-        self.frameLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.frameLabel.setText( _(u"フレームリスト") )
-        animVbox.addWidget(self.frameLabel)
-
-        self.guiFrameList = QtGui.QListWidget(self)
-        self.guiFrameList.currentRowChanged.connect(self.guiFrameItemActivated) # クリックされた時に実行する関数
-        animVbox.addWidget(self.guiFrameList)
-
-        # OAM
-        oamVbox = QtGui.QVBoxLayout()
-        mainHbox.addLayout(oamVbox)
-
-        # OAMリスト
-        self.oamLabel = QtGui.QLabel(self)
-        self.oamLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.oamLabel.setText( _(u"OAMリスト") )
-        oamVbox.addWidget(self.oamLabel)
-
-        self.guiOAMList = QtGui.QListWidget(self)
-        self.guiOAMList.setMinimumWidth(180)    # 横幅の最小値
-        self.guiOAMList.itemClicked.connect(self.guiOAMItemActivated) # クリックされた時に実行する関数
-        oamVbox.addWidget(self.guiOAMList)
-
-        '''
-        # OAM情報
-        self.oamDataLabel = QtGui.QLabel(self)
-        self.oamDataLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.oamDataLabel.setText( _("OAMデータ") )
-        oamVbox.addWidget(self.oamDataLabel)
-
-        '''
-
-        # パレット
-        palVbox = QtGui.QVBoxLayout()
-
-        self.palLabel = QtGui.QLabel(self)
-        self.palLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.palLabel.setText( _(u"パレット") )
-        palVbox.addWidget(self.palLabel)
-
-        self.guiPalList = QtGui.QListWidget(self)
-        self.guiPalList.setMinimumWidth(200)    # 横幅の最小値
-        self.guiPalList.setMinimumHeight(250)
-        self.guiPalList.itemClicked.connect(self.guiPalItemActivated) # クリックされた時に実行する関数
-        palVbox.addWidget(self.guiPalList)
-
-        oamVbox.addLayout(palVbox)
-
-        # ウインドウの表示
-        self.show()
 
     def openFile(self, *args):
         u''' ファイルを開くときの処理
@@ -743,15 +601,13 @@ main
 '''
 def main():
     app = QtGui.QApplication(sys.argv)
-    monoFont = QtGui.QFont("MS Gothic", 10) # 等幅フォント
-    app.setFont(monoFont)   # 全体のフォントを設定
 
     # 日本語文字コードを正常表示するための設定
     reload(sys) # モジュールをリロードしないと文字コードが変更できない
     sys.setdefaultencoding("utf-8") # コンソールの出力をutf-8に設定
-    QtCore.QTextCodec.setCodecForCStrings( QtCore.QTextCodec.codecForName("utf-8") )    # GUIもutf-8に設定
 
-    spriteViewer = SpriteViewer()
+    spriteReader = SpriteReader();
+    spriteReader.show()
     if len(sys.argv) >= 2:
         spriteViewer.openFile(sys.argv[1])
 
