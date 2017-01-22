@@ -10,6 +10,12 @@
     <height>600</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>1200</width>
+    <height>600</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>ロックマンエグゼ スプライトリーダー by ideal</string>
   </property>
@@ -19,7 +25,7 @@
      <rect>
       <x>10</x>
       <y>0</y>
-      <width>1201</width>
+      <width>1181</width>
       <height>551</height>
      </rect>
     </property>
@@ -27,7 +33,7 @@
      <item>
       <layout class="QVBoxLayout" name="spriteLayout">
        <item>
-        <widget class="QLabel" name="labelSprite">
+        <widget class="QLabel" name="spriteLabel">
          <property name="text">
           <string>スプライト</string>
          </property>
@@ -37,7 +43,7 @@
         <widget class="QListWidget" name="spriteList">
          <property name="minimumSize">
           <size>
-           <width>320</width>
+           <width>300</width>
            <height>0</height>
           </size>
          </property>
@@ -109,7 +115,20 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="animList"/>
+        <widget class="QListWidget" name="animList">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>120</width>
+           <height>16777215</height>
+          </size>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="frameLabel">
@@ -119,7 +138,21 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="frameList"/>
+        <widget class="QListWidget" name="frameList">
+         <property name="maximumSize">
+          <size>
+           <width>120</width>
+           <height>16777215</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="animCheck">
+         <property name="text">
+          <string>アニメーション再生</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -146,11 +179,14 @@
         <widget class="QListWidget" name="palList">
          <property name="minimumSize">
           <size>
-           <width>200</width>
+           <width>0</width>
            <height>0</height>
           </size>
          </property>
         </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="palSelect"/>
        </item>
       </layout>
      </item>
@@ -163,7 +199,7 @@
      <x>0</x>
      <y>0</y>
      <width>1200</width>
-     <height>21</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -180,6 +216,7 @@
      <string>スプライト</string>
     </property>
     <addaction name="dumpAction"/>
+    <addaction name="action"/>
     <addaction name="replaceAction"/>
    </widget>
    <widget class="QMenu" name="helpMenu">
@@ -198,25 +235,40 @@
    <property name="text">
     <string>ROMファイルを開く</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
   </action>
   <action name="saveAction">
    <property name="text">
     <string>名前をつけて保存</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
    </property>
   </action>
   <action name="exitAction">
    <property name="text">
     <string>終了</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
   </action>
   <action name="dumpAction">
    <property name="text">
     <string>ダンプ</string>
    </property>
+   <property name="statusTip">
+    <string>選択しているスプライトをファイルに出力します</string>
+   </property>
   </action>
   <action name="replaceAction">
    <property name="text">
     <string>置き換え</string>
+   </property>
+   <property name="statusTip">
+    <string>選択しているスプライトをファイルから読み込んだスプライトで上書きします</string>
    </property>
   </action>
   <action name="linkAction">
@@ -232,6 +284,24 @@
   <action name="openSpriteAction">
    <property name="text">
     <string>スプライトを開く</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+O</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>リポイント</string>
+   </property>
+   <property name="toolTip">
+    <string>選択しているスプライトのポインタを書き換えて
+別のアドレスのスプライトを読み込ませることが出来ます</string>
+   </property>
+   <property name="statusTip">
+    <string>選択しているスプライトのポインタを書き換えて，別のアドレスのスプライトを読み込ませることが出来ます</string>
    </property>
   </action>
  </widget>
@@ -317,6 +387,54 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>palSelect</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changePalet(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1100</x>
+     <y>562</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>exitAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>dumpAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>dumpSprite()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -324,5 +442,7 @@
   <slot>guiAnimItemActivated(int)</slot>
   <slot>guiFrameItemActivated(int)</slot>
   <slot>openSprite()</slot>
+  <slot>changePalet(int)</slot>
+  <slot>dumpSprite()</slot>
  </slots>
 </ui>
