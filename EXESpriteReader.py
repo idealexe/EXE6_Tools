@@ -114,16 +114,16 @@ class SpriteReader(QtGui.QMainWindow):
             print( _(u"ロックマンエグゼ6 グレイガ enとしてロードしました") )
             EXE_Addr = SpriteDict.MEGAMAN6_GXX
         elif self.romName == "ROCKEXE6_RXX":
-            print( _(u"ロックマンエグゼ6 ファルザーとしてロードしました") )
+            print( _(u"ロックマンエグゼ6 ファルザー jpとしてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE6_RXX
         elif self.romName == "ROCKEXE5_TOB":
-            print( _(u"ロックマンエグゼ5 チームオブブルースとしてロードしました") )
+            print( _(u"ロックマンエグゼ5 チームオブブルース jpとしてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE5_TOB
         elif self.romName == "ROCKEXE5_TOC":
-            print( _(u"ロックマンエグゼ5 チームオブカーネルとしてロードしました") )
+            print( _(u"ロックマンエグゼ5 チームオブカーネル jpとしてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE5_TOC
         elif self.romName == "ROCKEXE4.5RO":
-            print( _(u"ロックマンエグゼ4.5としてロードしました") )
+            print( _(u"ロックマンエグゼ4.5 jpとしてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE4_5RO
         else:
             print( _(u"対応していないバージョンです" ) )
@@ -164,7 +164,7 @@ class SpriteReader(QtGui.QMainWindow):
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t(" + hex(readPos)[2:].zfill(6).upper() + ")\t"  # GUIのリストに表示する文字列
                 if self.romName == "ROCKEXE6_GXX":
                     spriteAddrStr += unicode( SpriteDict.GXX_Sprite_List[hex(spriteAddr)] )
-                    
+
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
@@ -174,6 +174,11 @@ class SpriteReader(QtGui.QMainWindow):
     def guiSpriteItemActivated(self, index):
         u''' GUIでスプライトが選択されたときに行う処理
         '''
+
+        if index == -1:
+            u""" 何らかの原因で無選択状態になったら中断
+            """
+            return
 
         self.graphicsScene = QtGui.QGraphicsScene() # スプライトを描画するためのシーン
         self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
@@ -195,7 +200,7 @@ class SpriteReader(QtGui.QMainWindow):
 
         if compFlag == 0:   # 非圧縮スプライトなら
             startAddr = spriteAddr
-            endAddr = startAddr + 0x100000  # スプライトのサイズは得られないのでとりあえず設定
+            endAddr = startAddr + 0x100000  # スプライトはサイズは持たないのでとりあえず設定
             readPos = startAddr
             #print "Sprite Address:\t" + hex(startAddr) + "\n"
 
@@ -316,7 +321,7 @@ class SpriteReader(QtGui.QMainWindow):
         readPos = graphSizePtr + 4  # ４バイトのサイズ情報の後に画像データが続く
         graphData = spriteData[readPos:readPos+graphSize]   # 画像のロード
 
-        palSizePtr = animData[1]
+        self.palSizePtr = animData[1]
 
         ptrToOAMptr = animData[3]
 
@@ -378,7 +383,7 @@ class SpriteReader(QtGui.QMainWindow):
             #print("")
 
             # パレットの設定
-            self.parsePaletteData(spriteData, palSizePtr, palIndex)
+            self.parsePaletteData(spriteData, self.palSizePtr, palIndex)
 
             sizeX, sizeY = objDim[objSize+objShape]
             image = self.makeOAMImage(graphData, startTile, sizeX, sizeY, hFlip, vFlip)
@@ -451,6 +456,7 @@ class SpriteReader(QtGui.QMainWindow):
         '''
         #print "Animation Type:\t" + hex(animType)
         #print "\n----------------------------------------\n"
+        self.endAddr = readPos + len("\xFF\xFF\xFF\xFF\xFF")
 
 
     def guiSpriteItemWClicked(self, item):
@@ -625,6 +631,46 @@ class SpriteReader(QtGui.QMainWindow):
 
             palCount += 1
             readPos += 2
+
+    def changePalet(self, n):
+        print(n)
+        try:
+            self.parsePaletteData(self.spriteData, self.palSizePtr, n)
+        except:
+            print(u"スプライトが読み込まれていません")
+
+
+    def getSpriteSize(self):
+        u""" スプライトデータのサイズを検出する
+
+        スプライトの一番最後のアニメーションの一番最後のフレームの一番最後のOAMの終端がそのアドレス
+        """
+        #print len(self.animPtrList)
+        self.guiAnimItemActivated( len(self.animPtrList)-1 )    # 最後のアニメーション
+        #print len(self.framePtrList)
+        self.guiFrameItemActivated( len(self.framePtrList)-1 )  # 最後のフレーム
+        return self.endAddr+4   # ヘッダサイズぶん
+
+
+    def dumpSprite(self):
+        u""" スプライトのダンプ
+        """
+
+        spriteIndex = self.ui.spriteList.currentRow()
+        targetSprite = self.spriteAddrList[spriteIndex]
+
+        if targetSprite["compFlag"] == 0:
+            data = self.romData[targetSprite["spriteAddr"]:targetSprite["spriteAddr"]+self.getSpriteSize()]
+        else:
+            data = LZ77Util.decompLZ77_10(self.romData, targetSprite["spriteAddr"])[4:] # ファイルサイズ情報を取り除く
+
+        filename = QtGui.QFileDialog.getSaveFileName(self, _(u"スプライトを保存する"), os.path.expanduser('./'), _("dump File (*.bin *.dmp)"))
+        try:
+            with open( unicode(filename), 'wb') as saveFile:
+                saveFile.write(data)
+                print u"ファイルを保存しました"
+        except:
+            print u"ファイルの保存をキャンセルしました"
 
 
 '''
