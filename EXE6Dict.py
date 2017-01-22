@@ -141,8 +141,8 @@ GXX_TextDataList = [
 {"description":"チップ名２", "addr":0x70BC4C, "pointerAddr":0},
 {"description":"チップ説明１", "addr":0x70C164, "pointerAddr":0},
 {"description":"チップ説明２", "addr":0x70EBF0, "pointerAddr":0},
-{"description":"チップ説明３", "addr":0x710064, "pointerAddr":0},
-{"description":"", "addr":0, "pointerAddr":0},
+{"description":"クロス能力", "addr":0x710064, "pointerAddr":0},
+{"description":"ナビカス名", "addr":0x75FEA0, "pointerAddr":0},
 {"description":"", "addr":0, "pointerAddr":0},
 {"description":"", "addr":0, "pointerAddr":0}
 ]
