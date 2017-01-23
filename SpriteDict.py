@@ -1,37 +1,108 @@
 #!/usr/bin/python
 # coding: utf-8
 
-# ロックマンのスプライトのポインタ周辺をとりあえず使ってみる
-# このアドレスの直前にポインタのテーブルっぽいものがある
-# テーブルのポインタが示すアドレスには白玉がある．スプライトのまとまりを区切ってるのだろうか
+u""" 各ROMにおけるスプライトのアドレスを示すオフセットテーブル
+
+このオフセットテーブルの直前にもテーブルが存在し，その一つ目のデータがオフセットテーブルの先頭アドレスになっている
+続くデータは各タイプ（ナビ，攻撃エフェクト，置物，etc.）の先頭スプライトのアドレス？
+"""
+
 ROCKEXE6_GXX = {
 "startAddr":0x032CA8,
-"endAddr":0x033963
-}
-
-ROCKEXE6_RXX = {
-"startAddr":0x032CA8,
-"endAddr":0x033963
-}
-
-ROCKEXE5_TOB = {
-"startAddr":0x0326E8,
-"endAddr":0x033147
-}
-
-ROCKEXE5_TOC = {
-"startAddr":0x0326EC,
-"endAddr":0x03314B
-}
-
-ROCKEXE4_5RO = {
-"startAddr":0x02B39C,
-"endAddr":0x02BC73
+"endAddr":0x033967,
+"classHeadAddr":[0x032CE0, 0x032D60, 0x032DBC, 0x032F60, 0x0330D0, 0x033150, 0x0332D0, 0x033554, 0x0336D8],
+"ignoreAddr":[0x4EA2E4, 0x4EA9DC]
 }
 
 MEGAMAN6_GXX = {
 "startAddr":0x31CEC,
-"endAddr":0x329A8
+"endAddr":0x329A8,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCKEXE6_RXX = {
+"startAddr":0x032CA8,
+"endAddr":0x033964,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+MEGAMAN6_FXX = {
+"startAddr":0x31CEC,
+"endAddr":0x329A4,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCKEXE5_TOB = {
+"startAddr":0x0326E8,
+"endAddr":0x033147,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCKEXE5_TOC = {
+"startAddr":0x0326EC,
+"endAddr":0x03314B,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCKEXE4_5RO = {
+"startAddr":0x02B39C,
+"endAddr":0x02BC73,
+"classHeadAddr":[],
+"ignoreAddr":[0x50B268]
+}
+
+ROCKEXE4_RS = {
+"startAddr":0x02787C,
+"endAddr":0x028218,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCKEXE4_BM = {
+"startAddr":0x027880,
+"endAddr":0x02821F,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCKMAN_EXE3 = {
+"startAddr":0,
+"endAddr":0,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCK_EXE3_BK = {
+"startAddr":0,
+"endAddr":0,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCKMAN_EXE2 = {
+"startAddr":0,
+"endAddr":0,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCKMAN_EXE = {
+"startAddr":0,
+"endAddr":0,
+"classHeadAddr":[],
+"ignoreAddr":[]
+}
+
+ROCK = {
+"startAddr":0,
+"endAddr":0,
+"classHeadAddr":[],
+"ignoreAddr":[]
 }
 
 GXX_Sprite_List = {
@@ -234,20 +305,20 @@ GXX_Sprite_List = {
 "0x380884":"スパイラル？（戦闘）",
 "0x382ad4":"スクリーンディバイド（戦闘）",
 "0x386670":"レムゴンの腕（戦闘）",
-"0x3878dc":"",
+"0x3878dc":"リスキーハニー（戦闘）",
 "0x388070":"",
-"0x388b28":"",
+"0x388b28":"ローリングログ（戦闘）",
 "0x389364":"",
 "0x38a0d0":"",
-"0x38b080":"",
+"0x38b080":"スラッシュマンのクナイ（戦闘）",
 "0x38b6b8":"",
 "0x38c428":"",
 "0x38e0e4":"",
 "0x38e3d8":"",
-"0x38f284":"",
+"0x38f284":"スラッシュエックス（戦闘）",
 "0x38ffd4":"",
 "0x390bdc":"",
-"0x39122c":"",
+"0x39122c":"テングストーム（戦闘）",
 "0x393738":"",
 "0x393ef0":"",
 "0x3941c8":"",
@@ -255,7 +326,7 @@ GXX_Sprite_List = {
 "0x395158":"",
 "0x3955f4":"",
 "0x396f24":"キラーズデスビーム（戦闘）",
-"0x3974dc":"",
+"0x3974dc":"キラーテイルアロー（戦闘）",
 "0x397990":"グランドマンのキャタピラ（戦闘）",
 "0x399634":"",
 "0x399cd4":"",
@@ -268,9 +339,9 @@ GXX_Sprite_List = {
 "0x39f3e0":"",
 "0x39ff50":"",
 "0x3a0dd8":"",
-"0x3a2308":"",
-"0x3a3848":"",
-"0x3a4750":"",
+"0x3a2308":"爆発（戦闘）",
+"0x3a3848":"爆発（戦闘）",
+"0x3a4750":"不発（戦闘）",
 "0x3a5a6c":"",
 "0x3a8d9c":"",
 "0x3a9b38":"",
