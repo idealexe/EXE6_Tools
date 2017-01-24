@@ -99,8 +99,8 @@ class SpriteReader(QtGui.QMainWindow):
             print( _(u"ファイルの選択をキャンセルしました") )
             return -1
 
-        self.spriteAddrList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
-        self.ui.spriteList.clear() # スプライトリストの初期化
+        self.spriteAddrList = []
+        self.ui.spriteList.clear()
         self.spriteAddrList.append( {"spriteAddr":0, "compFlag":0, "readPos":0} )
 
         spriteItemStr = "Opend Sprite"  # GUIのリストに表示する文字列
@@ -192,21 +192,20 @@ class SpriteReader(QtGui.QMainWindow):
                     continue
 
 
+                u""" スプライトの先頭から次のデータまでの間はそのスプライトが利用可能な空間
+
                 nextDataAddr = romData[readPos+4:readPos+8]
                 [nextDataAddr] = struct.unpack("<L", nextDataAddr[:3]+"\x00")
 
                 spriteSpace = nextDataAddr - spriteAddr
-                u""" スプライトの先頭から次のデータまでの間はそのスプライトが利用可能な空間
 
                 パディングがついていることがあるので必ずしもスプライトのサイズとは一致しないが近い値
                 ↑と思ったがデータ的に連続していないスプライトを参照していることがあるので意味がなかった
                 """
-                if spriteSpace < 0:
-                    spriteSpace = 0    # サイズ判定不能
 
-                self.spriteAddrList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "pointerAddr":readPos, "spriteSpace":spriteSpace} )
+                self.spriteAddrList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "pointerAddr":readPos} )
 
-                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t" + hex(spriteSpace) +"\t"  # GUIのリストに表示する文字列
+                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t"  # GUIのリストに表示する文字列
                 if self.romName == "ROCKEXE6_GXX":
                     spriteAddrStr += unicode( SpriteDict.GXX_Sprite_List[hex(spriteAddr)] )
 
@@ -511,22 +510,14 @@ class SpriteReader(QtGui.QMainWindow):
         u''' GUIでOAMが選択されたときに行う処理
         '''
 
-        index = self.guiOAMList.currentRow()  # 渡されるのはアイテムなのでインデックス番号は現在の行から取得する
-        if self.graphicsScene.items()[index].isVisible():
-            self.graphicsScene.items()[index].hide()    # 非表示にする
-        else:
-            self.graphicsScene.items()[index].show()    # 表示する
-
-        '''
+        index = self.ui.oamList.currentRow()  # 渡されるのはアイテムなのでインデックス番号は現在の行から取得する
         oam = self.oamList[index]
         image = oam["image"]
         item = QtGui.QGraphicsPixmapItem(image)
         item.setOffset(oam["posX"], oam["posY"])
         imageBounds = item.boundingRect()
-        print( self.graphicsScene.items()[index] )
-        #self.graphicsScene.addRect(imageBounds)
-        #self.graphicsScene.addItem(item)
-        '''
+        self.graphicsScene.addRect(imageBounds)
+
 
     def guiPalItemActivated(self, item):
         u''' GUIで色が選択されたときに行う処理
@@ -550,7 +541,7 @@ class SpriteReader(QtGui.QMainWindow):
         #self.romData = self.romData[:writePos] + colorStr + self.romData[writePos+2:]  # ROM内の色を書き換える
 
         animIndex = self.ui.animList.currentRow()
-        print("animIndex: " + str(animIndex) )
+        #print("animIndex: " + str(animIndex) )
         self.guiAnimItemActivated(animIndex)
 
 
@@ -719,19 +710,18 @@ class SpriteReader(QtGui.QMainWindow):
         except:
             print u"ファイルの保存をキャンセルしました"
 
+
     def saveFrameImage(self):
         u""" フレーム画像の保存
         """
 
         sourceBounds = self.graphicsScene.itemsBoundingRect()    # シーン内の全てのアイテムから領域を算出
-        print(sourceBounds)
-        #self.graphicsScene.addRect(imageBounds)
-        #qpix = QtGui.QPixmap(QtCore.QSize(sourceBounds.width(), sourceBounds.height() ))
-        image = QtGui.QImage( QtCore.QSize(sourceBounds.width(), sourceBounds.height()), QtGui.QImage.Format_ARGB32)
+        image = QtGui.QImage( QtCore.QSize(sourceBounds.width(), sourceBounds.height()), 12)
         targetBounds = QtCore.QRectF(image.rect() )
         painter = QtGui.QPainter(image)
         self.graphicsScene.render(painter, targetBounds, sourceBounds)
         painter.end()
+
         filename = QtGui.QFileDialog.getSaveFileName(self, _(u"フレーム画像を保存する"), os.path.expanduser('./'), _("image File (*.png)"))
         try:
             with open( unicode(filename), 'wb') as saveFile:
@@ -739,6 +729,91 @@ class SpriteReader(QtGui.QMainWindow):
                 print u"ファイルを保存しました"
         except:
             print u"ファイルの保存をキャンセルしました"
+
+
+    def saveRomFile(self):
+        u""" ファイルの保存
+        """
+
+        filename = QtGui.QFileDialog.getSaveFileName(self, _(u"ROMを保存する"), os.path.expanduser('./'), _("Rom File (*.gba *.bin)"))
+        try:
+            with open( unicode(filename), 'wb') as saveFile:
+                saveFile.write(self.romData)
+                print u"ファイルを保存しました"
+        except:
+            print u"ファイルの保存をキャンセルしました"
+
+
+    def repoint(self):
+        index = self.ui.spriteList.currentRow()
+        targetAddr = self.spriteAddrList[index]["pointerAddr"]
+        print( u"書き換えるアドレス：\t" + hex( targetAddr ) )
+
+        dialog = QtGui.QDialog()
+        dialog.ui = repointDialog()
+        dialog.ui.setupUi(dialog)
+        dialog.show()
+        dialog.exec_()
+
+        if dialog.result() == 1:
+            addrText = dialog.ui.addrText.text()
+            try:
+                addr = int(str(addrText), 16)   # QStringから戻さないとダメ
+                data = struct.pack("L", addr + 0x08000000)
+                print binascii.hexlify(data)
+                self.romData = self.romData[:targetAddr] + data + self.romData[targetAddr+len(data):]
+
+                # リロード
+                self.extractSpriteAddr(self.romData)
+                self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
+            except:
+                print(u"不正な値です")
+        else:
+            print(u"リポイントをキャンセルしました")
+
+
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    def _fromUtf8(s):
+        return s
+
+try:
+    _encoding = QtGui.QApplication.UnicodeUTF8
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+except AttributeError:
+    def _translate(context, text, disambig):
+        return QtGui.QApplication.translate(context, text, disambig)
+
+class repointDialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        Dialog.resize(300, 100)
+        self.verticalLayout = QtGui.QVBoxLayout(Dialog)
+        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+        self.label = QtGui.QLabel(Dialog)
+        self.label.setObjectName(_fromUtf8("label"))
+        self.verticalLayout.addWidget(self.label)
+        self.addrText = QtGui.QLineEdit(Dialog)
+        self.addrText.setObjectName(_fromUtf8("addrText"))
+        self.verticalLayout.addWidget(self.addrText)
+        self.buttonBox = QtGui.QDialogButtonBox(Dialog)
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName(_fromUtf8("buttonBox"))
+        self.verticalLayout.addWidget(self.buttonBox)
+
+        self.retranslateUi(Dialog)
+        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
+        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), Dialog.reject)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        Dialog.setWindowTitle(_translate("Dialog", "リポイント", None))
+        self.label.setText(_translate("Dialog", "アドレス（16進数で指定してください）", None))
+
 
 
 '''
