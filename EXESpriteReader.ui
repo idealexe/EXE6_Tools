@@ -218,6 +218,7 @@
     <addaction name="dumpAction"/>
     <addaction name="action"/>
     <addaction name="replaceAction"/>
+    <addaction name="saveImageAction"/>
    </widget>
    <widget class="QMenu" name="helpMenu">
     <property name="title">
@@ -302,6 +303,11 @@
    </property>
    <property name="statusTip">
     <string>選択しているスプライトのポインタを書き換えて，別のアドレスのスプライトを読み込ませることが出来ます</string>
+   </property>
+  </action>
+  <action name="saveImageAction">
+   <property name="text">
+    <string>現在のフレームを画像に出力</string>
    </property>
   </action>
  </widget>
@@ -435,6 +441,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>palList</sender>
+   <signal>currentRowChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiPalItemActivated(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1066</x>
+     <y>427</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveImageAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>saveFrameImage()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -444,5 +482,7 @@
   <slot>openSprite()</slot>
   <slot>changePalet(int)</slot>
   <slot>dumpSprite()</slot>
+  <slot>guiPalItemActivated(int)</slot>
+  <slot>saveFrameImage()</slot>
  </slots>
 </ui>

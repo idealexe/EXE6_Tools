@@ -288,7 +288,7 @@ class SpriteReader(QtGui.QMainWindow):
         if index == -1: # GUIの選択位置によっては-1が渡されることがある？
             return
 
-        #self.guiAnimList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
+        self.ui.animList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         animPtr = self.animPtrList[index]
         #print( "Serected Anim:\t" + str(index) + " (" + hex(animPtr) + ")" )
         self.parseAnimData(self.spriteData, animPtr)
@@ -532,7 +532,10 @@ class SpriteReader(QtGui.QMainWindow):
         u''' GUIで色が選択されたときに行う処理
         '''
 
-        index = self.guiPalList.currentRow()
+        index = self.ui.palList.currentRow()
+        if index == -1:
+            return -1
+
         r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
         writePos = self.palData[index]["addr"]  # 色データを書き込む位置
         color = QtGui.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
@@ -546,7 +549,7 @@ class SpriteReader(QtGui.QMainWindow):
         self.spriteData = self.spriteData[:writePos] + colorStr + self.spriteData[writePos+2:]  # ロード中のスプライトデータの色を書き換える
         #self.romData = self.romData[:writePos] + colorStr + self.romData[writePos+2:]  # ROM内の色を書き換える
 
-        animIndex = self.guiAnimList.currentRow()
+        animIndex = self.ui.animList.currentRow()
         print("animIndex: " + str(animIndex) )
         self.guiAnimItemActivated(animIndex)
 
@@ -570,7 +573,7 @@ class SpriteReader(QtGui.QMainWindow):
         width = width/8 # サイズからタイルの枚数に変換
         hight = hight/8
         imgData = imgData[startAddr:]   # 使う部分を切り出し
-        imgData = binascii.hexlify(imgData).upper()   # バイナリ値をそのまま文字列にしたデータに変換
+        imgData = binascii.hexlify(imgData).upper()   # バイナリ値をそのまま文字列にしたデータに変換（0xFF -> "FF"）
         imgData = list(imgData) # 1文字ずつのリストに変換
 
         # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
@@ -712,6 +715,27 @@ class SpriteReader(QtGui.QMainWindow):
         try:
             with open( unicode(filename), 'wb') as saveFile:
                 saveFile.write(data)
+                print u"ファイルを保存しました"
+        except:
+            print u"ファイルの保存をキャンセルしました"
+
+    def saveFrameImage(self):
+        u""" フレーム画像の保存
+        """
+
+        sourceBounds = self.graphicsScene.itemsBoundingRect()    # シーン内の全てのアイテムから領域を算出
+        print(sourceBounds)
+        #self.graphicsScene.addRect(imageBounds)
+        #qpix = QtGui.QPixmap(QtCore.QSize(sourceBounds.width(), sourceBounds.height() ))
+        image = QtGui.QImage( QtCore.QSize(sourceBounds.width(), sourceBounds.height()), QtGui.QImage.Format_ARGB32)
+        targetBounds = QtCore.QRectF(image.rect() )
+        painter = QtGui.QPainter(image)
+        self.graphicsScene.render(painter, targetBounds, sourceBounds)
+        painter.end()
+        filename = QtGui.QFileDialog.getSaveFileName(self, _(u"フレーム画像を保存する"), os.path.expanduser('./'), _("image File (*.png)"))
+        try:
+            with open( unicode(filename), 'wb') as saveFile:
+                image.save(filename, "PNG")
                 print u"ファイルを保存しました"
         except:
             print u"ファイルの保存をキャンセルしました"
