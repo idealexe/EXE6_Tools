@@ -1,24 +1,24 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u''' GBA MIDI Corrector by idealexe
+u""" GBA MIDI Corrector by idealexe
 
     Sappyで出力した標準形式のMIDIデータをmid2agb.exeで正しく変換できるようにするプログラム
     （ループは手作業で・・・）
-'''
+"""
 
 import time
 startTime = time.time() # 実行時間計測開始
 
 import binascii
-import os.path
+import os
 import re
 import sys
 import struct
 
 # 引数が足りないよ！
 if len(sys.argv) < 2:
-    print("引数が足りません")
+    print(u"引数が足りません")
     sys.exit()
 
 f = sys.argv[1]  # 1つめの引数をファイルパスとして格納
