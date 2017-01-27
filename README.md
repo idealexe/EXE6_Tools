@@ -39,8 +39,13 @@
 
 ### LZ77Util.py
 * LZ77圧縮されたデータの検索，展開モジュール
-* 使用例：`>Python LZ77Util.py ROMFILE 0x75ACBC`
+* 使用例：`>Python LZ77Util.py <ROMFILE> 0x75ACBC`
   * ROMFILE内のアドレス`0x75ACBC`からLZ77圧縮されたデータと解釈して展開します
+
+### SappyTransplantAssistant.py
+* 音源移植をサポートするツール
+* 使用例：`>Python SappyTransplantAssistant.py <ROMFILE> 0x1494A0 0x700000`
+  * ROMFILEの0x1494A0をソングテーブルとして読み取り，ソングテーブル内の曲が使用しているボイスセットを元のアドレス+0x700000でアクセス出来るように調整します
 
 ### SpriteReader.py
 * スプライトを閲覧するツール
