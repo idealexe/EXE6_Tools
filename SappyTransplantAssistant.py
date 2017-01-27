@@ -123,14 +123,18 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
         voicesAddrList.append( songDataParser(romData, song) )
 
     offsAddrList = []   # 処理すべきポインタが追加されていくリスト
+    voiceDataStart = voicesAddrList[0]
+    voiceDataEnd = voicesAddrList[0]
+
     for voices in voicesAddrList:
-        [offsAddrList, voiceDataStart, voiceDataEnd, drumsAddr] = voiceTableParser(romData, voices, offsAddrList)
-        [offsAddrList, voiceDataStart2, voiceDataEnd2, drumsAddr] = voiceTableParser(romData, drumsAddr[0], offsAddrList) # ドラムパートは1個だけ分析する
+        # ここの処理がいまいちださい
+        [offsAddrList, start, end, drumsAddr] = voiceTableParser(romData, voices, offsAddrList)
+        [offsAddrList, start2, end2, drumsAddr] = voiceTableParser(romData, drumsAddr[0], offsAddrList) # ドラムパートは1個だけ分析する
         # コピーする範囲の更新
-        if voiceDataStart > voiceDataStart2:
-            voiceDataStart = voiceDataStart2
-        if voiceDataEnd < voiceDataEnd2:
-            voiceDataEnd = voiceDataEnd2
+        if voiceDataStart > min(start, start2):
+            voiceDataStart = min(start, start2)
+        if voiceDataEnd < max(end, end2):
+            voiceDataEnd = max(end, end2)
 
     u""" ポインタ書き換え
     """
@@ -141,6 +145,7 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
         sys.stdout.write(".")
     print("done\n")
 
+    print(hex(voiceDataStart) + u"から" + hex(voiceDataEnd) + u"まで切り出しました")
     print( u"出力データを移植先の " + hex(voiceDataStart + transplantOffs) + u" にペーストしてください")
     print( u"各ボイスセットには元のアドレス＋" + hex(transplantOffs) + u"でアクセス出来ます" )
     print( u"例）" + hex(voicesAddrList[0]) + u" → " + hex(voicesAddrList[0]+transplantOffs) +"\n" )
