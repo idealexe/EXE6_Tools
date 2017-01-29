@@ -168,7 +168,7 @@ def voiceTableParser(romData, tableAddr, offsAddrList):
     #print("| Sound | Device | Address |\n|----:|:---:|----:|")
     for i in xrange(128):
         [device, baseNote, st, ss, addr, atk, dec, sus, rel] = struct.unpack("BBBBLBBBB", romData[readAddr:readAddr+voiceSize])
-        if addr >= memoryOffs:  # ポインタだったら
+        if addr >= memoryOffs and addr - memoryOffs < len(romData):  # まともなポインタだったら
             addr -= memoryOffs
             if readAddr+4 not in offsAddrList:  # まだリストに追加していないなら
                 offsAddrList.append(readAddr+4) # addrの値を保持しているアドレスを記録
@@ -190,7 +190,8 @@ def voiceTableParser(romData, tableAddr, offsAddrList):
         readAddr += voiceSize
         if voiceDataEnd < readAddr:
             voiceDataEnd = readAddr+voiceSize
-    """
+
+            """
         try:
             print( "| Sound " + str(i).zfill(3) + " |\t" + devices[hex(device)] + "\t| " + hex(addr) + " |" )
         except:
