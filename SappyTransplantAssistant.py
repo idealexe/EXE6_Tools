@@ -66,7 +66,7 @@ def songTableParser(romData, startAddr):
 
     while readAddr < endAddr:
         [addr, data] = struct.unpack("LL", romData[readAddr:readAddr+dataSize])
-        if data != 0:
+        if data != -1:
             addr -= memoryOffs
             #print( hex(addr) )
             songAddrList.append(addr)
@@ -129,7 +129,11 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
     for voices in voicesAddrList:
         # ここの処理がいまいちださい
         [offsAddrList, start, end, drumsAddr] = voiceTableParser(romData, voices, offsAddrList)
-        [offsAddrList, start2, end2, drumsAddr] = voiceTableParser(romData, drumsAddr[0], offsAddrList) # ドラムパートは1個だけ分析する
+        if len(drumsAddr) > 0:
+            [offsAddrList, start2, end2, drumsAddr] = voiceTableParser(romData, drumsAddr[0], offsAddrList) # ドラムパートは1個だけ分析する
+        else:
+            start2 = start
+            end2 = end
         # コピーする範囲の更新
         if voiceDataStart > min(start, start2):
             voiceDataStart = min(start, start2)
