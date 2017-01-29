@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u''' EXE6 Sprite Reader by ideal.exe
+u''' EXE Sprite Reader by ideal.exe
 
 
     データ構造仕様
