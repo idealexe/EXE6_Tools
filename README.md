@@ -47,7 +47,7 @@
 * 使用例：`>Python SappyTransplantAssistant.py <ROMFILE> 0x1494A0 0x700000`
   * ROMFILEの0x1494A0をソングテーブルとして読み取り，ソングテーブル内の曲が使用しているボイスセットを元のアドレス+0x700000でアクセス出来るように調整します
 
-### SpriteReader.py
+### EXESpriteReader.py
 * スプライトを閲覧するツール
 
 ### SpriteDict.py
