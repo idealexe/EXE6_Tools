@@ -77,10 +77,10 @@
            </size>
           </property>
           <property name="backgroundBrush">
-           <brush brushstyle="SolidPattern">
+           <brush brushstyle="CrossPattern">
             <color alpha="255">
-             <red>0</red>
-             <green>0</green>
+             <red>200</red>
+             <green>220</green>
              <blue>255</blue>
             </color>
            </brush>
@@ -200,6 +200,13 @@
         <item>
          <widget class="QSpinBox" name="palSelect"/>
         </item>
+        <item>
+         <widget class="QPushButton" name="palSaveButton">
+          <property name="text">
+           <string>編集したパレットを書き込む</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
      </layout>
@@ -212,7 +219,7 @@
      <x>0</x>
      <y>0</y>
      <width>1200</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -534,6 +541,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>palSaveButton</sender>
+   <signal>pressed()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>writePalData()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1088</x>
+     <y>554</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -548,5 +571,6 @@
   <slot>saveRomFile()</slot>
   <slot>guiOAMItemActivated(QListWidgetItem*)</slot>
   <slot>repoint()</slot>
+  <slot>writePalData()</slot>
  </slots>
 </ui>

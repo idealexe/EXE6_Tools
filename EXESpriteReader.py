@@ -207,7 +207,10 @@ class SpriteReader(QtGui.QMainWindow):
 
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t"  # GUIのリストに表示する文字列
                 if self.romName == "ROCKEXE6_GXX":
-                    spriteAddrStr += unicode( SpriteDict.GXX_Sprite_List[hex(spriteAddr)] )
+                    try:
+                        spriteAddrStr += unicode( SpriteDict.GXX_Sprite_List[hex(spriteAddr)] )
+                    except:
+                        pass
 
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
@@ -227,6 +230,7 @@ class SpriteReader(QtGui.QMainWindow):
         self.graphicsScene = QtGui.QGraphicsScene() # スプライトを描画するためのシーン
         self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         self.ui.graphicsView.setScene(self.graphicsScene)
+        self.ui.palSelect.setValue(0)
         #self.ui.spriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         # ↑この変更もハンドリングされてしまうのでダメ
         spriteAddr = self.spriteAddrList[index]["spriteAddr"]
@@ -298,7 +302,7 @@ class SpriteReader(QtGui.QMainWindow):
         u''' 指定されたアニメーションデータを読み込んで処理する
 
             GUIのアニメーションリストで選択されたアニメーションに対して実行する
-            アニメーションデータは20バイトのデータでアニメーションの1フレームを管理する
+            アニメーションデータは複数のフレームデータで構成されており，1フレームは20バイトの情報で管理する
             この関数ではアニメーションデータが持つフレームデータをリスト化する
             1つのアニメーションのフレーム数は事前に与えられず，アニメーションデータが持つ再生タイプに基づいて逐次的にロードする模様
         '''
@@ -330,18 +334,19 @@ class SpriteReader(QtGui.QMainWindow):
 
         self.ui.frameList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         framePtr = self.framePtrList[index]
+        palIndex = self.ui.palSelect.value()
         self.parseframeData(self.spriteData, framePtr)
 
 
-    def parseframeData(self, spriteData, animPtr, *selectPal):
+    def parseframeData(self, spriteData, framePtr):
         u''' 1フレーム分の情報を取り出し画像を表示する
 
-            入力：スプライトのデータとアニメーションデータの開始位置
+            入力：スプライトのデータとフレームデータの開始位置
             処理：20バイトのアニメーションデータを読み取って情報を取り出す
         '''
 
         self.graphicsScene.clear()  # 描画シーンのクリア
-        frameData = spriteData[animPtr:animPtr+20]   # 1フレーム分ロード
+        frameData = spriteData[framePtr:framePtr+20]   # 1フレーム分ロード
         [graphSizePtr, palSizePtr, junkDataPtr, ptrToOAMptr, frameDelay, animType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
 
         u"""
@@ -355,6 +360,7 @@ class SpriteReader(QtGui.QMainWindow):
         """
 
         graphSize = spriteData[graphSizePtr:graphSizePtr+4]
+        #print("Graphics Size Pointer:\t" + hex(graphSizePtr))
         graphSize = struct.unpack("<L", graphSize)[0]
         #print( "Graphics Size:\t" + hex(graphSize) )
 
@@ -415,11 +421,10 @@ class SpriteReader(QtGui.QMainWindow):
             flag2 = bin(oamData[4])[2:].zfill(8)
             objShape = flag2[-2:]
 
-            if len(selectPal) == 0:
-                palIndex = int(flag2[0:4], 2)
-                self.ui.palSelect.setValue(palIndex)
-            else:
-                palIndex = selectPal[0]
+            u""" フレームが指定している色を無視してUIで選択中のパレットで表示する仕様にしています
+            """
+            #palIndex = int(flag2[0:4], 2)
+            palIndex = self.ui.palSelect.value()
 
             #print(palIndex)
             #print("shape:\t" + str(objShape) )
@@ -530,6 +535,10 @@ class SpriteReader(QtGui.QMainWindow):
         r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
         writePos = self.palData[index]["addr"]  # 色データを書き込む位置
         color = QtGui.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
+        if color.isValid() == False: # キャンセルしたとき
+            print(u"色の選択をキャンセルしました")
+            return 0
+
         r,g,b,a = color.getRgb()    # ダイアログでセットされた色に更新
 
         binR = bin(r/8)[2:].zfill(5)    # 5bitカラーに変換
@@ -538,11 +547,10 @@ class SpriteReader(QtGui.QMainWindow):
         gbaColor = int(binB + binG + binR, 2)  # GBAのカラーコードに変換
         colorStr = struct.pack("H", gbaColor)
         self.spriteData = self.spriteData[:writePos] + colorStr + self.spriteData[writePos+2:]  # ロード中のスプライトデータの色を書き換える
-        #self.romData = self.romData[:writePos] + colorStr + self.romData[writePos+2:]  # ROM内の色を書き換える
 
-        animIndex = self.ui.animList.currentRow()
-        #print("animIndex: " + str(animIndex) )
-        self.guiAnimItemActivated(animIndex)
+        frameIndex = self.ui.frameList.currentRow()
+        framePtr = self.framePtrList[frameIndex]
+        self.parseframeData(self.spriteData, framePtr)
 
 
     '''
@@ -669,7 +677,7 @@ class SpriteReader(QtGui.QMainWindow):
     def changePalet(self, n):
         index = self.ui.frameList.currentRow()
         framePtr = self.framePtrList[index]
-        self.parseframeData(self.spriteData, framePtr, n)
+        self.parseframeData(self.spriteData, framePtr)
         """
         try:
             self.parsePaletteData(self.spriteData, palSizePtr, n)
@@ -745,6 +753,8 @@ class SpriteReader(QtGui.QMainWindow):
 
 
     def repoint(self):
+        u""" ポインタの書き換え
+        """
         index = self.ui.spriteList.currentRow()
         targetAddr = self.spriteAddrList[index]["pointerAddr"]
         print( u"書き換えるアドレス：\t" + hex( targetAddr ) )
@@ -762,14 +772,30 @@ class SpriteReader(QtGui.QMainWindow):
                 data = struct.pack("L", addr + 0x08000000)
                 print binascii.hexlify(data)
                 self.romData = self.romData[:targetAddr] + data + self.romData[targetAddr+len(data):]
-
-                # リロード
-                self.extractSpriteAddr(self.romData)
-                self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
             except:
                 print(u"不正な値です")
+            # リロード
+            self.extractSpriteAddr(self.romData)
+            self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
         else:
             print(u"リポイントをキャンセルしました")
+
+    def writePalData(self):
+        u""" UI上で編集したパレットのデータをROMに書き込む
+        """
+        index = self.ui.spriteList.currentRow()
+        if index == -1:
+            return -1
+
+        targetSprite = self.spriteAddrList[self.ui.spriteList.currentRow()]
+        if targetSprite["compFlag"] == 1:
+            print(u"圧縮スプライトは現在非対応です")
+            return 0
+        else:
+            writeAddr = targetSprite["spriteAddr"] + 4  # ヘッダのぶん4バイト
+            self.romData = self.romData[:writeAddr] + self.spriteData + self.romData[writeAddr+len(self.spriteData):]
+            print(u"編集したパレットをメモリ上のROMに書き込みました")
+            return 0
 
 
 try:
