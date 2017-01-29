@@ -189,7 +189,13 @@
           <property name="minimumSize">
            <size>
             <width>200</width>
-            <height>350</height>
+            <height>300</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>300</height>
            </size>
           </property>
           <property name="isWrapping" stdset="0">
