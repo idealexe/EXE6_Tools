@@ -564,8 +564,10 @@ class SpriteReader(QtGui.QMainWindow):
     def makeOAMImage(self, imgData, startTile, width, hight, hFlip, vFlip):
         u''' OAM情報から画像を生成する
 
-            入力：スプライトのグラフィック，開始タイル，横サイズ，縦サイズ
+            入力：スプライトのグラフィックデータ，開始タイル，横サイズ，縦サイズ
             出力：画像データ（QPixmap形式）
+
+            グラフィックデータは4bitで1pxを表現する．アクセス可能な最小単位は8*8pxのタイルでサイズは32byteとなる
         '''
 
         startAddr = startTile * 32  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
