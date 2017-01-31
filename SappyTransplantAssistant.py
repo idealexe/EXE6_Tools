@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u""" Sappy Transplant Assistant ver 1.1 by ideal.exe
+u""" Sappy Transplant Assistant ver 1.2 by ideal.exe
 
     与えられたソングテーブル内の曲が使用しているボイスセットを
     元のアドレス＋指定オフセットでアクセス出来るようにポインタを書き換えるツール
@@ -56,62 +56,6 @@ def main():
     print( "Execution Time:\t" + str(executionTime) + " sec" )
 
 
-def songTableParser(romData, startAddr):
-    u""" ソングテーブルから曲のアドレスを抽出する
-    """
-    songAddrList = []
-    dataSize = 8    # 1曲分のデータサイズ
-    readAddr = startAddr
-    endAddr = startAddr + dataSize*100 # 実際の曲の数によらず100曲分のスペースが確保されている？
-
-    while readAddr < endAddr:
-        [addr, data] = struct.unpack("LL", romData[readAddr:readAddr+dataSize])
-        if data != 0:   # ここ適当（曲のアドレスとそうじゃないアドレスをどうやって区別すべきか検討中）
-            addr -= memoryOffs
-            #print( hex(addr) )
-            songAddrList.append(addr)
-        readAddr += dataSize
-
-    return songAddrList
-
-
-def songDataParser(romData, songAddr):
-    u""" 曲データを解析する
-
-        移植に使うためボイステーブルのアドレスを返します
-    """
-
-    readAddr = songAddr
-
-    u""" ヘッダ
-    """
-    #print("Song at " + hex(songAddr))
-    [trackNum, x1, x2, x3] = struct.unpack("BBBB", romData[readAddr:readAddr+4])
-    #print("Track Number:\t" + str(trackNum) )
-    #print([x1, x2, x3])
-    readAddr += 4
-
-    u""" ボイステーブルのアドレス
-    """
-    voicesAddr = struct.unpack("L", romData[readAddr:readAddr+offsSize])[0] - memoryOffs
-    #print(hex(readAddr))
-    readAddr += offsSize
-    #print( "Voices Addr:\t" + hex(voicesAddr) + "\n")
-
-    u""" 各トラックのアドレス
-    """
-    trackList = []
-    for i in xrange(trackNum):
-        trackAddr = struct.unpack("L", romData[readAddr:readAddr+offsSize])[0] - memoryOffs
-        trackList.append(trackAddr)
-        #print(hex(readAddr))
-        readAddr += offsSize
-        #print("Track" + str(i) + " Addr:\t" + hex(trackAddr))
-    #print("\n---\n")
-
-    return voicesAddr
-
-
 def voiceTransplanter(romData, songTableAddr, transplantOffs):
     u""" 指定したソングテーブル内の曲が使用しているボイスセットのポインタを調整する
 
@@ -127,6 +71,9 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
     voiceDataEnd = voicesAddrList[0]
 
     for voices in voicesAddrList:
+        if voices == -1:
+            continue
+
         # ここの処理がいまいちださい
         [offsAddrList, start, end, drumsAddr] = voiceTableParser(romData, voices, offsAddrList)
         if len(drumsAddr) > 0:
@@ -155,6 +102,66 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
     print( u"例）" + hex(voicesAddrList[0]) + u" → " + hex(voicesAddrList[0]+transplantOffs) +"\n" )
 
     return romData[voiceDataStart:voiceDataEnd]
+
+
+def songTableParser(romData, startAddr):
+    u""" ソングテーブルから曲のアドレスを抽出する
+    """
+    songAddrList = []
+    dataSize = 8    # 1曲分のデータサイズ
+    readAddr = startAddr
+    endAddr = startAddr + dataSize*100 # 実際の曲の数によらず100曲分のスペースが確保されている？
+
+    while readAddr < endAddr:
+        [addr, data] = struct.unpack("LL", romData[readAddr:readAddr+dataSize])
+        if data != -1:   # ここ適当（曲のアドレスとそうじゃないアドレスをどうやって区別すべきか検討中）
+            addr -= memoryOffs
+            #print( hex(addr) )
+            if addr not in songAddrList:
+                songAddrList.append(addr)
+        readAddr += dataSize
+
+    return songAddrList
+
+
+def songDataParser(romData, songAddr):
+    u""" 曲データを解析する
+
+        移植に使うためボイステーブルのアドレスを返します
+        曲データではないと判断した場合は-1を返します
+    """
+
+    readAddr = songAddr
+
+    u""" ヘッダ
+    """
+    #print("Song at " + hex(songAddr))
+    [trackNum, x1, x2, x3] = struct.unpack("BBBB", romData[readAddr:readAddr+4])
+    if trackNum == 0:
+        return -1
+    #print("Track Number:\t" + str(trackNum) )
+    #print([x1, x2, x3])
+    readAddr += 4
+
+    u""" ボイステーブルのアドレス
+    """
+    voicesAddr = struct.unpack("L", romData[readAddr:readAddr+offsSize])[0] - memoryOffs
+    #print(hex(readAddr))
+    readAddr += offsSize
+    #print( "Voices Addr:\t" + hex(voicesAddr) + "\n")
+
+    u""" 各トラックのアドレス
+    """
+    trackList = []
+    for i in xrange(trackNum):
+        trackAddr = struct.unpack("L", romData[readAddr:readAddr+offsSize])[0] - memoryOffs
+        trackList.append(trackAddr)
+        #print(hex(readAddr))
+        readAddr += offsSize
+        #print("Track" + str(i) + " Addr:\t" + hex(trackAddr))
+    #print("\n---\n")
+
+    return voicesAddr
 
 
 def voiceTableParser(romData, tableAddr, offsAddrList):
