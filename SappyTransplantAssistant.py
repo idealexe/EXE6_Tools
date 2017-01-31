@@ -66,7 +66,7 @@ def songTableParser(romData, startAddr):
 
     while readAddr < endAddr:
         [addr, data] = struct.unpack("LL", romData[readAddr:readAddr+dataSize])
-        if data != -1:
+        if data != 0:   # ここ適当（曲のアドレスとそうじゃないアドレスをどうやって区別すべきか検討中）
             addr -= memoryOffs
             #print( hex(addr) )
             songAddrList.append(addr)
