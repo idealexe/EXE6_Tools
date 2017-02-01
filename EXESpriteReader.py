@@ -643,7 +643,7 @@ class SpriteReader(QtGui.QMainWindow):
         palSize = spriteData[palSizePtr:palSizePtr+4]
         palSize = struct.unpack("<L", palSize)[0]
         #print( "Palette Size:\t" + hex(palSize) )
-        if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x20にしてることもあったので無視
+        if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x00にしてることもあったので無視
             #return
             palSize = 0x20
 
