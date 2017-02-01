@@ -46,6 +46,10 @@
 * 使用法：`>Python EXESpriteReader.py`でGUIが開きます
   * 引数にファイルを指定するとそのファイルを開きます
 
+### GBA_MIDI_Corrector.py
+* Sappyで出力した標準形式のMIDIデータをmid2agb.exeで正しく変換できるようにするプログラム
+* 使用法：`>Python GBA_MIDI_Corrector.py <MIDIFILE>`
+
 ### LZ77Util.py
 * LZ77圧縮されたデータの検索，展開モジュール
 * 使用例：`>Python LZ77Util.py <ROMFILE> 0x75ACBC`
@@ -58,7 +62,3 @@
 
 ### SpriteDict.py
 * EXESpriteReader用の辞書データ
-
-### GBA_MIDI_Corrector.py
-* Sappyで出力した標準形式のMIDIデータをmid2agb.exeで正しく変換できるようにするプログラム
-* 使用法：`>Python GBA_MIDI_Corrector.py <MIDIFILE>`
