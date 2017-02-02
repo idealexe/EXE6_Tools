@@ -311,6 +311,7 @@ def songTransplanter(romData, songAddr, targetAddr, voicesAddr):
 
     print( u"出力データを移植先の " + hex(songDataStart + transplantOffs) + u" にペーストしてください")
     print( u"ソングヘッダのアドレスは" + hex(targetAddr) + u"です" )
+    print( u"移植先のソングテーブルで" + hex(targetAddr) + u"を指定するとアクセスできます")
 
     return romData[songDataStart:songDataEnd]
 
