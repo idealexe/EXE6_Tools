@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u''' EXE Sprite Reader ver 1.0 by ideal.exe
+u''' EXE Sprite Reader ver 1.1 by ideal.exe
 
 
     データ構造仕様
@@ -28,6 +28,13 @@ _ = gettext.gettext # 後の翻訳用
 import SpriteDict
 import LZ77Util
 import UI_EXESpriteReader as designer
+
+from logging import getLogger,StreamHandler,INFO,DEBUG
+logger = getLogger(__name__)    # 出力元の明確化
+handler = StreamHandler()
+handler.setLevel(DEBUG)
+logger.setLevel(DEBUG)
+logger.addHandler(handler)
 
 # フラグと形状の対応を取る辞書[size+shape]:[x,y]
 # キーにリストが使えないのでこんなことに・・・
@@ -145,6 +152,13 @@ class SpriteReader(QtGui.QMainWindow):
         elif self.romName == "ROCK_EXE4_BM":
             print( _(u"ロックマンエグゼ4 トーナメントブルームーン jp としてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE4_BM
+
+        elif self.romName == "ROCK_EXE3_BK":
+            print( _(u"ロックマンエグゼ3 Black jp としてロードしました") )
+            EXE_Addr = SpriteDict.ROCK_EXE3_BK
+        elif self.romName == "ROCKMAN_EXE3":
+            print(_(u"ロックマンエグゼ3 jp としてロードしました"))
+            EXE_Addr = SpriteDict.ROCKMAN_EXE3
 
         else:
             print( _(u"対応していないバージョンです" ) )
@@ -368,70 +382,67 @@ class SpriteReader(QtGui.QMainWindow):
         readPos = graphSizePtr + 4  # ４バイトのサイズ情報の後に画像データが続く
         graphData = spriteData[readPos:readPos+graphSize]   # 画像のロード
 
+        u""" フレームが指定している色を無視してUIで選択中のパレットで表示する仕様にしています
+        """
+        palIndex = self.ui.palSelect.value()
+        self.parsePaletteData(spriteData, palSizePtr, palIndex)
+
         oamDataPtr = spriteData[ ptrToOAMptr:ptrToOAMptr+4 ]
         oamDataPtr = struct.unpack("<L", oamDataPtr)[0]
         #print( "OAM Data Pointer:\t" + hex(oamDataPtr) )
         oamDataStart = ptrToOAMptr + oamDataPtr # OAMデータの先頭アドレスはOAMポインタの先頭アドレス+ポインタの値
-        readPos = oamDataStart
+        self.parseOamData(spriteData, graphData, oamDataStart)
 
-        u'''
-            OAMの処理
+
+    def parseOamData(self, spriteData, graphData, oamDataStart):
+        u''' OAMの処理
+
+            OAMデータを読み取って生成した画像とサイズ，描画オフセットを取得する
             OAMデータは5バイトで1セット
             FF FF FF FF FF で終端を表す
         '''
+
         oamCount = 0
+        OAM_DATA_SIZE = 5
+        OAM_DATA_END = "\xFF\xFF\xFF\xFF\xFF"
+        readPos = oamDataStart
+
         self.oamList = []   # OAMの情報を格納するリスト
         self.ui.oamList.clear() # GUIのOAMリストをクリア
-        while spriteData[readPos:readPos+5] != "\xFF\xFF\xFF\xFF\xFF":
-            #print( "\nOAM: " + str(oamCount) )
+        while spriteData[readPos:readPos+OAM_DATA_SIZE] != OAM_DATA_END:
 
-            oamData = spriteData[readPos:readPos+5]
+            oamData = spriteData[readPos:readPos+OAM_DATA_SIZE]
             oamAddrStr = ( hex(readPos)[2:].zfill(8)).upper()  # GUIのリストに表示する文字列
             oamItem = QtGui.QListWidgetItem( oamAddrStr )   # GUIのOAMリストに追加するアイテムの生成
             self.ui.oamList.addItem(oamItem) # GUIスプライトリストへ追加
 
-            readPos += 5
+            readPos += OAM_DATA_SIZE
             oamCount += 1
 
 
-            oamData = struct.unpack("BbbBB", oamData)
-            startTile = oamData[0]
-            #print( "Starting Tile:\t" + str(startTile) )
-            posX = oamData[1]
-            #print( "X:\t" + str(posX) )
-            posY = oamData[2]
-            #print( "Y:\t" + str(posY) )
+            [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
+            logger.debug( "Starting Tile:\t" + str(startTile) )
+            logger.debug( "X: " + str(posX) )
+            logger.debug( "Y: " + str(posY) )
 
-            flag1 = bin(oamData[3])[2:].zfill(8)    # 2進数にして先頭の0bを取り除いて8桁に0埋め
-            '''
-                フラグ構造（8bit）
+            flag1 = bin(flag1)[2:].zfill(8)    # 2進数にして先頭の0bを取り除いて8桁に0埋め
+            u''' フラグ構造（8bit）
+
                 b b  bbbb   bb
-                h v unused size
-
+                v h unused size
             '''
+
             objSize = flag1[-2:]    # 下位2ビット
             hFlip = int( flag1[1], 2 ) # 水平反転フラグ
             vFlip = int( flag1[0], 2 ) # 垂直反転フラグ
-            """
-            print( "Horizontal Flip: " + str(hFlip) )
-            print( "Vertical Flip:\t" + str(vFlip) )
-            print("size:\t" + str(objSize) )
-            """
 
-            flag2 = bin(oamData[4])[2:].zfill(8)
+            logger.debug( "Horizontal Flip: " + str(hFlip) )
+            logger.debug( "Vertical Flip:   " + str(vFlip) )
+            logger.debug( "Size Flag:\t" + str(objSize) )
+
+            flag2 = bin(flag2)[2:].zfill(8)
             objShape = flag2[-2:]
-
-            u""" フレームが指定している色を無視してUIで選択中のパレットで表示する仕様にしています
-            """
-            #palIndex = int(flag2[0:4], 2)
-            palIndex = self.ui.palSelect.value()
-
-            #print(palIndex)
-            #print("shape:\t" + str(objShape) )
-            #print("")
-
-            # パレットの設定
-            self.parsePaletteData(spriteData, palSizePtr, palIndex)
+            logger.debug( "Shape Flag:\t" + str(objShape) )
 
             sizeX, sizeY = objDim[objSize+objShape]
             image = self.makeOAMImage(graphData, startTile, sizeX, sizeY, hFlip, vFlip)
@@ -445,61 +456,7 @@ class SpriteReader(QtGui.QMainWindow):
             }
             self.oamList.append(OAM)
             self.drawOAM(OAM["image"], OAM["sizeX"], OAM["sizeY"], OAM["posX"], OAM["posY"])
-
-            u'''
-                フラグとサイズの関係．わかりづらい・・・
-
-                shape:
-                    b00: 正方形
-                    b01: 長方形（横長）
-                    b10: 長方形（縦長）
-                    b11: 未使用
-
-                size 0, shape 0: 8x8
-                □
-                size 0, shape 1: 16x8
-                □□
-                size 0, shape 2: 8x16
-                □
-                □
-                size 1, shape 0: 16x16
-                □□
-                □□
-                size 1, shape 1: 32x8
-                □□□□
-                size 1, shape 2: 8x32
-                □
-                □
-                □
-                □
-                size 2, shape 0: 32x32
-                □□□□
-                □□□□
-                □□□□
-                □□□□
-                size 2, shape 1: 32x16
-                □□□□
-                □□□□
-                size 2, shape 2: 16x32
-                □□
-                □□
-                □□
-                □□
-                size 3, shape 0: 64x64
-                size 3, shape 1: 64x32
-                size 3, shape 2: 32x64
-            '''
-            #self.showOBJ(graphData, startTile, sizeX, sizeY, posX, posY, hFlip, vFlip)
-
-        u'''
-            アニメーションタイプは再生状態を決定する
-            0x00:   遅延フレーム分待った後に次フレームを再生（次のアニメーションデータをロード）
-            0x80:   アニメーションの終了（最後のフレーム）
-            0xC0:   アニメーションのループ（最初のフレームに戻る）
-            アニメーションの最後のフレームは0x80か0xC0
-        '''
-        #print "Animation Type:\t" + hex(animType)
-        #print "\n----------------------------------------\n"
+            logger.debug("---\n")
         self.endAddr = readPos + len("\xFF\xFF\xFF\xFF\xFF")
 
 
@@ -558,7 +515,7 @@ class SpriteReader(QtGui.QMainWindow):
 
     '''
     def playAnimData(self):
-        pass
+        print(u"現在アニメーションの再生には対応していません")
 
 
     def makeOAMImage(self, imgData, startTile, width, hight, hFlip, vFlip):
@@ -800,6 +757,114 @@ class SpriteReader(QtGui.QMainWindow):
             return 0
 
 
+    def flipSprite(self):
+        u""" 選択中のスプライトを水平反転する
+
+            全てのOAMの水平反転フラグを切り替え，描画オフセットXを-X-sizeXにする
+        """
+
+        OFFSET_SIZE = 4
+        FRAME_DATA_SIZE = 20
+        OAM_DATA_SIZE = 5
+        OAM_DATA_END = "\xFF\xFF\xFF\xFF\xFF"
+
+        index = self.ui.spriteList.currentRow()
+        logger.debug("Sprite List Current Row:\t" + str(index))
+        targetSprite = self.spriteAddrList[index]
+        spriteAddr = targetSprite["spriteAddr"]
+        logger.debug("Current Sprite Address:\t" + hex(spriteAddr))
+
+        if targetSprite["compFlag"] == 1:
+            print(u"圧縮スプライトは現在非対応です")
+            return -1
+
+        spriteAddr += 4 # ヘッダは無視
+        readAddr = spriteAddr
+        animPtrList = []
+        animDataStart = self.romData[readAddr:readAddr+OFFSET_SIZE]
+        animDataStart = struct.unpack("<L", animDataStart)[0] + readAddr
+        logger.debug("Animation Data Start:\t" + hex(animDataStart))
+
+        animCount = 0
+        while readAddr < animDataStart:
+            animPtr = self.romData[readAddr:readAddr+OFFSET_SIZE]
+            animPtr = struct.unpack("<L", animPtr)[0] + spriteAddr
+            animPtrList.append({"animNum":animCount, "addr":readAddr, "value":animPtr})
+            readAddr += OFFSET_SIZE
+            animCount += 1
+
+        frameDataList = []
+        for animPtr in animPtrList:
+            readAddr = animPtr["value"]
+            logger.debug("Animation at " + hex(readAddr))
+
+            frameCount = 0
+            while True: # do while文がないので代わりに無限ループ＋breakを使う
+                frameData = self.romData[readAddr:readAddr+FRAME_DATA_SIZE]
+                [graphSizePtr, palSizePtr, junkDataPtr, ptrToOAMptr, frameDelay, frameType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
+                ptrToOAMptr += spriteAddr
+                u"""
+                    20バイトで1フレーム
+                    4バイト：画像サイズがあるアドレスへのポインタ
+                    4バイト：パレットサイズがあるアドレスへのポインタ
+                    4バイト：未使用データへのポインタ（？）
+                    4バイト：OAMデータのポインタがあるアドレスへのポインタ
+                    2バイト：フレーム遅延数
+                    2バイト：再生タイプ
+                """
+                frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "oamPtrAddr":ptrToOAMptr})
+                readAddr += FRAME_DATA_SIZE
+                frameCount += 1
+
+                if frameData[-2:] in ["\x80\x00","\xC0\x00"]: # 終端フレームならループを終了
+                    break
+
+        oamDataList = []
+        for frameData in frameDataList:
+            logger.debug("Frame at " + hex(frameData["address"]))
+            logger.debug("  Animation Number:\t" + str(frameData["animNum"]))
+            logger.debug("  Frame Number:\t\t" + str(frameData["frameNum"]))
+            logger.debug("  Address of OAM Pointer:\t" + hex(frameData["oamPtrAddr"]))
+            oamPtrAddr = frameData["oamPtrAddr"]
+            [oamPtr] = struct.unpack("L", self.romData[oamPtrAddr:oamPtrAddr+OFFSET_SIZE])
+            readAddr = oamPtrAddr + oamPtr
+
+            while True:
+                oamData = self.romData[readAddr:readAddr+OAM_DATA_SIZE]
+                if oamData == OAM_DATA_END:
+                    break
+                oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData})
+                readAddr += OAM_DATA_SIZE
+
+        for oam in oamDataList:
+            logger.debug("OAM at " + hex(oam["address"]))
+            oamData = oam["oamData"]
+            [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
+            logger.debug("  Start Tile:\t" + str(startTile))
+            logger.debug("  Offset X:\t" + str(posX))
+            logger.debug("  Offset Y:\t" + str(posY))
+            logger.debug("  Flag1 (VHNNNNSS)\t" + bin(flag1)[2:].zfill(8))
+            logger.debug("  Flag2 (PPPPNNSS)\t" + bin(flag2)[2:].zfill(8))
+
+            objSize = bin(flag1)[2:].zfill(8)[-2:]
+            objShape = bin(flag2)[2:].zfill(8)[-2:]
+            [sizeX, sizeY] = objDim[objSize+objShape]
+            logger.debug("  Size X:\t" + str(sizeX))
+            logger.debug("  Size Y:\t" + str(sizeY))
+
+            posX = posX * -1 -sizeX # 水平方向の描画座標を反転
+            flag1 ^= 0b01000000 # 水平反転フラグをビット反転
+
+            flipData = struct.pack("BbbBB", startTile, posX, posY, flag1, flag2)
+            self.writeDataToRom(oam["address"], flipData)
+
+
+    def writeDataToRom(self, writeAddr, data):
+        u""" 指定したアドレスから指定したデータを上書きする
+        """
+        self.romData = self.romData[:writeAddr] + data + self.romData[writeAddr+len(data):]
+
+
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
@@ -864,3 +929,47 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+u'''
+    フラグとサイズの関係．わかりづらい・・・
+
+    shape:
+        b00: 正方形
+        b01: 長方形（横長）
+        b10: 長方形（縦長）
+        b11: 未使用
+
+    size 0, shape 0: 8x8
+    □
+    size 0, shape 1: 16x8
+    □□
+    size 0, shape 2: 8x16
+    □
+    □
+    size 1, shape 0: 16x16
+    □□
+    □□
+    size 1, shape 1: 32x8
+    □□□□
+    size 1, shape 2: 8x32
+    □
+    □
+    □
+    □
+    size 2, shape 0: 32x32
+    □□□□
+    □□□□
+    □□□□
+    □□□□
+    size 2, shape 1: 32x16
+    □□□□
+    □□□□
+    size 2, shape 2: 16x32
+    □□
+    □□
+    □□
+    □□
+    size 3, shape 0: 64x64
+    size 3, shape 1: 64x32
+    size 3, shape 2: 32x64
+'''

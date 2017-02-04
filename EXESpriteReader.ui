@@ -245,6 +245,7 @@
     <addaction name="repointAction"/>
     <addaction name="replaceAction"/>
     <addaction name="saveImageAction"/>
+    <addaction name="flipAction"/>
    </widget>
    <widget class="QMenu" name="helpMenu">
     <property name="title">
@@ -334,6 +335,11 @@
   <action name="saveImageAction">
    <property name="text">
     <string>現在のフレームを画像に出力</string>
+   </property>
+  </action>
+  <action name="flipAction">
+   <property name="text">
+    <string>水平反転</string>
    </property>
   </action>
  </widget>
@@ -563,6 +569,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>flipAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>flipSprite()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -578,5 +600,6 @@
   <slot>guiOAMItemActivated(QListWidgetItem*)</slot>
   <slot>repoint()</slot>
   <slot>writePalData()</slot>
+  <slot>flipSprite()</slot>
  </slots>
 </ui>

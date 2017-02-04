@@ -78,10 +78,10 @@ ROCKMAN_EXE3 = {
 }
 
 ROCK_EXE3_BK = {
-"startAddr":0,
-"endAddr":0,
+"startAddr":0x248E0,
+"endAddr":0x251B4,
 "classHeadAddr":[],
-"ignoreAddr":[]
+"ignoreAddr":[0x441060, 0x6A5F20]
 }
 
 ROCKMAN_EXE2 = {

@@ -163,6 +163,8 @@ class Ui_MainWindow(object):
         self.repointAction.setObjectName(_fromUtf8("repointAction"))
         self.saveImageAction = QtGui.QAction(MainWindow)
         self.saveImageAction.setObjectName(_fromUtf8("saveImageAction"))
+        self.flipAction = QtGui.QAction(MainWindow)
+        self.flipAction.setObjectName(_fromUtf8("flipAction"))
         self.fileMenu.addAction(self.openAction)
         self.fileMenu.addAction(self.openSpriteAction)
         self.fileMenu.addAction(self.saveAction)
@@ -171,6 +173,7 @@ class Ui_MainWindow(object):
         self.spriteMenu.addAction(self.repointAction)
         self.spriteMenu.addAction(self.replaceAction)
         self.spriteMenu.addAction(self.saveImageAction)
+        self.spriteMenu.addAction(self.flipAction)
         self.helpMenu.addAction(self.linkAction)
         self.helpMenu.addAction(self.aboutAction)
         self.menubar.addAction(self.fileMenu.menuAction())
@@ -192,6 +195,7 @@ class Ui_MainWindow(object):
         QtCore.QObject.connect(self.oamList, QtCore.SIGNAL(_fromUtf8("itemDoubleClicked(QListWidgetItem*)")), MainWindow.guiOAMItemActivated)
         QtCore.QObject.connect(self.repointAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.repoint)
         QtCore.QObject.connect(self.palSaveButton, QtCore.SIGNAL(_fromUtf8("pressed()")), MainWindow.writePalData)
+        QtCore.QObject.connect(self.flipAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.flipSprite)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -226,4 +230,5 @@ class Ui_MainWindow(object):
 "別のアドレスのスプライトを読み込ませることが出来ます", None))
         self.repointAction.setStatusTip(_translate("MainWindow", "選択しているスプライトのポインタを書き換えて，別のアドレスのスプライトを読み込ませることが出来ます", None))
         self.saveImageAction.setText(_translate("MainWindow", "現在のフレームを画像に出力", None))
+        self.flipAction.setText(_translate("MainWindow", "水平反転", None))
 
