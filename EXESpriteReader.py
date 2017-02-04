@@ -36,6 +36,12 @@ handler.setLevel(INFO)
 logger.setLevel(INFO)
 logger.addHandler(handler)
 
+HEADER_SIZE = 4 # スプライトヘッダのサイズ
+OFFSET_SIZE = 4
+FRAME_DATA_SIZE = 20
+OAM_DATA_SIZE = 5
+OAM_DATA_END = "\xFF\xFF\xFF\xFF\xFF"
+
 # フラグと形状の対応を取る辞書[size+shape]:[x,y]
 # キーにリストが使えないのでこんなことに・・・
 objDim = {
@@ -106,9 +112,9 @@ class SpriteReader(QtGui.QMainWindow):
             print( _(u"ファイルの選択をキャンセルしました") )
             return -1
 
-        self.spriteAddrList = []
+        self.spriteList = []
         self.ui.spriteList.clear()
-        self.spriteAddrList.append( {"spriteAddr":0, "compFlag":0, "readPos":0} )
+        self.spriteList.append( {"spriteAddr":0, "compFlag":0, "readPos":0} )
 
         spriteItemStr = "Opend Sprite"  # GUIのリストに表示する文字列
         spriteItem = QtGui.QListWidgetItem( spriteItemStr )  # GUIのスプライトリストに追加するアイテムの生成
@@ -169,17 +175,17 @@ class SpriteReader(QtGui.QMainWindow):
         u''' スプライトのアドレスを抽出する
         '''
 
-        self.spriteAddrList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
+        self.spriteList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
         self.ui.spriteList.clear() # スプライトリストの初期化
 
         readPos = EXE_Addr["startAddr"]
-        while readPos <= EXE_Addr["endAddr"]-4:
+        while readPos <= EXE_Addr["endAddr"] - OFFSET_SIZE:
             u""" スプライトテーブルの読み込み
 
             テーブルの最後のアドレスはスプライトデータではなくデータの終端と思われる
             """
 
-            spriteAddr = romData[readPos:readPos+4]
+            spriteAddr = romData[readPos:readPos+OFFSET_SIZE]
             memByte = struct.unpack("B", spriteAddr[3])[0]
 
             if memByte in [0x08, 0x88]:
@@ -202,7 +208,7 @@ class SpriteReader(QtGui.QMainWindow):
                 """
 
                 if spriteAddr in EXE_Addr["ignoreAddr"]:
-                    readPos += 4
+                    readPos += OFFSET_SIZE
                     continue
 
 
@@ -217,7 +223,7 @@ class SpriteReader(QtGui.QMainWindow):
                 ↑と思ったがデータ的に連続していないスプライトを参照していることがあるので意味がなかった
                 """
 
-                self.spriteAddrList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "pointerAddr":readPos} )
+                self.spriteList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "pointerAddr":readPos} )
 
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t"  # GUIのリストに表示する文字列
                 if self.romName == "ROCKEXE6_GXX":
@@ -229,7 +235,7 @@ class SpriteReader(QtGui.QMainWindow):
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
-            readPos += 4
+            readPos += OFFSET_SIZE
 
 
     def guiSpriteItemActivated(self, index):
@@ -247,9 +253,9 @@ class SpriteReader(QtGui.QMainWindow):
         self.ui.palSelect.setValue(0)
         #self.ui.spriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         # ↑この変更もハンドリングされてしまうのでダメ
-        spriteAddr = self.spriteAddrList[index]["spriteAddr"]
+        spriteAddr = self.spriteList[index]["spriteAddr"]
         #print( "Serected Sprite:\t" + hex(spriteAddr) )
-        compFlag = self.spriteAddrList[index]["compFlag"]
+        compFlag = self.spriteList[index]["compFlag"]
         self.parseSpriteData(self.romData, spriteAddr, compFlag)
         self.guiAnimItemActivated(0)
 
@@ -267,8 +273,8 @@ class SpriteReader(QtGui.QMainWindow):
             #print "Sprite Address:\t" + hex(startAddr) + "\n"
 
             # 使う部分だけ切り出し
-            spriteHeader = romData[startAddr:startAddr+4]   # 初めの４バイトがヘッダ情報
-            self.spriteData = romData[startAddr+4:endAddr]   # それ以降がスプライトの内容
+            spriteHeader = romData[startAddr:startAddr+HEADER_SIZE]   # 初めの４バイトがヘッダ情報
+            self.spriteData = romData[startAddr+HEADER_SIZE:endAddr]   # それ以降がスプライトの内容
 
         elif compFlag == 1: # 圧縮スプライトなら
             spriteData = LZ77Util.decompLZ77_10(romData, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
@@ -278,7 +284,7 @@ class SpriteReader(QtGui.QMainWindow):
             return
 
         readPos = 0 # スプライトデータの先頭から読み込む
-        animDataStart = self.spriteData[readPos:readPos+4]
+        animDataStart = self.spriteData[readPos:readPos+OFFSET_SIZE]
         animDataStart = struct.unpack("<L", animDataStart)[0]
 
         # アニメーションポインタのリスト生成
@@ -288,8 +294,8 @@ class SpriteReader(QtGui.QMainWindow):
         while readPos < animDataStart:
             u""" アニメーションポインタのリスト化
             """
-            animPtr = self.spriteData[readPos:readPos+4] # ポインタは4バイト
-            readPos += 4
+            animPtr = self.spriteData[readPos:readPos+OFFSET_SIZE]
+            readPos += OFFSET_SIZE
 
             animPtr = struct.unpack("<L", animPtr)[0]   # リトルエンディアンのunsigned longとして読み込む
             self.animPtrList.append(animPtr)
@@ -332,7 +338,7 @@ class SpriteReader(QtGui.QMainWindow):
             frameItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのフレームリストに追加するアイテムの生成
             self.ui.frameList.addItem(frameItem) # フレームリストへ追加
 
-            animPtr += 20
+            animPtr += FRAME_DATA_SIZE
             frameCount += 1
 
             if frameData[-2:] in ["\x80\x00","\xC0\x00"]: # 終端フレームならループを終了
@@ -360,7 +366,7 @@ class SpriteReader(QtGui.QMainWindow):
         '''
 
         self.graphicsScene.clear()  # 描画シーンのクリア
-        frameData = spriteData[framePtr:framePtr+20]   # 1フレーム分ロード
+        frameData = spriteData[framePtr:framePtr+FRAME_DATA_SIZE]   # 1フレーム分ロード
         [graphSizePtr, palSizePtr, junkDataPtr, ptrToOAMptr, frameDelay, animType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
 
         u"""
@@ -373,13 +379,13 @@ class SpriteReader(QtGui.QMainWindow):
             2バイト：再生タイプ
         """
 
-        graphSize = spriteData[graphSizePtr:graphSizePtr+4]
+        graphSize = spriteData[graphSizePtr:graphSizePtr+OFFSET_SIZE]
         #print("Graphics Size Pointer:\t" + hex(graphSizePtr))
         graphSize = struct.unpack("<L", graphSize)[0]
         #print( "Graphics Size:\t" + hex(graphSize) )
 
         # 画像データの読み込み
-        readPos = graphSizePtr + 4  # ４バイトのサイズ情報の後に画像データが続く
+        readPos = graphSizePtr + OFFSET_SIZE  # ４バイトのサイズ情報の後に画像データが続く
         graphData = spriteData[readPos:readPos+graphSize]   # 画像のロード
 
         u""" フレームが指定している色を無視してUIで選択中のパレットで表示する仕様にしています
@@ -387,7 +393,7 @@ class SpriteReader(QtGui.QMainWindow):
         palIndex = self.ui.palSelect.value()
         self.parsePaletteData(spriteData, palSizePtr, palIndex)
 
-        oamDataPtr = spriteData[ ptrToOAMptr:ptrToOAMptr+4 ]
+        oamDataPtr = spriteData[ ptrToOAMptr:ptrToOAMptr+OFFSET_SIZE ]
         oamDataPtr = struct.unpack("<L", oamDataPtr)[0]
         #print( "OAM Data Pointer:\t" + hex(oamDataPtr) )
         oamDataStart = ptrToOAMptr + oamDataPtr # OAMデータの先頭アドレスはOAMポインタの先頭アドレス+ポインタの値
@@ -403,7 +409,6 @@ class SpriteReader(QtGui.QMainWindow):
         '''
 
         oamCount = 0
-        OAM_DATA_SIZE = 5
         OAM_DATA_END = "\xFF\xFF\xFF\xFF\xFF"
         readPos = oamDataStart
 
@@ -458,14 +463,6 @@ class SpriteReader(QtGui.QMainWindow):
             self.drawOAM(OAM["image"], OAM["sizeX"], OAM["sizeY"], OAM["posX"], OAM["posY"])
             logger.debug("---\n")
         self.endAddr = readPos + len("\xFF\xFF\xFF\xFF\xFF")
-
-
-    def guiSpriteItemWClicked(self, item):
-        u''' GUIでスプライトがダブルクリックされたときに行う処理（未使用）
-        '''
-
-        index = self.ui.spriteList.currentRow() # 選択された行の番号を取得
-        ptrAddr = self.spriteAddrList[index][2]
 
 
     def guiOAMItemActivated(self, item):
@@ -597,14 +594,14 @@ class SpriteReader(QtGui.QMainWindow):
         '''
 
         # パレットサイズの読み取り
-        palSize = spriteData[palSizePtr:palSizePtr+4]
+        palSize = spriteData[palSizePtr:palSizePtr+OFFSET_SIZE]
         palSize = struct.unpack("<L", palSize)[0]
         #print( "Palette Size:\t" + hex(palSize) )
         if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x00にしてることもあったので無視
             #return
             palSize = 0x20
 
-        readPos = palSizePtr + 4 + palIndex * palSize # パレットサイズ情報の後にパレットデータが続く（インデックス番号によって開始位置をずらす）
+        readPos = palSizePtr + OFFSET_SIZE + palIndex * palSize # パレットサイズ情報の後にパレットデータが続く（インデックス番号によって開始位置をずらす）
         endAddr = readPos + palSize
 
         self.palData = []    # パレットデータを格納するリスト
@@ -654,15 +651,14 @@ class SpriteReader(QtGui.QMainWindow):
         self.guiAnimItemActivated( len(self.animPtrList)-1 )    # 最後のアニメーション
         #print len(self.framePtrList)
         self.guiFrameItemActivated( len(self.framePtrList)-1 )  # 最後のフレーム
-        return self.endAddr+4   # ヘッダサイズぶん
+        return self.endAddr+HEADER_SIZE   # ヘッダサイズぶん
 
 
     def dumpSprite(self):
         u""" スプライトのダンプ
         """
 
-        spriteIndex = self.ui.spriteList.currentRow()
-        targetSprite = self.spriteAddrList[spriteIndex]
+        targetSprite = self.getCurrentSprite()
 
         if targetSprite["compFlag"] == 0:
             data = self.romData[targetSprite["spriteAddr"]:targetSprite["spriteAddr"]+self.getSpriteSize()]
@@ -676,6 +672,20 @@ class SpriteReader(QtGui.QMainWindow):
                 print u"ファイルを保存しました"
         except:
             print u"ファイルの保存をキャンセルしました"
+
+
+    def exDumpSprite(self):
+        u""" スプライトを拡張してダンプ
+
+            スプライトを32アニメーション，各16フレームのスペースを確保したスプライトに変換して保存する
+            拡張した部分には１個めのアニメーションをコピーする
+            アニメーション数が少ないスプライトを移植するときも安心
+        """
+
+        ANIMATION_NUM = 32   # アニメーション数は32に固定する
+        FRAME_NUM = 16   # フレーム数は16枚分確保する
+        ANIMATION_TABLE_SIZE = ANIMATION_NUM * OFFSET_SIZE
+        ANIMATION_SIZE = FRAME_NUM * FRAME_DATA_SIZE
 
 
     def saveFrameImage(self):
@@ -714,8 +724,7 @@ class SpriteReader(QtGui.QMainWindow):
     def repoint(self):
         u""" ポインタの書き換え
         """
-        index = self.ui.spriteList.currentRow()
-        targetAddr = self.spriteAddrList[index]["pointerAddr"]
+        targetAddr = self.getCurrentSprite()
         print( u"書き換えるアドレス：\t" + hex( targetAddr ) )
 
         dialog = QtGui.QDialog()
@@ -742,16 +751,13 @@ class SpriteReader(QtGui.QMainWindow):
     def writePalData(self):
         u""" UI上で編集したパレットのデータをROMに書き込む
         """
-        index = self.ui.spriteList.currentRow()
-        if index == -1:
-            return -1
 
-        targetSprite = self.spriteAddrList[self.ui.spriteList.currentRow()]
+        targetSprite = self.getCurrentSprite()
         if targetSprite["compFlag"] == 1:
             print(u"圧縮スプライトは現在非対応です")
             return 0
         else:
-            writeAddr = targetSprite["spriteAddr"] + 4  # ヘッダのぶん4バイト
+            writeAddr = targetSprite["spriteAddr"] + HEADER_SIZE  # ヘッダのぶん4バイト
             self.romData = self.romData[:writeAddr] + self.spriteData + self.romData[writeAddr+len(self.spriteData):]
             print(u"編集したパレットをメモリ上のROMに書き込みました")
             return 0
@@ -763,14 +769,7 @@ class SpriteReader(QtGui.QMainWindow):
             全てのOAMの水平反転フラグを切り替え，描画オフセットXを-X-sizeXにする
         """
 
-        OFFSET_SIZE = 4
-        FRAME_DATA_SIZE = 20
-        OAM_DATA_SIZE = 5
-        OAM_DATA_END = "\xFF\xFF\xFF\xFF\xFF"
-
-        index = self.ui.spriteList.currentRow()
-        logger.debug("Sprite List Current Row:\t" + str(index))
-        targetSprite = self.spriteAddrList[index]
+        targetSprite = self.getCurrentSprite()
         spriteAddr = targetSprite["spriteAddr"]
         logger.debug("Current Sprite Address:\t" + hex(spriteAddr))
 
@@ -778,7 +777,7 @@ class SpriteReader(QtGui.QMainWindow):
             print(u"圧縮スプライトは現在非対応です")
             return -1
 
-        spriteAddr += 4 # ヘッダは無視
+        spriteAddr += HEADER_SIZE # ヘッダは無視
         readAddr = spriteAddr
         animPtrList = []
         animDataStart = self.romData[readAddr:readAddr+OFFSET_SIZE]
@@ -862,6 +861,15 @@ class SpriteReader(QtGui.QMainWindow):
 
         logger.info(u"水平反転したスプライトを書き込みました")
         self.guiSpriteItemActivated(index)
+
+
+    def getCurrentSprite(self):
+        u""" 選択中のスプライトを取得する
+        """
+        index = self.ui.spriteList.currentRow()
+        if index == -1:
+            return -1
+        return self.spriteList[index]
 
 
     def writeDataToRom(self, writeAddr, data):
