@@ -20,8 +20,8 @@ import time
 from logging import getLogger,StreamHandler,WARNING,INFO,DEBUG
 logger = getLogger(__name__)    # 出力元の明確化
 handler = StreamHandler()
-handler.setLevel(DEBUG)
-logger.setLevel(DEBUG)
+handler.setLevel(INFO)
+logger.setLevel(INFO)
 logger.addHandler(handler)
 
 
