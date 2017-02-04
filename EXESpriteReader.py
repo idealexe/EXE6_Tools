@@ -32,8 +32,8 @@ import UI_EXESpriteReader as designer
 from logging import getLogger,StreamHandler,INFO,DEBUG
 logger = getLogger(__name__)    # 出力元の明確化
 handler = StreamHandler()
-handler.setLevel(DEBUG)
-logger.setLevel(DEBUG)
+handler.setLevel(INFO)
+logger.setLevel(INFO)
 logger.addHandler(handler)
 
 # フラグと形状の対応を取る辞書[size+shape]:[x,y]
@@ -857,6 +857,11 @@ class SpriteReader(QtGui.QMainWindow):
 
             flipData = struct.pack("BbbBB", startTile, posX, posY, flag1, flag2)
             self.writeDataToRom(oam["address"], flipData)
+            sys.stdout.write(".")
+        logger.info("done")
+
+        logger.info(u"水平反転したスプライトを書き込みました")
+        self.guiSpriteItemActivated(index)
 
 
     def writeDataToRom(self, writeAddr, data):
