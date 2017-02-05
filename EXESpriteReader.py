@@ -97,7 +97,7 @@ class SpriteReader(QtGui.QMainWindow):
             return -1
 
         self.extractSpriteAddr(self.romData)
-        self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
+        self.ui.spriteList.setCurrentRow(0)
 
 
     def openSprite(self):
@@ -121,7 +121,7 @@ class SpriteReader(QtGui.QMainWindow):
         spriteItemStr = "Opened Sprite"  # GUIのリストに表示する文字列
         spriteItem = QtGui.QListWidgetItem( spriteItemStr )  # GUIのスプライトリストに追加するアイテムの生成
         self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
-        self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
+        self.ui.spriteList.setCurrentRow(0)  # 1番目のスプライトを自動で選択
 
 
     def setSpriteDict(self, romData):
