@@ -70,7 +70,6 @@ class Ui_MainWindow(object):
         self.graphicsView.setForegroundBrush(brush)
         self.graphicsView.setInteractive(False)
         self.graphicsView.setResizeAnchor(QtGui.QGraphicsView.NoAnchor)
-        self.graphicsView.setViewportUpdateMode(QtGui.QGraphicsView.FullViewportUpdate)
         self.graphicsView.setObjectName(_fromUtf8("graphicsView"))
         self.graphicsLayout.addWidget(self.graphicsView)
         self.baseHLayout.addLayout(self.graphicsLayout)

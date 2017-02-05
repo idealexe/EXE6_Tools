@@ -103,9 +103,6 @@
           <property name="resizeAnchor">
            <enum>QGraphicsView::NoAnchor</enum>
           </property>
-          <property name="viewportUpdateMode">
-           <enum>QGraphicsView::FullViewportUpdate</enum>
-          </property>
          </widget>
         </item>
        </layout>

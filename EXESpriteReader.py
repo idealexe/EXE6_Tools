@@ -396,7 +396,11 @@ class SpriteReader(QtGui.QMainWindow):
         currentAnimFrame = [frame for frame in self.frameDataList if frame["animNum"] == index]
         self.ui.frameLabel.setText(u"フレーム：" + str(len(currentAnimFrame)))
         for frame in currentAnimFrame:
-            frameStr = hex(frame["address"])[2:].zfill(8).upper() + "\t" + str(frame["frameType"])  # GUIに表示する文字列
+            frameStr = hex(frame["address"])[2:].zfill(8).upper()   # GUIに表示する文字列
+            if frame["frameType"] == 128:
+                frameStr += "\tStop"
+            elif frame["frameType"] == 192:
+                frameStr += "\tLoop"
             frameItem = QtGui.QListWidgetItem( frameStr )    # GUIのフレームリストに追加するアイテムの生成
             self.ui.frameList.addItem(frameItem) # フレームリストへ追加
 
@@ -715,8 +719,10 @@ class SpriteReader(QtGui.QMainWindow):
         """
 
         sourceBounds = self.graphicsScene.itemsBoundingRect()    # シーン内の全てのアイテムから領域を算出
-        image = QtGui.QImage( QtCore.QSize(sourceBounds.width(), sourceBounds.height()), 12)
-        targetBounds = QtCore.QRectF(image.rect() )
+        #self.graphicsScene.addRect(sourceBounds)
+        image = QtGui.QImage( QtCore.QSize(sourceBounds.width(), sourceBounds.height()), 6)
+        image.fill(QtGui.QColor(0, 0, 0, 0).rgba()) # 初期化されていないのでfillしないとノイズが入る（えぇ・・・）
+        targetBounds = QtCore.QRectF( image.rect() )
         painter = QtGui.QPainter(image)
         self.graphicsScene.render(painter, targetBounds, sourceBounds)
         painter.end()
