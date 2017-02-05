@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u''' EXE Sprite Reader ver 1.1 by ideal.exe
+u''' EXE Sprite Reader ver 1.2 by ideal.exe
 
 
     データ構造仕様
@@ -253,17 +253,6 @@ class SpriteReader(QtGui.QMainWindow):
         self.animPtrList = animPtrList
         self.frameDataList = frameDataList
         self.oamDataList = oamDataList
-
-        """
-        if compFlag == 0:   # 非圧縮スプライトなら
-            endAddr = self.getSpriteEnd()
-            # 使う部分だけ切り出し
-            spriteHeader = self.romData[spriteAddr:spriteAddr+HEADER_SIZE]   # 初めの４バイトがヘッダ情報
-            self.spriteData = self.romData[spriteAddr+HEADER_SIZE:endAddr]   # それ以降がスプライトの内容
-        elif compFlag == 1: # 圧縮スプライトなら
-            spriteData = LZ77Util.decompLZ77_10(self.romData, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
-            self.spriteData = spriteData
-        """
 
         self.ui.animLabel.setText(u"アニメーション：" + str(len(animPtrList)))
         for animPtr in animPtrList:
@@ -662,6 +651,52 @@ class SpriteReader(QtGui.QMainWindow):
         FRAME_NUM = 16   # フレーム数は16枚分確保する
         ANIMATION_TABLE_SIZE = ANIMATION_NUM * OFFSET_SIZE
         ANIMATION_SIZE = FRAME_NUM * FRAME_DATA_SIZE
+
+        output = "" # 出力用のスプライトデータ
+
+        u""" アニメーションオフセットテーブル作成
+        """
+        animDataStart = ANIMATION_NUM * OFFSET_SIZE
+        for i in xrange(ANIMATION_NUM):
+            output += struct.pack("L", animDataStart + i * ANIMATION_SIZE)
+
+        u""" グラフィック，OAMなどのコピー
+
+            フレームデータ内で各アドレスを参照するので先にコピーする
+        """
+        output += "\xFF" * ANIMATION_SIZE * ANIMATION_NUM # アニメーションデータ領域の確保
+        writeAddr = ANIMATION_TABLE_SIZE + ANIMATION_SIZE * ANIMATION_NUM
+        copyOffset = writeAddr - self.frameDataList[0]["graphSizeAddr"] # グラフィックデータの元の開始位置との差分（フレームデータの修正に使用する）
+        # 先頭のフレームが先頭のグラフィックデータを使ってないパターンがあったら死ぬ
+        output += self.spriteData[self.frameDataList[0]["graphSizeAddr"]:]  # グラフィックデータ先頭からスプライトの終端までコピー
+
+        u""" フレームデータのコピー
+        """
+        for frameData in self.frameDataList:
+            writeAddr = animDataStart + ANIMATION_SIZE * frameData["animNum"] + FRAME_DATA_SIZE * frameData["frameNum"]
+            graphSizeAddr = frameData["graphSizeAddr"] + copyOffset
+            palSizeAddr = frameData["palSizeAddr"] + copyOffset
+            junkDataAddr = frameData["junkDataAddr"] + copyOffset
+            oamPtrAddr = frameData["oamPtrAddr"] + copyOffset
+            frameDelay = frameData["frameDelay"]
+            frameType = frameData["frameType"]
+            data = struct.pack("<LLLLHH", graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
+            output = output[:writeAddr] + data + output[writeAddr+len(data):]
+
+        for i in xrange(len(self.animPtrList), ANIMATION_NUM):    # 拡張した分のアニメーション
+            writeAddr = animDataStart + ANIMATION_SIZE * i
+            data = output[animDataStart:animDataStart+ANIMATION_SIZE] # 1つめのアニメーションをコピーする
+            output = output[:writeAddr] + data + output[writeAddr+len(data):]
+
+        output = "\xFF\xFF\xFF\xFF" + output    # ヘッダの追加
+
+        filename = QtGui.QFileDialog.getSaveFileName(self, _(u"スプライトを保存する"), os.path.expanduser('./'), _("dump File (*.bin *.dmp)"))
+        try:
+            with open( unicode(filename), 'wb') as saveFile:
+                saveFile.write(output)
+                logger.info(u"ファイルを保存しました")
+        except:
+            logger.info(u"ファイルの保存をキャンセルしました")
 
 
     def saveFrameImage(self):
