@@ -38,6 +38,7 @@ logger.addHandler(handler)
 
 HEADER_SIZE = 4 # スプライトヘッダのサイズ
 OFFSET_SIZE = 4
+COLOR_SIZE  = 2 # 1色あたりのサイズ
 FRAME_DATA_SIZE = 20
 OAM_DATA_SIZE = 5
 OAM_DATA_END = "\xFF\xFF\xFF\xFF\xFF"
@@ -249,24 +250,39 @@ class SpriteReader(QtGui.QMainWindow):
         spriteAddr = self.spriteList[index]["spriteAddr"]
         compFlag = self.spriteList[index]["compFlag"]
 
-        [animPtrList, frameDataList, oamDataList] = self.parseAllData(self.romData, spriteAddr, compFlag)
+        [spriteData, animPtrList, frameDataList, oamDataList] = self.parseAllData(self.romData, spriteAddr, compFlag)
+        self.spriteData = spriteData
         self.animPtrList = animPtrList
         self.frameDataList = frameDataList
         self.oamDataList = oamDataList
 
+        """
+        if compFlag == 0:   # 非圧縮スプライトなら
+            endAddr = self.getSpriteEnd()
+            # 使う部分だけ切り出し
+            spriteHeader = self.romData[spriteAddr:spriteAddr+HEADER_SIZE]   # 初めの４バイトがヘッダ情報
+            self.spriteData = self.romData[spriteAddr+HEADER_SIZE:endAddr]   # それ以降がスプライトの内容
+        elif compFlag == 1: # 圧縮スプライトなら
+            spriteData = LZ77Util.decompLZ77_10(self.romData, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
+            self.spriteData = spriteData
+        """
+
         self.ui.animLabel.setText(u"アニメーション：" + str(len(animPtrList)))
         for animPtr in animPtrList:
-            animPtrStr = hex(animPtr["addr"])[2:].zfill(6).upper() # GUIに表示する文字列
+            animPtrStr = hex(animPtr["value"])[2:].zfill(6).upper() # GUIに表示する文字列
             animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
             self.ui.animList.addItem(animItem) # アニメーションリストへ追加
         #self.parseSpriteData(self.romData, spriteAddr, compFlag)
-        self.guiAnimItemActivated(0)
+        self.ui.animList.setCurrentRow(0)   # self.guiAnimItemActivated(0)  が呼ばれる
+
 
 
     def parseAllData(self, romData, spriteAddr, compFlag):
         u""" スプライトの読み取り
 
             以下のリストを返す
+
+            spriteData
 
             animPtrList.append({"animNum":animCount, "addr":readAddr, "value":animPtr})
 
@@ -278,19 +294,16 @@ class SpriteReader(QtGui.QMainWindow):
         """
 
         if compFlag == 0:
-            spriteAddr += HEADER_SIZE # ヘッダは無視
-            readAddr = spriteAddr
+            spriteData = romData[spriteAddr+HEADER_SIZE:]   # スプライトはサイズ情報を持たないので仮の範囲を切り出し
         elif compFlag == 1:
             spriteData = LZ77Util.decompLZ77_10(romData, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
-            romData = spriteData    # 圧縮データだとROM内のアドレスで参照できないので応急処置
-            spriteAddr = 0
-            readAddr = 0
         else:
             logger.info(u"不明なエラーです")
             return -1
 
-        animDataStart = romData[readAddr:readAddr+OFFSET_SIZE]
-        animDataStart = struct.unpack("<L", animDataStart)[0] + readAddr
+        readAddr = 0
+        animDataStart = spriteData[readAddr:readAddr+OFFSET_SIZE]
+        animDataStart = struct.unpack("<L", animDataStart)[0]
         logger.debug("Animation Data Start:\t" + hex(animDataStart))
 
         u""" アニメーションオフセットのテーブルからアニメーションのアドレスを取得
@@ -298,8 +311,8 @@ class SpriteReader(QtGui.QMainWindow):
         animPtrList = []
         animCount = 0
         while readAddr < animDataStart:
-            animPtr = romData[readAddr:readAddr+OFFSET_SIZE]
-            animPtr = struct.unpack("<L", animPtr)[0] + spriteAddr
+            animPtr = spriteData[readAddr:readAddr+OFFSET_SIZE]
+            animPtr = struct.unpack("<L", animPtr)[0]
             animPtrList.append({"animNum":animCount, "addr":readAddr, "value":animPtr})
             readAddr += OFFSET_SIZE
             animCount += 1
@@ -314,12 +327,10 @@ class SpriteReader(QtGui.QMainWindow):
 
             frameCount = 0
             while True: # do while文がないので代わりに無限ループ＋breakを使う
-                frameData = romData[readAddr:readAddr+FRAME_DATA_SIZE]
+                frameData = spriteData[readAddr:readAddr+FRAME_DATA_SIZE]
                 [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
                 if graphSizeAddr not in graphAddrList:
                     graphAddrList.append(graphSizeAddr)
-
-                [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr] = [ addr + spriteAddr for addr in [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr] ]
 
                 frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "frameData":frameData, \
                     "graphSizeAddr":graphSizeAddr, "palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
@@ -340,11 +351,11 @@ class SpriteReader(QtGui.QMainWindow):
             logger.debug("  Frame Number:\t\t" + str(frameData["frameNum"]))
             logger.debug("  Address of OAM Pointer:\t" + hex(frameData["oamPtrAddr"]))
             oamPtrAddr = frameData["oamPtrAddr"]
-            [oamPtr] = struct.unpack("L", romData[oamPtrAddr:oamPtrAddr+OFFSET_SIZE])
+            [oamPtr] = struct.unpack("L", spriteData[oamPtrAddr:oamPtrAddr+OFFSET_SIZE])
             readAddr = oamPtrAddr + oamPtr
 
             while True:
-                oamData = romData[readAddr:readAddr+OAM_DATA_SIZE]
+                oamData = spriteData[readAddr:readAddr+OAM_DATA_SIZE]
                 if oamData == OAM_DATA_END:
                     break
                 oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData})
@@ -366,7 +377,13 @@ class SpriteReader(QtGui.QMainWindow):
             logger.debug("  Size X:\t" + str(sizeX))
             logger.debug("  Size Y:\t" + str(sizeY))
 
-        return [animPtrList, frameDataList, oamDataList]
+        u""" スプライトデータの切り出し
+        """
+        if compFlag == 0:
+            endAddr = oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END)
+            spriteData = spriteData[:endAddr]
+
+        return [spriteData, animPtrList, frameDataList, oamDataList]
 
 
     def parseSpriteData(self, romData, spriteAddr, compFlag):
@@ -422,7 +439,6 @@ class SpriteReader(QtGui.QMainWindow):
         if index == -1: # GUIの選択位置によっては-1が渡されることがある？
             return
 
-        self.ui.animList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         self.ui.frameList.clear()
 
         currentAnimFrame = [frame for frame in self.frameDataList if frame["animNum"] == index]
@@ -434,7 +450,7 @@ class SpriteReader(QtGui.QMainWindow):
         #print( "Serected Anim:\t" + str(index) + " (" + hex(animPtr) + ")" )
 
         #self.parseAnimData(self.spriteData, animPtr)
-        self.guiFrameItemActivated(0)
+        self.ui.frameList.setCurrentRow(0)
 
 
     def parseAnimData(self, spriteData, animPtr):
@@ -466,16 +482,22 @@ class SpriteReader(QtGui.QMainWindow):
 
     def guiFrameItemActivated(self, index):
         u''' GUIでフレームが選択されたときに行う処理
+
+            現在のフレームのOAMを取得してリスト化，パレットの取得
         '''
 
         if index == -1:
             return
 
-        self.ui.frameList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         self.graphicsScene.clear()  # 描画シーンのクリア
         self.ui.oamList.clear()
-        palIndex = self.ui.palSelect.value()
         animIndex = self.ui.animList.currentRow()
+
+        u""" フレームが指定している色を無視してUIで選択中のパレットで表示する仕様にしています
+        """
+        palIndex = self.ui.palSelect.value()
+        currentFrame = self.frameDataList[index]
+        self.parsePaletteData(self.spriteData, self.frameDataList[index]["palSizeAddr"], palIndex)
 
         currentFrameOam = [oam for oam in self.oamDataList if oam["animNum"] == animIndex and oam["frameNum"] == index]
         self.ui.oamLabel.setText(u"OAM：" + str(len(currentFrameOam)))
@@ -484,10 +506,53 @@ class SpriteReader(QtGui.QMainWindow):
             oamItem = QtGui.QListWidgetItem( oamAddrStr )   # GUIのOAMリストに追加するアイテムの生成
             self.ui.oamList.addItem(oamItem) # GUIスプライトリストへ追加
 
-
-
         #framePtr = self.framePtrList[index]
         #self.parseframeData(self.spriteData, framePtr)
+
+
+    def parsePaletteData(self, spriteData, palSizePtr, palIndex):
+        u''' パレットデータの読み取り
+
+            入力：スプライトデータ，パレットサイズのアドレス
+            処理：スプライトデータからのパレットサイズ読み込み，パレットデータ読み込み，RGBAカラー化
+        '''
+
+        # パレットサイズの読み取り
+        palSize = spriteData[palSizePtr:palSizePtr+OFFSET_SIZE]
+        palSize = struct.unpack("<L", palSize)[0]
+        #print( "Palette Size:\t" + hex(palSize) )
+        if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x00にしてることもあったので無視
+            #return
+            palSize = 0x20
+
+        readPos = palSizePtr + OFFSET_SIZE + palIndex * palSize # パレットサイズ情報の後にパレットデータが続く（インデックス番号によって開始位置をずらす）
+        endAddr = readPos + palSize
+
+        self.palData = []    # パレットデータを格納するリスト
+        self.ui.palList.clear()
+        palCount = 0
+        while readPos < endAddr:
+            color = spriteData[readPos:readPos+COLOR_SIZE]
+            color = struct.unpack("<H", color)[0]
+
+            binColor = bin(color)[2:].zfill(15) # GBAのオブジェクトは15bitカラー（0BBBBBGGGGGRRRRR）
+            binB = int( binColor[0:5], 2 ) * 8  #   文字列化されているので数値に直す（255階調での近似色にするため8倍する）
+            binG = int( binColor[5:10], 2 ) * 8
+            binR = int( binColor[10:15], 2 ) * 8
+            #print "R: " + hex(binR) + "\tG: " + hex(binG) + "\tB: " + hex(binB)
+            if palCount == 0:
+                self.palData.append( {"color":[binR, binG, binB, 0], "addr":readPos } ) # 最初の色は透過色
+            else:
+                self.palData.append( {"color":[binR, binG, binB, 255], "addr":readPos } )
+
+            colorStr = hex(color)[2:].zfill(4).upper() + "\t(" + str(binR).rjust(3) + ", " + str(binG).rjust(3) + ", " + str(binB).rjust(3) + ")"  # GUIに表示する文字列
+            colorItem = QtGui.QListWidgetItem(colorStr)
+            colorItem.setBackgroundColor( QtGui.QColor(binR, binG, binB) )  # 背景色をパレットの色に
+            colorItem.setTextColor( QtGui.QColor(255-binR, 255-binG, 255-binB) )    # 文字は反転色
+            self.ui.palList.addItem(colorItem) # フレームリストへ追加
+
+            palCount += 1
+            readPos += COLOR_SIZE
 
 
     def parseframeData(self, spriteData, framePtr):
@@ -540,7 +605,6 @@ class SpriteReader(QtGui.QMainWindow):
         '''
 
         oamCount = 0
-        OAM_DATA_END = "\xFF\xFF\xFF\xFF\xFF"
         readPos = oamDataStart
 
         self.oamList = []   # OAMの情報を格納するリスト
@@ -631,7 +695,7 @@ class SpriteReader(QtGui.QMainWindow):
         binB = bin(b/8)[2:].zfill(5)
         gbaColor = int(binB + binG + binR, 2)  # GBAのカラーコードに変換
         colorStr = struct.pack("H", gbaColor)
-        self.spriteData = self.spriteData[:writePos] + colorStr + self.spriteData[writePos+2:]  # ロード中のスプライトデータの色を書き換える
+        self.spriteData = self.spriteData[:writePos] + colorStr + self.spriteData[writePos+COLOR_SIZE:]  # ロード中のスプライトデータの色を書き換える
 
         frameIndex = self.ui.frameList.currentRow()
         framePtr = self.framePtrList[frameIndex]
@@ -717,50 +781,6 @@ class SpriteReader(QtGui.QMainWindow):
         #self.graphicsScene.addRect(imageBounds)
 
 
-    def parsePaletteData(self, spriteData, palSizePtr, palIndex):
-        u''' パレットデータの読み取り
-
-            入力：スプライトデータ，パレットサイズのアドレス
-            処理：スプライトデータからのパレットサイズ読み込み，パレットデータ読み込み，RGBAカラー化
-        '''
-
-        # パレットサイズの読み取り
-        palSize = spriteData[palSizePtr:palSizePtr+OFFSET_SIZE]
-        palSize = struct.unpack("<L", palSize)[0]
-        #print( "Palette Size:\t" + hex(palSize) )
-        if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x00にしてることもあったので無視
-            #return
-            palSize = 0x20
-
-        readPos = palSizePtr + OFFSET_SIZE + palIndex * palSize # パレットサイズ情報の後にパレットデータが続く（インデックス番号によって開始位置をずらす）
-        endAddr = readPos + palSize
-
-        self.palData = []    # パレットデータを格納するリスト
-        self.ui.palList.clear()
-        palCount = 0
-        while readPos < endAddr:
-            color = spriteData[readPos:readPos+2]   # 1色あたり16bit（2バイト）
-            color = struct.unpack("<H", color)[0]
-
-            binColor = bin(color)[2:].zfill(15) # GBAのオブジェクトは15bitカラー（0BBBBBGGGGGRRRRR）
-            binB = int( binColor[0:5], 2 ) * 8  #   文字列化されているので数値に直す（255階調での近似色にするため8倍する）
-            binG = int( binColor[5:10], 2 ) * 8
-            binR = int( binColor[10:15], 2 ) * 8
-            #print "R: " + hex(binR) + "\tG: " + hex(binG) + "\tB: " + hex(binB)
-            if palCount == 0:
-                self.palData.append( {"color":[binR, binG, binB, 0], "addr":readPos } ) # 最初の色は透過色
-            else:
-                self.palData.append( {"color":[binR, binG, binB, 255], "addr":readPos } )
-
-            colorStr = hex(color)[2:].zfill(4).upper() + "\t(" + str(binR).rjust(3) + ", " + str(binG).rjust(3) + ", " + str(binB).rjust(3) + ")"  # GUIに表示する文字列
-            colorItem = QtGui.QListWidgetItem(colorStr)
-            colorItem.setBackgroundColor( QtGui.QColor(binR, binG, binB) )  # 背景色をパレットの色に
-            colorItem.setTextColor( QtGui.QColor(255-binR, 255-binG, 255-binB) )    # 文字は反転色
-            self.ui.palList.addItem(colorItem) # フレームリストへ追加
-
-            palCount += 1
-            readPos += 2
-
     def changePalet(self, n):
         index = self.ui.frameList.currentRow()
         framePtr = self.framePtrList[index]
@@ -773,15 +793,13 @@ class SpriteReader(QtGui.QMainWindow):
             """
 
 
-    def getSpriteEnd(self, spriteAddr):
+    def getSpriteEnd(self):
         u""" 無圧縮のスプライトデータの終端アドレスを検出する
 
             スプライトの一番最後のアニメーションの一番最後のフレームの一番最後のOAMの終端がそのアドレス
         """
 
-        compFlag = 0
-        [animPtrList, frameDataList, oamDataList] = self.parseAllData(self.romData, spriteAddr, compFlag)
-        endAddr = oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END)
+        endAddr = self.oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END)
         return endAddr
 
 
@@ -878,6 +896,7 @@ class SpriteReader(QtGui.QMainWindow):
         else:
             logger.info(u"リポイントをキャンセルしました")
 
+
     def writePalData(self):
         u""" UI上で編集したパレットのデータをROMに書き込む
         """
@@ -899,7 +918,12 @@ class SpriteReader(QtGui.QMainWindow):
             全てのOAMの水平反転フラグを切り替え，描画オフセットXを-X-sizeXにする
         """
 
-        for oam in oamDataList:
+        targetSprite = self.getCurrentSprite()
+        if targetSprite["compFlag"] == 1:
+            print(u"圧縮スプライトは非対応です")
+            return -1
+
+        for oam in self.oamDataList:
             logger.debug("OAM at " + hex(oam["address"]))
             oamData = oam["oamData"]
             [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
