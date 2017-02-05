@@ -380,6 +380,7 @@ class SpriteReader(QtGui.QMainWindow):
                 [sizeX, sizeY] = objDim[objSize+objShape]
                 logger.debug("  Size X:\t" + str(sizeX))
                 logger.debug("  Size Y:\t" + str(sizeY))
+
                 oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData, \
                     "startTile":startTile, "posX":posX, "posY":posY, "sizeX":sizeX, "sizeY":sizeY, "flipV":vFlip, "flipH":hFlip})
                 readAddr += OAM_DATA_SIZE
@@ -503,15 +504,22 @@ class SpriteReader(QtGui.QMainWindow):
         u""" フレームが指定している色を無視してUIで選択中のパレットで表示する仕様にしています
         """
         palIndex = self.ui.palSelect.value()
-        currentFrame = self.frameDataList[index]
-        self.parsePaletteData(self.spriteData, self.frameDataList[index]["palSizeAddr"], palIndex)
+
+        [currentFrame] = [frame for frame in self.frameDataList if frame["animNum"] == animIndex and frame["frameNum"] == index]
+        self.parsePaletteData(self.spriteData, currentFrame["palSizeAddr"], palIndex)
 
         currentFrameOam = [oam for oam in self.oamDataList if oam["animNum"] == animIndex and oam["frameNum"] == index]
         self.ui.oamLabel.setText(u"OAM：" + str(len(currentFrameOam)))
+
         for oam in currentFrameOam:
             oamAddrStr = ( hex(oam["address"])[2:].zfill(8)).upper()  # GUIのリストに表示する文字列
             oamItem = QtGui.QListWidgetItem( oamAddrStr )   # GUIのOAMリストに追加するアイテムの生成
             self.ui.oamList.addItem(oamItem) # GUIスプライトリストへ追加
+
+            # OAM画像の生成，描画
+            graphicData = currentFrame["graphicData"]
+            image = self.makeOAMImage(graphicData, oam["startTile"], oam["sizeX"], oam["sizeY"], oam["flipV"], oam["flipH"])
+            self.drawOAM(image, oam["sizeX"], oam["sizeY"], oam["posX"], oam["posY"])
 
         #framePtr = self.framePtrList[index]
         #self.parseframeData(self.spriteData, framePtr)
@@ -655,7 +663,7 @@ class SpriteReader(QtGui.QMainWindow):
             logger.debug( "Shape Flag:\t" + str(objShape) )
 
             sizeX, sizeY = objDim[objSize+objShape]
-            image = self.makeOAMImage(graphData, startTile, sizeX, sizeY, hFlip, vFlip)
+            image = self.makeOAMImage(graphData, startTile, sizeX, sizeY, vFlip, hFlip)
 
             OAM = {
             "image":image,
@@ -720,48 +728,66 @@ class SpriteReader(QtGui.QMainWindow):
         logger.info(u"現在アニメーションの再生には対応していません")
 
 
-    def makeOAMImage(self, imgData, startTile, width, hight, hFlip, vFlip):
+    def makeOAMImage(self, imgData, startTile, width, height, vFlip, hFlip):
         u''' OAM情報から画像を生成する
 
-            入力：スプライトのグラフィックデータ，開始タイル，横サイズ，縦サイズ
+            入力：スプライトのグラフィックデータ，開始タイル，横サイズ，縦サイズ，垂直反転フラグ，水平反転フラグ
             出力：画像データ（QPixmap形式）
 
             グラフィックデータは4bitで1pxを表現する．アクセス可能な最小単位は8*8pxのタイルでサイズは32byteとなる
         '''
 
-        startAddr = startTile * 32  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
-        width = width/8 # サイズからタイルの枚数に変換
-        hight = hight/8
+        TILE_WIDTH = 8
+        TILE_HEIGHT = 8
+        TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT / 2
+
+        logger.info("Image Width:\t" + str(width))
+        logger.info("Image Height:\t" + str(height))
+        logger.info("Flip V:\t" + str(vFlip))
+        logger.info("Flip H:\t" + str(hFlip))
+
+        startAddr = startTile * TILE_DATA_SIZE  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
         imgData = imgData[startAddr:]   # 使う部分を切り出し
         imgData = binascii.hexlify(imgData).upper()   # バイナリ値をそのまま文字列にしたデータに変換（0xFF -> "FF"）
         imgData = list(imgData) # 1文字ずつのリストに変換
-
         # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
         for i in range(0, len(imgData))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
             imgData[i], imgData[i+1] = imgData[i+1], imgData[i] # これで値を入れ替えられる
 
+        width = width / TILE_WIDTH # サイズからタイルの枚数に変換
+        height = height / TILE_HEIGHT
+
         totalSize = len(imgData)    # 全ドット数
         imgArray = []
+
         # 色情報に変換する
         readPos = 0
         while readPos < totalSize:
             currentPixel = int(imgData[readPos], 16)    # 1ドット分読み込み，文字列から数値に変換
-            imgArray.append(self.palData[currentPixel]["color"])
+            imgArray.append(self.palData[currentPixel]["color"])    # 対応する色に変換
             readPos += 1
 
         imgArray = np.array(imgArray)   # ndarrayに変換
-        imgArray = imgArray.reshape( (-1, 8, 4) )  # 横8ドットのタイルに並べ替える（-1を設定すると自動で縦の値を算出してくれる）
+        imgArray = imgArray.reshape( (-1, TILE_WIDTH, 4) )  # 横8ドットのタイルに並べ替える（-1を設定すると自動で縦の値を算出してくれる）
+        u""" 現在の状態
 
-        tileNum = width * hight  # 合計タイル数
+            □
+            □
+            ︙
+            □
+            □
+        """
+
+        tileNum = width * height  # 合計タイル数
 
         # タイルの切り出し
         tile = []  # pythonのリストとして先に宣言する（ndarrayとごっちゃになりやすい）
         for i in range(0, tileNum):
-            tile.append(imgArray[i*8:i*8+8, 0:8, :])    # 8x8のタイルを切り出していく
+            tile.append(imgArray[TILE_HEIGHT*i:TILE_HEIGHT*(i+1), 0:TILE_WIDTH, :])    # 8x8のタイルを切り出していく
 
         # タイルの並び替え
         h = []  # 水平方向に結合したタイルを格納するリスト
-        for i in range(0, hight):
+        for i in range(0, height):
             h.append( np.zeros_like(tile[0]) )    # タイルを詰めるダミー
             for j in range(0, width):
                 h[i] = np.hstack( (h[i], tile[i*width + j]) )
@@ -772,7 +798,6 @@ class SpriteReader(QtGui.QMainWindow):
         dataImg = Image.fromarray( np.uint8(img) )  # 色情報の行列から画像を生成（PILのImage形式）
         if hFlip == 1:
             dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
-
         if vFlip == 1:
             dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
         qImg = ImageQt(dataImg) # QImage形式に変換
