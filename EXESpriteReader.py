@@ -520,9 +520,7 @@ class SpriteReader(QtGui.QMainWindow):
         # パレットサイズの読み取り
         palSize = spriteData[palSizePtr:palSizePtr+OFFSET_SIZE]
         palSize = struct.unpack("<L", palSize)[0]
-        #print( "Palette Size:\t" + hex(palSize) )
         if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x00にしてることもあったので無視
-            #return
             palSize = 0x20
 
         readPos = palSizePtr + OFFSET_SIZE + palIndex * palSize # パレットサイズ情報の後にパレットデータが続く（インデックス番号によって開始位置をずらす）
@@ -553,6 +551,11 @@ class SpriteReader(QtGui.QMainWindow):
 
             palCount += 1
             readPos += COLOR_SIZE
+
+
+    def changePalet(self, n):
+        index = self.ui.frameList.currentRow()
+        self.guiFrameItemActivated(index)
 
 
     def parseframeData(self, spriteData, framePtr):
@@ -779,18 +782,6 @@ class SpriteReader(QtGui.QMainWindow):
         imageBounds = item.boundingRect()
         self.graphicsScene.addItem(item)
         #self.graphicsScene.addRect(imageBounds)
-
-
-    def changePalet(self, n):
-        index = self.ui.frameList.currentRow()
-        framePtr = self.framePtrList[index]
-        self.parseframeData(self.spriteData, framePtr)
-        """
-        try:
-            self.parsePaletteData(self.spriteData, palSizePtr, n)
-        except:
-            print(u"スプライトが読み込まれていません")
-            """
 
 
     def getSpriteEnd(self):
