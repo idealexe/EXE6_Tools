@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1200</width>
+    <width>1265</width>
     <height>600</height>
    </rect>
   </property>
@@ -146,7 +146,7 @@
         <item>
          <widget class="QCheckBox" name="animCheck">
           <property name="text">
-           <string>アニメーション再生</string>
+           <string>アニメーション再生（未実装）</string>
           </property>
          </widget>
         </item>
@@ -224,8 +224,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1200</width>
-     <height>21</height>
+     <width>1265</width>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -242,6 +242,7 @@
      <string>スプライト</string>
     </property>
     <addaction name="dumpAction"/>
+    <addaction name="exDumpAction"/>
     <addaction name="repointAction"/>
     <addaction name="replaceAction"/>
     <addaction name="saveImageAction"/>
@@ -340,6 +341,14 @@
   <action name="flipAction">
    <property name="text">
     <string>水平反転</string>
+   </property>
+  </action>
+  <action name="exDumpAction">
+   <property name="text">
+    <string>拡張してダンプ</string>
+   </property>
+   <property name="statusTip">
+    <string>選択しているスプライトを32アニメーション，各16フレームのスペースを確保したスプライトに変換して出力します</string>
    </property>
   </action>
  </widget>
@@ -585,6 +594,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>exDumpAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>exDumpSprite()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>599</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -601,5 +626,6 @@
   <slot>repoint()</slot>
   <slot>writePalData()</slot>
   <slot>flipSprite()</slot>
+  <slot>exDumpSprite()</slot>
  </slots>
 </ui>

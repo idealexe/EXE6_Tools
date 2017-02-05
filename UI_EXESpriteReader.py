@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(1200, 600)
+        MainWindow.resize(1265, 600)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setEnabled(True)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
@@ -130,7 +130,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addLayout(self.baseHLayout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1200, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1265, 24))
         self.menubar.setObjectName(_fromUtf8("menubar"))
         self.fileMenu = QtGui.QMenu(self.menubar)
         self.fileMenu.setObjectName(_fromUtf8("fileMenu"))
@@ -165,11 +165,14 @@ class Ui_MainWindow(object):
         self.saveImageAction.setObjectName(_fromUtf8("saveImageAction"))
         self.flipAction = QtGui.QAction(MainWindow)
         self.flipAction.setObjectName(_fromUtf8("flipAction"))
+        self.exDumpAction = QtGui.QAction(MainWindow)
+        self.exDumpAction.setObjectName(_fromUtf8("exDumpAction"))
         self.fileMenu.addAction(self.openAction)
         self.fileMenu.addAction(self.openSpriteAction)
         self.fileMenu.addAction(self.saveAction)
         self.fileMenu.addAction(self.exitAction)
         self.spriteMenu.addAction(self.dumpAction)
+        self.spriteMenu.addAction(self.exDumpAction)
         self.spriteMenu.addAction(self.repointAction)
         self.spriteMenu.addAction(self.replaceAction)
         self.spriteMenu.addAction(self.saveImageAction)
@@ -196,6 +199,7 @@ class Ui_MainWindow(object):
         QtCore.QObject.connect(self.repointAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.repoint)
         QtCore.QObject.connect(self.palSaveButton, QtCore.SIGNAL(_fromUtf8("pressed()")), MainWindow.writePalData)
         QtCore.QObject.connect(self.flipAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.flipSprite)
+        QtCore.QObject.connect(self.exDumpAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.exDumpSprite)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -204,7 +208,7 @@ class Ui_MainWindow(object):
         self.graphicsLabel.setText(_translate("MainWindow", "スプライトビュー", None))
         self.animLabel.setText(_translate("MainWindow", "アニメーション", None))
         self.frameLabel.setText(_translate("MainWindow", "フレーム", None))
-        self.animCheck.setText(_translate("MainWindow", "アニメーション再生", None))
+        self.animCheck.setText(_translate("MainWindow", "アニメーション再生（未実装）", None))
         self.oamLabel.setText(_translate("MainWindow", "OAM", None))
         self.palLabel.setText(_translate("MainWindow", "パレット", None))
         self.palSaveButton.setText(_translate("MainWindow", "編集したパレットを書き込む", None))
@@ -231,4 +235,6 @@ class Ui_MainWindow(object):
         self.repointAction.setStatusTip(_translate("MainWindow", "選択しているスプライトのポインタを書き換えて，別のアドレスのスプライトを読み込ませることが出来ます", None))
         self.saveImageAction.setText(_translate("MainWindow", "現在のフレームを画像に出力", None))
         self.flipAction.setText(_translate("MainWindow", "水平反転", None))
+        self.exDumpAction.setText(_translate("MainWindow", "拡張してダンプ", None))
+        self.exDumpAction.setStatusTip(_translate("MainWindow", "選択しているスプライトを32アニメーション，各16フレームのスペースを確保したスプライトに変換して出力します", None))
 
