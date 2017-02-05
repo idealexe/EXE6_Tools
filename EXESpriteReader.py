@@ -250,6 +250,8 @@ class SpriteReader(QtGui.QMainWindow):
         compFlag = self.spriteList[index]["compFlag"]
 
         [animPtrList, frameDataList, oamDataList] = self.parseAllData(self.romData, spriteAddr, compFlag)
+        self.animPtrList = animPtrList
+        self.frameDataList = frameDataList
 
         self.ui.animLabel.setText(u"アニメーション：" + str(len(animPtrList)))
         for animPtr in animPtrList:
@@ -257,7 +259,7 @@ class SpriteReader(QtGui.QMainWindow):
             animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
             self.ui.animList.addItem(animItem) # アニメーションリストへ追加
         #self.parseSpriteData(self.romData, spriteAddr, compFlag)
-        #self.guiAnimItemActivated(0)
+        self.guiAnimItemActivated(0)
 
 
     def parseAllData(self, romData, spriteAddr, compFlag):
@@ -412,16 +414,26 @@ class SpriteReader(QtGui.QMainWindow):
 
     def guiAnimItemActivated(self, index):
         u''' GUIでアニメーションが選択されたときに行う処理
+
+            フレームリストから選択されたアニメーションのフレームを取り出してリスト化
         '''
 
         if index == -1: # GUIの選択位置によっては-1が渡されることがある？
             return
 
         self.ui.animList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
-        animPtr = self.animPtrList[index]
+        self.ui.frameList.clear()
+
+        currentAnimFrame = [frame for frame in self.frameDataList if frame["animNum"] == index]
+        self.ui.frameLabel.setText(u"フレーム：" + str(len(currentAnimFrame)))
+        for frame in currentAnimFrame:
+            frameStr = hex(frame["address"])[2:].zfill(8).upper()  # GUIに表示する文字列
+            frameItem = QtGui.QListWidgetItem( frameStr )    # GUIのフレームリストに追加するアイテムの生成
+            self.ui.frameList.addItem(frameItem) # フレームリストへ追加
         #print( "Serected Anim:\t" + str(index) + " (" + hex(animPtr) + ")" )
-        self.parseAnimData(self.spriteData, animPtr)
-        self.guiFrameItemActivated(0)
+
+        #self.parseAnimData(self.spriteData, animPtr)
+        #self.guiFrameItemActivated(0)
 
 
     def parseAnimData(self, spriteData, animPtr):
