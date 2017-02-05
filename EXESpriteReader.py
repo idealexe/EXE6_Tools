@@ -87,10 +87,10 @@ class SpriteReader(QtGui.QMainWindow):
             with open( filename, 'rb' ) as romFile:
                 self.romData = romFile.read()
         except:
-            print( _(u"ファイルの選択をキャンセルしました") )
+            logger.info( _(u"ファイルの選択をキャンセルしました") )
             return -1    # 中断
 
-        if self.setDict(self.romData) == -1:
+        if self.setSpriteDict(self.romData) == -1:
             u""" 非対応ROMの場合も中断
             """
             return -1
@@ -102,81 +102,88 @@ class SpriteReader(QtGui.QMainWindow):
     def openSprite(self):
         u""" スプライトファイルを開くときの処理
         """
-        filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE Sprite File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+
+        filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE_Sprite File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
         filename = unicode(filename)
 
         try:
             with open( filename, 'rb' ) as romFile:
                 self.romData = romFile.read()
         except:
-            print( _(u"ファイルの選択をキャンセルしました") )
+            logger.info( _(u"ファイルの選択をキャンセルしました") )
             return -1
 
         self.spriteList = []
         self.ui.spriteList.clear()
         self.spriteList.append( {"spriteAddr":0, "compFlag":0, "readPos":0} )
 
-        spriteItemStr = "Opend Sprite"  # GUIのリストに表示する文字列
+        spriteItemStr = "Opened Sprite"  # GUIのリストに表示する文字列
         spriteItem = QtGui.QListWidgetItem( spriteItemStr )  # GUIのスプライトリストに追加するアイテムの生成
         self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
         self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
 
 
-    def setDict(self, romData):
+    def setSpriteDict(self, romData):
         u""" バージョンを判定し使用する辞書をセットする
         """
 
-        self.romName = self.romData[0xA0:0xAC]
+        global romName
+        romName = romData[0xA0:0xAC]
         global EXE_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒なので）
-        if self.romName == "ROCKEXE6_GXX":
-            print( _(u"ロックマンエグゼ6 グレイガ jp としてロードしました") )
+
+        if romName == "ROCKEXE6_GXX":
+            logger.info( _(u"ロックマンエグゼ6 グレイガ jp としてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE6_GXX
-        elif self.romName == "MEGAMAN6_GXX":
-            print( _(u"ロックマンエグゼ6 グレイガ en としてロードしました") )
+        elif romName == "MEGAMAN6_GXX":
+            logger.info( _(u"ロックマンエグゼ6 グレイガ en としてロードしました") )
             EXE_Addr = SpriteDict.MEGAMAN6_GXX
-        elif self.romName == "ROCKEXE6_RXX":
-            print( _(u"ロックマンエグゼ6 ファルザー jp としてロードしました") )
+        elif romName == "ROCKEXE6_RXX":
+            logger.info( _(u"ロックマンエグゼ6 ファルザー jp としてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE6_RXX
-        elif self.romName == "MEGAMAN6_FXX":
-            print( _(u"ロックマンエグゼ6 ファルザー en としてロードしました") )
+        elif romName == "MEGAMAN6_FXX":
+            logger.info( _(u"ロックマンエグゼ6 ファルザー en としてロードしました") )
             EXE_Addr = SpriteDict.MEGAMAN6_FXX
 
-        elif self.romName == "ROCKEXE5_TOB":
-            print( _(u"ロックマンエグゼ5 チームオブブルース jp としてロードしました") )
+        elif romName == "ROCKEXE5_TOB":
+            logger.info( _(u"ロックマンエグゼ5 チームオブブルース jp としてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE5_TOB
-        elif self.romName == "ROCKEXE5_TOC":
-            print( _(u"ロックマンエグゼ5 チームオブカーネル jp としてロードしました") )
+        elif romName == "ROCKEXE5_TOC":
+            logger.info( _(u"ロックマンエグゼ5 チームオブカーネル jp としてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE5_TOC
 
-        elif self.romName == "ROCKEXE4.5RO":
-            print( _(u"ロックマンエグゼ4.5 jp としてロードしました") )
+        elif romName == "ROCKEXE4.5RO":
+            logger.info( _(u"ロックマンエグゼ4.5 jp としてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE4_5RO
 
-        elif self.romName == "ROCK_EXE4_RS":
-            print( _(u"ロックマンエグゼ4 トーナメントレッドサン jp としてロードしました") )
+        elif romName == "ROCK_EXE4_RS":
+            logger.info( _(u"ロックマンエグゼ4 トーナメントレッドサン jp としてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE4_RS
-        elif self.romName == "ROCK_EXE4_BM":
-            print( _(u"ロックマンエグゼ4 トーナメントブルームーン jp としてロードしました") )
+        elif romName == "ROCK_EXE4_BM":
+            logger.info( _(u"ロックマンエグゼ4 トーナメントブルームーン jp としてロードしました") )
             EXE_Addr = SpriteDict.ROCKEXE4_BM
 
-        elif self.romName == "ROCK_EXE3_BK":
-            print( _(u"ロックマンエグゼ3 Black jp としてロードしました") )
+        elif romName == "ROCK_EXE3_BK":
+            logger.info( _(u"ロックマンエグゼ3 Black jp としてロードしました") )
             EXE_Addr = SpriteDict.ROCK_EXE3_BK
-        elif self.romName == "ROCKMAN_EXE3":
-            print(_(u"ロックマンエグゼ3 jp としてロードしました"))
+        elif romName == "ROCKMAN_EXE3":
+            logger.info(_(u"ロックマンエグゼ3 jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKMAN_EXE3
 
         else:
-            print( _(u"対応していないバージョンです" ) )
+            logger.info( _(u"対応していないバージョンです" ) )
             return -1   # error
 
 
     def extractSpriteAddr(self, romData):
         u''' スプライトのアドレスを抽出する
+
+            スプライトリストが作成されます
+            スプライトリストはスプライトのアドレス，圧縮状態，スプライトのアドレスを保持しているポインタのアドレスを保持します
+            spriteListの各要素は{"spriteAddr":spriteAddr, "compFlag":compFlag, "pointerAddr":readPos}の形式です
         '''
 
-        self.spriteList = []    # スプライトの先頭アドレスと圧縮状態を保持するリスト
-        self.ui.spriteList.clear() # スプライトリストの初期化
+        self.spriteList = []
+        self.ui.spriteList.clear() # UIのスプライトリストの初期化
 
         readPos = EXE_Addr["startAddr"]
         while readPos <= EXE_Addr["endAddr"] - OFFSET_SIZE:
@@ -202,36 +209,18 @@ class SpriteReader(QtGui.QMainWindow):
                 spriteAddr = spriteAddr[:3] + "\x00"    # ROM内でのアドレスに直す　例）081D8000 -> 001D8000 (00 80 1D 08 -> 00 80 1D 00)
                 [spriteAddr] = struct.unpack("<L", spriteAddr)
 
-                """
-                if readPos in EXE_Addr["classHeadAddr"]:
-                    print hex(spriteAddr)
-                """
-
                 if spriteAddr in EXE_Addr["ignoreAddr"]:
                     readPos += OFFSET_SIZE
                     continue
 
-
-                u""" スプライトの先頭から次のデータまでの間はそのスプライトが利用可能な空間
-
-                nextDataAddr = romData[readPos+4:readPos+8]
-                [nextDataAddr] = struct.unpack("<L", nextDataAddr[:3]+"\x00")
-
-                spriteSpace = nextDataAddr - spriteAddr
-
-                パディングがついていることがあるので必ずしもスプライトのサイズとは一致しないが近い値
-                ↑と思ったがデータ的に連続していないスプライトを参照していることがあるので意味がなかった
-                """
-
                 self.spriteList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "pointerAddr":readPos} )
 
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t"  # GUIのリストに表示する文字列
-                if self.romName == "ROCKEXE6_GXX":
+                if romName == "ROCKEXE6_GXX":
                     try:
                         spriteAddrStr += unicode( SpriteDict.GXX_Sprite_List[hex(spriteAddr)] )
                     except:
                         pass
-
                 spriteItem = QtGui.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
@@ -245,19 +234,127 @@ class SpriteReader(QtGui.QMainWindow):
         if index == -1:
             u""" 何らかの原因で無選択状態になったら中断
             """
-            return
+            return -1
 
         self.graphicsScene = QtGui.QGraphicsScene() # スプライトを描画するためのシーン
         self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         self.ui.graphicsView.setScene(self.graphicsScene)
-        self.ui.palSelect.setValue(0)
+        self.ui.palSelect.setValue(0)   # パレットをリセット
+
         #self.ui.spriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         # ↑この変更もハンドリングされてしまうのでダメ
         spriteAddr = self.spriteList[index]["spriteAddr"]
-        #print( "Serected Sprite:\t" + hex(spriteAddr) )
         compFlag = self.spriteList[index]["compFlag"]
+
         self.parseSpriteData(self.romData, spriteAddr, compFlag)
+        [animPtrList, frameDataList, oamDataList] = self.parseAllData(self.romData, spriteAddr, compFlag)
         self.guiAnimItemActivated(0)
+
+
+    def parseAllData(self, romData, spriteAddr, compFlag):
+        u""" スプライトの読み取り
+
+            以下のリストを返す
+
+            animPtrList.append({"animNum":animCount, "addr":readAddr, "value":animPtr})
+
+            frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "frameData":frameData, \
+                "graphSizeAddr":graphSizeAddr, "palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
+                "oamPtrAddr":oamPtrAddr, "frameDelay":frameDelay, "frameType":frameType})
+
+            oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData})
+        """
+
+        if compFlag == 0:
+            spriteAddr += HEADER_SIZE # ヘッダは無視
+            readAddr = spriteAddr
+        elif compFlag == 1:
+            spriteData = LZ77Util.decompLZ77_10(romData, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
+            romData = spriteData    # 圧縮データだとROM内のアドレスで参照できないので応急処置
+            spriteAddr = 0
+            readAddr = 0
+        else:
+            logger.info(u"不明なエラーです")
+            return -1
+
+        animDataStart = romData[readAddr:readAddr+OFFSET_SIZE]
+        animDataStart = struct.unpack("<L", animDataStart)[0] + readAddr
+        logger.debug("Animation Data Start:\t" + hex(animDataStart))
+
+        u""" アニメーションオフセットのテーブルからアニメーションのアドレスを取得
+        """
+        animPtrList = []
+        animCount = 0
+        while readAddr < animDataStart:
+            animPtr = romData[readAddr:readAddr+OFFSET_SIZE]
+            animPtr = struct.unpack("<L", animPtr)[0] + spriteAddr
+            animPtrList.append({"animNum":animCount, "addr":readAddr, "value":animPtr})
+            readAddr += OFFSET_SIZE
+            animCount += 1
+
+        u""" アニメーションのアドレスから各フレームのデータを取得
+        """
+        frameDataList = []
+        graphAddrList = []    # グラフィックデータは共有しているフレームも多いので別のリストで保持
+        for animPtr in animPtrList:
+            readAddr = animPtr["value"]
+            logger.debug("Animation at " + hex(readAddr))
+
+            frameCount = 0
+            while True: # do while文がないので代わりに無限ループ＋breakを使う
+                frameData = romData[readAddr:readAddr+FRAME_DATA_SIZE]
+                [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
+                if graphSizeAddr not in graphAddrList:
+                    graphAddrList.append(graphSizeAddr)
+
+                [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr] = [ addr + spriteAddr for addr in [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr] ]
+
+                frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "frameData":frameData, \
+                    "graphSizeAddr":graphSizeAddr, "palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
+                    "oamPtrAddr":oamPtrAddr, "frameDelay":frameDelay, "frameType":frameType})
+
+                readAddr += FRAME_DATA_SIZE
+                frameCount += 1
+
+                if frameData[-2:] in ["\x80\x00","\xC0\x00"]: # 終端フレームならループを終了
+                    break
+
+        u""" フレームデータからOAMデータを取得
+        """
+        oamDataList = []
+        for frameData in frameDataList:
+            logger.debug("Frame at " + hex(frameData["address"]))
+            logger.debug("  Animation Number:\t" + str(frameData["animNum"]))
+            logger.debug("  Frame Number:\t\t" + str(frameData["frameNum"]))
+            logger.debug("  Address of OAM Pointer:\t" + hex(frameData["oamPtrAddr"]))
+            oamPtrAddr = frameData["oamPtrAddr"]
+            [oamPtr] = struct.unpack("L", romData[oamPtrAddr:oamPtrAddr+OFFSET_SIZE])
+            readAddr = oamPtrAddr + oamPtr
+
+            while True:
+                oamData = romData[readAddr:readAddr+OAM_DATA_SIZE]
+                if oamData == OAM_DATA_END:
+                    break
+                oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData})
+                readAddr += OAM_DATA_SIZE
+
+        for oam in oamDataList:
+            logger.debug("OAM at " + hex(oam["address"]))
+            oamData = oam["oamData"]
+            [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
+            logger.debug("  Start Tile:\t" + str(startTile))
+            logger.debug("  Offset X:\t" + str(posX))
+            logger.debug("  Offset Y:\t" + str(posY))
+            logger.debug("  Flag1 (VHNNNNSS)\t" + bin(flag1)[2:].zfill(8))
+            logger.debug("  Flag2 (PPPPNNSS)\t" + bin(flag2)[2:].zfill(8))
+
+            objSize = bin(flag1)[2:].zfill(8)[-2:]
+            objShape = bin(flag2)[2:].zfill(8)[-2:]
+            [sizeX, sizeY] = objDim[objSize+objShape]
+            logger.debug("  Size X:\t" + str(sizeX))
+            logger.debug("  Size Y:\t" + str(sizeY))
+
+        return [animPtrList, frameDataList, oamDataList]
 
 
     def parseSpriteData(self, romData, spriteAddr, compFlag):
@@ -490,7 +587,7 @@ class SpriteReader(QtGui.QMainWindow):
         writePos = self.palData[index]["addr"]  # 色データを書き込む位置
         color = QtGui.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
         if color.isValid() == False: # キャンセルしたとき
-            print(u"色の選択をキャンセルしました")
+            logger.info(u"色の選択をキャンセルしました")
             return 0
 
         r,g,b,a = color.getRgb()    # ダイアログでセットされた色に更新
@@ -512,7 +609,7 @@ class SpriteReader(QtGui.QMainWindow):
 
     '''
     def playAnimData(self):
-        print(u"現在アニメーションの再生には対応していません")
+        logger.info(u"現在アニメーションの再生には対応していません")
 
 
     def makeOAMImage(self, imgData, startTile, width, hight, hFlip, vFlip):
@@ -642,16 +739,16 @@ class SpriteReader(QtGui.QMainWindow):
             """
 
 
-    def getSpriteSize(self):
-        u""" スプライトデータのサイズを検出する
+    def getSpriteEnd(self, spriteAddr):
+        u""" 無圧縮のスプライトデータの終端アドレスを検出する
 
-        スプライトの一番最後のアニメーションの一番最後のフレームの一番最後のOAMの終端がそのアドレス
+            スプライトの一番最後のアニメーションの一番最後のフレームの一番最後のOAMの終端がそのアドレス
         """
-        #print len(self.animPtrList)
-        self.guiAnimItemActivated( len(self.animPtrList)-1 )    # 最後のアニメーション
-        #print len(self.framePtrList)
-        self.guiFrameItemActivated( len(self.framePtrList)-1 )  # 最後のフレーム
-        return self.endAddr+HEADER_SIZE   # ヘッダサイズぶん
+
+        compFlag = 0
+        [animPtrList, frameDataList, oamDataList] = self.parseAllData(self.romData, spriteAddr, compFlag)
+        endAddr = oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END)
+        return endAddr
 
 
     def dumpSprite(self):
@@ -661,7 +758,7 @@ class SpriteReader(QtGui.QMainWindow):
         targetSprite = self.getCurrentSprite()
 
         if targetSprite["compFlag"] == 0:
-            data = self.romData[targetSprite["spriteAddr"]:targetSprite["spriteAddr"]+self.getSpriteSize()]
+            data = self.romData[targetSprite["spriteAddr"]:self.getSpriteEnd(targetSprite["spriteAddr"])]
         else:
             data = LZ77Util.decompLZ77_10(self.romData, targetSprite["spriteAddr"])[4:] # ファイルサイズ情報を取り除く
 
@@ -669,9 +766,9 @@ class SpriteReader(QtGui.QMainWindow):
         try:
             with open( unicode(filename), 'wb') as saveFile:
                 saveFile.write(data)
-                print u"ファイルを保存しました"
+                logger.info(u"ファイルを保存しました")
         except:
-            print u"ファイルの保存をキャンセルしました"
+            logger.info(u"ファイルの保存をキャンセルしました")
 
 
     def exDumpSprite(self):
@@ -703,9 +800,9 @@ class SpriteReader(QtGui.QMainWindow):
         try:
             with open( unicode(filename), 'wb') as saveFile:
                 image.save(filename, "PNG")
-                print u"ファイルを保存しました"
+                logger.info(u"ファイルを保存しました")
         except:
-            print u"ファイルの保存をキャンセルしました"
+            logger.info(u"ファイルの保存をキャンセルしました")
 
 
     def saveRomFile(self):
@@ -716,16 +813,16 @@ class SpriteReader(QtGui.QMainWindow):
         try:
             with open( unicode(filename), 'wb') as saveFile:
                 saveFile.write(self.romData)
-                print u"ファイルを保存しました"
+                logger.info(u"ファイルを保存しました")
         except:
-            print u"ファイルの保存をキャンセルしました"
+            logger.info(u"ファイルの保存をキャンセルしました")
 
 
     def repoint(self):
         u""" ポインタの書き換え
         """
         targetAddr = self.getCurrentSprite()
-        print( u"書き換えるアドレス：\t" + hex( targetAddr ) )
+        logger.info( u"書き換えるアドレス：\t" + hex( targetAddr ) )
 
         dialog = QtGui.QDialog()
         dialog.ui = repointDialog()
@@ -738,15 +835,14 @@ class SpriteReader(QtGui.QMainWindow):
             try:
                 addr = int(str(addrText), 16)   # QStringから戻さないとダメ
                 data = struct.pack("L", addr + 0x08000000)
-                print binascii.hexlify(data)
                 self.romData = self.romData[:targetAddr] + data + self.romData[targetAddr+len(data):]
             except:
-                print(u"不正な値です")
+                logger.info(u"不正な値です")
             # リロード
             self.extractSpriteAddr(self.romData)
             self.guiSpriteItemActivated(0)  # 1番目のスプライトを自動で選択
         else:
-            print(u"リポイントをキャンセルしました")
+            logger.info(u"リポイントをキャンセルしました")
 
     def writePalData(self):
         u""" UI上で編集したパレットのデータをROMに書き込む
@@ -754,12 +850,12 @@ class SpriteReader(QtGui.QMainWindow):
 
         targetSprite = self.getCurrentSprite()
         if targetSprite["compFlag"] == 1:
-            print(u"圧縮スプライトは現在非対応です")
+            logger.info(u"圧縮スプライトは現在非対応です")
             return 0
         else:
             writeAddr = targetSprite["spriteAddr"] + HEADER_SIZE  # ヘッダのぶん4バイト
             self.romData = self.romData[:writeAddr] + self.spriteData + self.romData[writeAddr+len(self.spriteData):]
-            print(u"編集したパレットをメモリ上のROMに書き込みました")
+            logger.info(u"編集したパレットをメモリ上のROMに書き込みました")
             return 0
 
 
@@ -768,72 +864,6 @@ class SpriteReader(QtGui.QMainWindow):
 
             全てのOAMの水平反転フラグを切り替え，描画オフセットXを-X-sizeXにする
         """
-
-        targetSprite = self.getCurrentSprite()
-        spriteAddr = targetSprite["spriteAddr"]
-        logger.debug("Current Sprite Address:\t" + hex(spriteAddr))
-
-        if targetSprite["compFlag"] == 1:
-            print(u"圧縮スプライトは現在非対応です")
-            return -1
-
-        spriteAddr += HEADER_SIZE # ヘッダは無視
-        readAddr = spriteAddr
-        animPtrList = []
-        animDataStart = self.romData[readAddr:readAddr+OFFSET_SIZE]
-        animDataStart = struct.unpack("<L", animDataStart)[0] + readAddr
-        logger.debug("Animation Data Start:\t" + hex(animDataStart))
-
-        animCount = 0
-        while readAddr < animDataStart:
-            animPtr = self.romData[readAddr:readAddr+OFFSET_SIZE]
-            animPtr = struct.unpack("<L", animPtr)[0] + spriteAddr
-            animPtrList.append({"animNum":animCount, "addr":readAddr, "value":animPtr})
-            readAddr += OFFSET_SIZE
-            animCount += 1
-
-        frameDataList = []
-        for animPtr in animPtrList:
-            readAddr = animPtr["value"]
-            logger.debug("Animation at " + hex(readAddr))
-
-            frameCount = 0
-            while True: # do while文がないので代わりに無限ループ＋breakを使う
-                frameData = self.romData[readAddr:readAddr+FRAME_DATA_SIZE]
-                [graphSizePtr, palSizePtr, junkDataPtr, ptrToOAMptr, frameDelay, frameType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
-                ptrToOAMptr += spriteAddr
-                u"""
-                    20バイトで1フレーム
-                    4バイト：画像サイズがあるアドレスへのポインタ
-                    4バイト：パレットサイズがあるアドレスへのポインタ
-                    4バイト：未使用データへのポインタ（？）
-                    4バイト：OAMデータのポインタがあるアドレスへのポインタ
-                    2バイト：フレーム遅延数
-                    2バイト：再生タイプ
-                """
-                frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "oamPtrAddr":ptrToOAMptr})
-                readAddr += FRAME_DATA_SIZE
-                frameCount += 1
-
-                if frameData[-2:] in ["\x80\x00","\xC0\x00"]: # 終端フレームならループを終了
-                    break
-
-        oamDataList = []
-        for frameData in frameDataList:
-            logger.debug("Frame at " + hex(frameData["address"]))
-            logger.debug("  Animation Number:\t" + str(frameData["animNum"]))
-            logger.debug("  Frame Number:\t\t" + str(frameData["frameNum"]))
-            logger.debug("  Address of OAM Pointer:\t" + hex(frameData["oamPtrAddr"]))
-            oamPtrAddr = frameData["oamPtrAddr"]
-            [oamPtr] = struct.unpack("L", self.romData[oamPtrAddr:oamPtrAddr+OFFSET_SIZE])
-            readAddr = oamPtrAddr + oamPtr
-
-            while True:
-                oamData = self.romData[readAddr:readAddr+OAM_DATA_SIZE]
-                if oamData == OAM_DATA_END:
-                    break
-                oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData})
-                readAddr += OAM_DATA_SIZE
 
         for oam in oamDataList:
             logger.debug("OAM at " + hex(oam["address"]))
@@ -860,6 +890,7 @@ class SpriteReader(QtGui.QMainWindow):
         logger.info("done")
 
         logger.info(u"水平反転したスプライトを書き込みました")
+        index = self.ui.spriteList.currentRow()
         self.guiSpriteItemActivated(index)
 
 
