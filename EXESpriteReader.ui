@@ -49,6 +49,9 @@
             <height>16777215</height>
            </size>
           </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
        </layout>
@@ -124,6 +127,9 @@
             <height>0</height>
            </size>
           </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
         <item>
@@ -140,6 +146,9 @@
             <width>150</width>
             <height>0</height>
            </size>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -168,6 +177,9 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -225,7 +237,7 @@
      <x>0</x>
      <y>0</y>
      <width>1265</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
