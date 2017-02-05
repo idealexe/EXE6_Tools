@@ -229,6 +229,8 @@ class SpriteReader(QtGui.QMainWindow):
 
     def guiSpriteItemActivated(self, index):
         u''' GUIでスプライトが選択されたときに行う処理
+
+            描画シーンのクリア，アニメーションリストの生成
         '''
 
         if index == -1:
@@ -240,15 +242,22 @@ class SpriteReader(QtGui.QMainWindow):
         self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         self.ui.graphicsView.setScene(self.graphicsScene)
         self.ui.palSelect.setValue(0)   # パレットをリセット
+        self.ui.animList.clear()
 
         #self.ui.spriteList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
         # ↑この変更もハンドリングされてしまうのでダメ
         spriteAddr = self.spriteList[index]["spriteAddr"]
         compFlag = self.spriteList[index]["compFlag"]
 
-        self.parseSpriteData(self.romData, spriteAddr, compFlag)
         [animPtrList, frameDataList, oamDataList] = self.parseAllData(self.romData, spriteAddr, compFlag)
-        self.guiAnimItemActivated(0)
+
+        self.ui.animLabel.setText(u"アニメーション：" + str(len(animPtrList)))
+        for animPtr in animPtrList:
+            animPtrStr = hex(animPtr["addr"])[2:].zfill(6).upper() # GUIに表示する文字列
+            animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
+            self.ui.animList.addItem(animItem) # アニメーションリストへ追加
+        #self.parseSpriteData(self.romData, spriteAddr, compFlag)
+        #self.guiAnimItemActivated(0)
 
 
     def parseAllData(self, romData, spriteAddr, compFlag):
