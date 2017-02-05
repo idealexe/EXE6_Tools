@@ -252,6 +252,7 @@ class SpriteReader(QtGui.QMainWindow):
         [animPtrList, frameDataList, oamDataList] = self.parseAllData(self.romData, spriteAddr, compFlag)
         self.animPtrList = animPtrList
         self.frameDataList = frameDataList
+        self.oamDataList = oamDataList
 
         self.ui.animLabel.setText(u"アニメーション：" + str(len(animPtrList)))
         for animPtr in animPtrList:
@@ -433,7 +434,7 @@ class SpriteReader(QtGui.QMainWindow):
         #print( "Serected Anim:\t" + str(index) + " (" + hex(animPtr) + ")" )
 
         #self.parseAnimData(self.spriteData, animPtr)
-        #self.guiFrameItemActivated(0)
+        self.guiFrameItemActivated(0)
 
 
     def parseAnimData(self, spriteData, animPtr):
@@ -471,9 +472,22 @@ class SpriteReader(QtGui.QMainWindow):
             return
 
         self.ui.frameList.setCurrentRow(index) # GUI以外から呼び出された時のために選択位置を合わせる
-        framePtr = self.framePtrList[index]
+        self.graphicsScene.clear()  # 描画シーンのクリア
+        self.ui.oamList.clear()
         palIndex = self.ui.palSelect.value()
-        self.parseframeData(self.spriteData, framePtr)
+        animIndex = self.ui.animList.currentRow()
+
+        currentFrameOam = [oam for oam in self.oamDataList if oam["animNum"] == animIndex and oam["frameNum"] == index]
+        self.ui.oamLabel.setText(u"OAM：" + str(len(currentFrameOam)))
+        for oam in currentFrameOam:
+            oamAddrStr = ( hex(oam["address"])[2:].zfill(8)).upper()  # GUIのリストに表示する文字列
+            oamItem = QtGui.QListWidgetItem( oamAddrStr )   # GUIのOAMリストに追加するアイテムの生成
+            self.ui.oamList.addItem(oamItem) # GUIスプライトリストへ追加
+
+
+
+        #framePtr = self.framePtrList[index]
+        #self.parseframeData(self.spriteData, framePtr)
 
 
     def parseframeData(self, spriteData, framePtr):
@@ -483,7 +497,6 @@ class SpriteReader(QtGui.QMainWindow):
             処理：20バイトのアニメーションデータを読み取って情報を取り出す
         '''
 
-        self.graphicsScene.clear()  # 描画シーンのクリア
         frameData = spriteData[framePtr:framePtr+FRAME_DATA_SIZE]   # 1フレーム分ロード
         [graphSizePtr, palSizePtr, junkDataPtr, ptrToOAMptr, frameDelay, animType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
 
