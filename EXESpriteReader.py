@@ -331,9 +331,11 @@ class SpriteReader(QtGui.QMainWindow):
                 [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
                 if graphSizeAddr not in graphAddrList:
                     graphAddrList.append(graphSizeAddr)
+                [graphicSize] = struct.unpack("L", spriteData[graphSizeAddr:graphSizeAddr+OFFSET_SIZE])
+                graphicData = spriteData[graphSizeAddr+OFFSET_SIZE:graphSizeAddr+OFFSET_SIZE+graphicSize]
 
                 frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "frameData":frameData, \
-                    "graphSizeAddr":graphSizeAddr, "palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
+                    "graphSizeAddr":graphSizeAddr, "graphicData":graphicData,"palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
                     "oamPtrAddr":oamPtrAddr, "frameDelay":frameDelay, "frameType":frameType})
 
                 readAddr += FRAME_DATA_SIZE
@@ -358,26 +360,31 @@ class SpriteReader(QtGui.QMainWindow):
                 oamData = spriteData[readAddr:readAddr+OAM_DATA_SIZE]
                 if oamData == OAM_DATA_END:
                     break
-                oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData})
+                logger.debug("OAM at " + hex(readAddr))
+
+                [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
+                logger.debug("  Start Tile:\t" + str(startTile))
+                logger.debug("  Offset X:\t" + str(posX))
+                logger.debug("  Offset Y:\t" + str(posY))
+
+                flag1 = bin(flag1)[2:].zfill(8)
+                flag2 = bin(flag2)[2:].zfill(8)
+                logger.debug("  Flag1 (VHNNNNSS)\t" + flag1)
+                logger.debug("  Flag2 (PPPPNNSS)\t" + flag2)
+
+                vFlip = int( flag1[0], 2 ) # 垂直反転フラグ
+                hFlip = int( flag1[1], 2 ) # 水平反転フラグ
+
+                objSize = flag1[-2:]
+                objShape = flag2[-2:]
+                [sizeX, sizeY] = objDim[objSize+objShape]
+                logger.debug("  Size X:\t" + str(sizeX))
+                logger.debug("  Size Y:\t" + str(sizeY))
+                oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData, \
+                    "startTile":startTile, "posX":posX, "posY":posY, "sizeX":sizeX, "sizeY":sizeY, "flipV":vFlip, "flipH":hFlip})
                 readAddr += OAM_DATA_SIZE
 
-        for oam in oamDataList:
-            logger.debug("OAM at " + hex(oam["address"]))
-            oamData = oam["oamData"]
-            [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
-            logger.debug("  Start Tile:\t" + str(startTile))
-            logger.debug("  Offset X:\t" + str(posX))
-            logger.debug("  Offset Y:\t" + str(posY))
-            logger.debug("  Flag1 (VHNNNNSS)\t" + bin(flag1)[2:].zfill(8))
-            logger.debug("  Flag2 (PPPPNNSS)\t" + bin(flag2)[2:].zfill(8))
-
-            objSize = bin(flag1)[2:].zfill(8)[-2:]
-            objShape = bin(flag2)[2:].zfill(8)[-2:]
-            [sizeX, sizeY] = objDim[objSize+objShape]
-            logger.debug("  Size X:\t" + str(sizeX))
-            logger.debug("  Size Y:\t" + str(sizeY))
-
-        u""" スプライトデータの切り出し
+        u""" 無圧縮スプライトデータの切り出し
         """
         if compFlag == 0:
             endAddr = oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END)
