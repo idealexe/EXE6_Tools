@@ -42,6 +42,8 @@ COLOR_SIZE  = 2 # 1色あたりのサイズ
 FRAME_DATA_SIZE = 20
 OAM_DATA_SIZE = 5
 OAM_DATA_END = "\xFF\xFF\xFF\xFF\xFF"
+EXPAND_ANIMATION_NUM = 64   # 拡張ダンプのアニメーション数
+EXPAND_FRAME_NUM = 16   # 拡張ダンプのフレーム数
 
 # フラグと形状の対応を取る辞書[size+shape]:[x,y]
 # キーにリストが使えないのでこんなことに・・・
@@ -394,7 +396,7 @@ class SpriteReader(QtGui.QMainWindow):
         currentAnimFrame = [frame for frame in self.frameDataList if frame["animNum"] == index]
         self.ui.frameLabel.setText(u"フレーム：" + str(len(currentAnimFrame)))
         for frame in currentAnimFrame:
-            frameStr = hex(frame["address"])[2:].zfill(8).upper()  # GUIに表示する文字列
+            frameStr = hex(frame["address"])[2:].zfill(8).upper() + "\t" + str(frame["frameType"])  # GUIに表示する文字列
             frameItem = QtGui.QListWidgetItem( frameStr )    # GUIのフレームリストに追加するアイテムの生成
             self.ui.frameList.addItem(frameItem) # フレームリストへ追加
 
@@ -488,12 +490,19 @@ class SpriteReader(QtGui.QMainWindow):
         '''
 
         index = self.ui.oamList.currentRow()  # 渡されるのはアイテムなのでインデックス番号は現在の行から取得する
+        logger.info("Serected OAM:\t" + str(index))
+        items = self.graphicsScene.items()
+        for item in items:
+            logger.info(item)
+
+        """
         oam = self.oamList[index]
         image = oam["image"]
         item = QtGui.QGraphicsPixmapItem(image)
         item.setOffset(oam["posX"], oam["posY"])
         imageBounds = item.boundingRect()
         self.graphicsScene.addRect(imageBounds)
+        """
 
 
     def guiPalItemActivated(self, item):
@@ -647,25 +656,23 @@ class SpriteReader(QtGui.QMainWindow):
             アニメーション数が少ないスプライトを移植するときも安心
         """
 
-        ANIMATION_NUM = 32   # アニメーション数は32に固定する
-        FRAME_NUM = 16   # フレーム数は16枚分確保する
-        ANIMATION_TABLE_SIZE = ANIMATION_NUM * OFFSET_SIZE
-        ANIMATION_SIZE = FRAME_NUM * FRAME_DATA_SIZE
+        ANIMATION_TABLE_SIZE = EXPAND_ANIMATION_NUM * OFFSET_SIZE
+        ANIMATION_SIZE = EXPAND_FRAME_NUM * FRAME_DATA_SIZE
 
         output = "" # 出力用のスプライトデータ
 
         u""" アニメーションオフセットテーブル作成
         """
-        animDataStart = ANIMATION_NUM * OFFSET_SIZE
-        for i in xrange(ANIMATION_NUM):
+        animDataStart = EXPAND_ANIMATION_NUM * OFFSET_SIZE
+        for i in xrange(EXPAND_ANIMATION_NUM):
             output += struct.pack("L", animDataStart + i * ANIMATION_SIZE)
 
         u""" グラフィック，OAMなどのコピー
 
             フレームデータ内で各アドレスを参照するので先にコピーする
         """
-        output += "\xFF" * ANIMATION_SIZE * ANIMATION_NUM # アニメーションデータ領域の確保
-        writeAddr = ANIMATION_TABLE_SIZE + ANIMATION_SIZE * ANIMATION_NUM
+        output += "\xFF" * ANIMATION_SIZE * EXPAND_ANIMATION_NUM # アニメーションデータ領域の確保
+        writeAddr = ANIMATION_TABLE_SIZE + ANIMATION_SIZE * EXPAND_ANIMATION_NUM
         copyOffset = writeAddr - self.frameDataList[0]["graphSizeAddr"] # グラフィックデータの元の開始位置との差分（フレームデータの修正に使用する）
         # 先頭のフレームが先頭のグラフィックデータを使ってないパターンがあったら死ぬ
         output += self.spriteData[self.frameDataList[0]["graphSizeAddr"]:]  # グラフィックデータ先頭からスプライトの終端までコピー
@@ -681,12 +688,16 @@ class SpriteReader(QtGui.QMainWindow):
             frameDelay = frameData["frameDelay"]
             frameType = frameData["frameType"]
             data = struct.pack("<LLLLHH", graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
+            if frameType == 128:
+                # ループしないフレームを拡張部分のダミーとして使う
+                dummy = data
             output = output[:writeAddr] + data + output[writeAddr+len(data):]
 
-        for i in xrange(len(self.animPtrList), ANIMATION_NUM):    # 拡張した分のアニメーション
+        for i in xrange(len(self.animPtrList), EXPAND_ANIMATION_NUM):    # 拡張した分のアニメーション
+            u""" プラグイン時などはアニメーションが再生し終わらないと移動できないのでループアニメーションだと操作不能になってしまう
+            """
             writeAddr = animDataStart + ANIMATION_SIZE * i
-            data = output[animDataStart:animDataStart+ANIMATION_SIZE] # 1つめのアニメーションをコピーする
-            output = output[:writeAddr] + data + output[writeAddr+len(data):]
+            output = output[:writeAddr] + dummy + output[writeAddr+len(dummy):]
 
         output = "\xFF\xFF\xFF\xFF" + output    # ヘッダの追加
 
