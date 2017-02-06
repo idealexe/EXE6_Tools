@@ -98,10 +98,32 @@
            </brush>
           </property>
           <property name="interactive">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="resizeAnchor">
-           <enum>QGraphicsView::NoAnchor</enum>
+           <enum>QGraphicsView::AnchorViewCenter</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSlider" name="graphicsScaleSlider">
+          <property name="minimum">
+           <number>0</number>
+          </property>
+          <property name="maximum">
+           <number>40</number>
+          </property>
+          <property name="singleStep">
+           <number>5</number>
+          </property>
+          <property name="pageStep">
+           <number>5</number>
+          </property>
+          <property name="sliderPosition">
+           <number>10</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
@@ -124,6 +146,12 @@
             <height>0</height>
            </size>
           </property>
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
@@ -142,6 +170,12 @@
            <size>
             <width>150</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="alternatingRowColors">
@@ -175,6 +209,12 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
@@ -203,7 +243,7 @@
           </property>
           <property name="maximumSize">
            <size>
-            <width>16777215</width>
+            <width>200</width>
             <height>300</height>
            </size>
           </property>
@@ -213,10 +253,23 @@
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="palSelect"/>
+         <widget class="QSpinBox" name="palSelect">
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>16777215</height>
+           </size>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QPushButton" name="palSaveButton">
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="text">
            <string>編集したパレットを書き込む</string>
           </property>
@@ -311,12 +364,12 @@
   </action>
   <action name="linkAction">
    <property name="text">
-    <string>リンク</string>
+    <string>リンク（未実装）</string>
    </property>
   </action>
   <action name="aboutAction">
    <property name="text">
-    <string>このツールについて</string>
+    <string>このツールについて（未実装）</string>
    </property>
   </action>
   <action name="openSpriteAction">
@@ -498,8 +551,8 @@
    <slot>changePalet(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1100</x>
-     <y>562</y>
+     <x>1253</x>
+     <y>539</y>
     </hint>
     <hint type="destinationlabel">
      <x>599</x>
@@ -546,8 +599,8 @@
    <slot>guiOAMItemActivated(QListWidgetItem*)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>658</x>
-     <y>668</y>
+     <x>1253</x>
+     <y>189</y>
     </hint>
     <hint type="destinationlabel">
      <x>599</x>
@@ -619,6 +672,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>graphicsScaleSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeViewScale(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>568</x>
+     <y>557</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>632</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -636,5 +705,6 @@
   <slot>writePalData()</slot>
   <slot>flipSprite()</slot>
   <slot>exDumpSprite()</slot>
+  <slot>changeViewScale(int)</slot>
  </slots>
 </ui>

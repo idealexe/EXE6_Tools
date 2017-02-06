@@ -853,6 +853,13 @@ class SpriteReader(QtGui.QMainWindow):
         """
         self.romData = self.romData[:writeAddr] + data + self.romData[writeAddr+len(data):]
 
+    def changeViewScale(self, value):
+        self.ui.graphicsView.resetTransform()   # 一度オリジナルサイズに戻す
+        scale = pow(2, value/10.0)   # 指数で拡大したほうが自然にスケールしてる感じがする
+        self.ui.graphicsView.scale(scale, scale)
+
+
+
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
