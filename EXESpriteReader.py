@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u''' EXE Sprite Reader ver 1.2 by ideal.exe
+u''' EXE Sprite Reader ver 1.3 by ideal.exe
 
 
     データ構造仕様
@@ -854,9 +854,48 @@ class SpriteReader(QtGui.QMainWindow):
         self.romData = self.romData[:writeAddr] + data + self.romData[writeAddr+len(data):]
 
     def changeViewScale(self, value):
+        u""" ビューを拡大縮小する
+        """
         self.ui.graphicsView.resetTransform()   # 一度オリジナルサイズに戻す
         scale = pow(2, value/10.0)   # 指数で拡大したほうが自然にスケールしてる感じがする
         self.ui.graphicsView.scale(scale, scale)
+
+    def importSprite(self):
+        u""" 指定したアドレスにファイルから読み込んだスプライトをインポートする
+        """
+
+        filename = QtGui.QFileDialog.getOpenFileName( self, _("Open EXE_Sprite File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+        filename = unicode(filename)
+
+        try:
+            with open( filename, 'rb' ) as spriteFile:
+                spriteData = spriteFile.read()
+        except:
+            logger.info( _(u"ファイルの選択をキャンセルしました") )
+            return -1
+
+        dialog = QtGui.QDialog()
+        dialog.ui = importDialog()
+        dialog.ui.setupUi(dialog)
+        dialog.show()
+        dialog.exec_()
+
+        if dialog.result() == 1:
+            addrText = dialog.ui.addrText.text()
+            try:
+                addr = int(str(addrText), 16)   # QStringから戻さないとダメ
+                if len(self.romData) < addr:
+                    self.romData += "\xFF" * (addr - len(self.romData)) # 指定したアドレスまで0xFFで埋める
+                self.writeDataToRom(addr, spriteData)
+                logger.info(u"インポートに成功しました")
+            except:
+                logger.info(u"不正な値です")
+            # リロード
+            index = self.ui.spriteList.currentRow()
+            self.extractSpriteAddr(self.romData)
+            self.ui.spriteList.setCurrentRow(index)
+        else:
+            logger.info(u"インポートをキャンセルしました")
 
 
 
@@ -903,7 +942,33 @@ class repointDialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "リポイント", None))
         self.label.setText(_translate("Dialog", "アドレス（16進数で指定してください）", None))
 
+class importDialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        Dialog.resize(300, 100)
+        self.verticalLayout = QtGui.QVBoxLayout(Dialog)
+        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+        self.label = QtGui.QLabel(Dialog)
+        self.label.setObjectName(_fromUtf8("label"))
+        self.verticalLayout.addWidget(self.label)
+        self.addrText = QtGui.QLineEdit(Dialog)
+        self.addrText.setObjectName(_fromUtf8("addrText"))
+        self.verticalLayout.addWidget(self.addrText)
+        self.buttonBox = QtGui.QDialogButtonBox(Dialog)
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName(_fromUtf8("buttonBox"))
+        self.verticalLayout.addWidget(self.buttonBox)
 
+        self.retranslateUi(Dialog)
+        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Dialog.accept)
+        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), Dialog.reject)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        Dialog.setWindowTitle(_translate("Dialog", "インポート", None))
+        self.label.setText(_translate("Dialog", "アドレス（16進数で指定してください）", None))
 
 '''
 main

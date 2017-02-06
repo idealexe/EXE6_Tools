@@ -306,7 +306,7 @@
     <addaction name="dumpAction"/>
     <addaction name="exDumpAction"/>
     <addaction name="repointAction"/>
-    <addaction name="replaceAction"/>
+    <addaction name="importAction"/>
     <addaction name="saveImageAction"/>
     <addaction name="flipAction"/>
    </widget>
@@ -354,12 +354,12 @@
     <string>選択しているスプライトをファイルに出力します</string>
    </property>
   </action>
-  <action name="replaceAction">
+  <action name="importAction">
    <property name="text">
-    <string>置き換え</string>
+    <string>インポート</string>
    </property>
    <property name="statusTip">
-    <string>選択しているスプライトをファイルから読み込んだスプライトで上書きします</string>
+    <string>指定したアドレスにファイルから読み込んだスプライトをインポートします</string>
    </property>
   </action>
   <action name="linkAction">
@@ -688,6 +688,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>importAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>importSprite()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>632</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -706,5 +722,6 @@
   <slot>flipSprite()</slot>
   <slot>exDumpSprite()</slot>
   <slot>changeViewScale(int)</slot>
+  <slot>importSprite()</slot>
  </slots>
 </ui>
