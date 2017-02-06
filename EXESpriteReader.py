@@ -172,6 +172,10 @@ class SpriteReader(QtGui.QMainWindow):
             logger.info(_(u"ロックマンエグゼ3 jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKMAN_EXE3
 
+        elif romName == "ROCKMAN_EXE2":
+            logger.info(_(u"ロックマンエグゼ2 jp としてロードしました"))
+            EXE_Addr = SpriteDict.ROCKMAN_EXE2
+
         else:
             logger.info( _(u"対応していないバージョンです" ) )
             return -1   # error
@@ -363,6 +367,8 @@ class SpriteReader(QtGui.QMainWindow):
                 flipV = int( flag1[0], 2 ) # 垂直反転フラグ
                 flipH = int( flag1[1], 2 ) # 水平反転フラグ
 
+                palIndex = int(flag2[0:4], 2)
+
                 objSize = flag1[-2:]
                 objShape = flag2[-2:]
                 [sizeX, sizeY] = objDim[objSize+objShape]
@@ -370,7 +376,7 @@ class SpriteReader(QtGui.QMainWindow):
                 logger.debug("  Size Y:\t" + str(sizeY))
 
                 oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData, \
-                    "startTile":startTile, "posX":posX, "posY":posY, "sizeX":sizeX, "sizeY":sizeY, "flipV":flipV, "flipH":flipH})
+                    "startTile":startTile, "posX":posX, "posY":posY, "sizeX":sizeX, "sizeY":sizeY, "flipV":flipV, "flipH":flipH, "palIndex":palIndex})
                 readAddr += OAM_DATA_SIZE
 
         u""" 無圧縮スプライトデータの切り出し
