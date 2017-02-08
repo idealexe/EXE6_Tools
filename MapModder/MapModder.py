@@ -2,6 +2,8 @@
 # coding: utf-8
 
 u""" Map Modder ver 0.1 by ideal.exe
+
+ToDo:アドレスのステップを可変にする
 """
 
 from PIL import Image
@@ -43,6 +45,21 @@ class MapModder(QtGui.QMainWindow):
         self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         self.ui.graphicsView.setScene(self.graphicsScene)
 
+        u""" 各種パラメータの初期化
+
+            複数の関数で独立して更新されることが多いので全てself下の変数とした
+        """
+        self.addr = 0
+        self.palAddr = 0
+        self.tileX = 1
+        self.tileY = 1
+
+    def updateImage(self):
+        u""" 画像を更新する
+        """
+        self.palData = self.parsePaletteData(self.romData, self.palAddr)
+        image = self.makeMapImage(self.romData, self.addr, self.tileX, self.tileY)
+        self.drawMap(image)
 
     def openFile(self, *args):
         u""" ファイルを開くときの処理
@@ -85,17 +102,13 @@ class MapModder(QtGui.QMainWindow):
             print(u"リストファイルを作成しました")
             self.listData = df
 
-        #self.palData = self.parsePaletteData(self.romData, 0x745a4c)
-        #image = self.makeMapImage(self.romData, 0x715bcc, 7, 6)
-        #self.drawMap(image)
-
-
     def loadListFile(self, listName):
         u""" リストファイルの読み込み
 
-            pandas形式のリストを返す
+            GUIのリストをセットアップしpandas形式のリストを返す
         """
-        listData = pd.read_csv("./lists/" + listName, encoding="utf-8")
+        self.ui.dataList.clear()
+        listData = pd.read_csv("./lists/" + listName, encoding="utf-8", index_col=0)
         logger.debug(listData)
         for i, data in listData.iterrows():    # 各行のイテレータ
             logger.debug(data)
@@ -105,7 +118,6 @@ class MapModder(QtGui.QMainWindow):
             item = QtGui.QListWidgetItem(dataStr)  # リストに追加するアイテムの生成
             self.ui.dataList.addItem(item) # リストへ追加
         logger.info(u"リストファイルを読み込みました")
-
         return listData
 
 
@@ -120,7 +132,7 @@ class MapModder(QtGui.QMainWindow):
     def drawMap(self, image):
         u''' マップ画像を描画する
         '''
-
+        self.graphicsScene.clear()
         item = QtGui.QGraphicsPixmapItem(image)
         item.setOffset(image.width()/2*-1, image.height()/2*-1)
         imageBounds = item.boundingRect()
@@ -172,39 +184,111 @@ class MapModder(QtGui.QMainWindow):
     def guiDataItemActivated(self):
         u""" 登録データが選択されたときの処理
         """
+        [self.label, self.addr, self.palAddr, self.tileX, self.tileY] = self.getCrrentItemData()
+
+        self.ui.labelEdit.setText(self.label)
+        self.ui.addrBox.setValue(self.addr)
+        self.ui.palAddrBox.setValue(self.palAddr)
+        self.ui.xTileBox.setValue(self.tileX)
+        self.ui.yTileBox.setValue(self.tileY)
+
+        self.updateImage()
+
+
+    def getCrrentItemData(self):
+        u""" 現在の行のアイテム情報を返す
+        """
         index = self.ui.dataList.currentRow()
         logger.debug("index:\t" + str(index))
         logger.debug(self.listData)
 
         label = self.listData["label"][index]
-        self.ui.labelEdit.setText(label)
-
         addr = int(self.listData["addr"][index], 16)
-        self.ui.addrEdit.setText(hex(addr))
-
         palAddr = int(self.listData["palAddr"][index], 16)
-        self.ui.palAddrEdit.setText(hex(palAddr))
-
         tileX = int(self.listData["width"][index])
-        self.ui.xTileBox.setValue(tileX)
-
         tileY = int(self.listData["height"][index])
-        self.ui.yTileBox.setValue(tileY)
 
-        self.palData = self.parsePaletteData(self.romData, palAddr)
-        image = self.makeMapImage(self.romData, addr, tileX, tileY)
-        self.drawMap(image)
+        return [label, addr, palAddr, tileX, tileY]
 
+
+    def guiAddrEdited(self):
+        u""" アドレスが更新されたときの処理
+        """
+        self.addr = self.ui.addrBox.value()
+        self.updateImage()
+
+    def guiAddrStepChanged(self, n):
+        u""" アドレスのステップ数の変更
+        """
+        self.ui.addrBox.setSingleStep(n)
+
+
+    def guiPalLineEdited(self):
+        u""" パレットアドレスが更新されたときの処理
+        """
+        self.palAddr = self.ui.palAddrBox.value()
+        logger.debug(hex(self.palAddr))
+        self.updateImage()
+
+    def guiPalAddrStepChanged(self, n):
+        u""" パレットアドレスのステップ数の変更
+        """
+        self.ui.palAddrBox.setSingleStep(n)
+
+
+    def guiPalItemActivated(self):
+        u''' GUIで色が選択されたときに行う処理
+        '''
+        COLOR_SIZE = 2
+
+        index = self.ui.palList.currentRow()
+        if index == -1:
+            return -1
+
+        r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
+        writePos = self.palData[index]["addr"]  # 色データを書き込む位置
+        color = QtGui.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
+        if color.isValid() == False: # キャンセルしたとき
+            logger.info(u"色の選択をキャンセルしました")
+            return 0
+
+        r,g,b,a = color.getRgb()    # ダイアログでセットされた色に更新
+
+        binR = bin(r/8)[2:].zfill(5)    # 5bitカラーに変換
+        binG = bin(g/8)[2:].zfill(5)
+        binB = bin(b/8)[2:].zfill(5)
+        gbaColor = int(binB + binG + binR, 2)  # GBAのカラーコードに変換
+        colorStr = struct.pack("H", gbaColor)
+        self.romData = self.romData[:writePos] + colorStr + self.romData[writePos+COLOR_SIZE:]
+        self.updateImage()
+
+
+    def guiTileXChanged(self, n):
+        self.tileX = n
+        self.updateImage()
+
+    def guiTileYChanged(self, n):
+        self.tileY = n
+        self.updateImage()
 
     def guiRegButtonPressed(self):
         u""" 登録ボタンが押されたときの処理
         """
-        logger.info(u"リストに登録しました")
+        [title, code] = self.getRomHeader(self.romData)
+        listName = code + "_" + title + ".csv"
 
-    def guiPalItemActivated(self):
-        u""" 色が選択されたときの処理
-        """
-        pass
+        label = self.ui.labelEdit.text()
+        addr = self.ui.addrBox.value()
+        palAddr = self.ui.palAddrBox.value()
+        width = self.ui.xTileBox.value()
+        height = self.ui.yTileBox.value()
+
+        se = pd.Series([unicode(label), hex(addr), hex(palAddr), width, height, 0], index=self.listData.columns)
+        self.listData = self.listData.append(se, ignore_index=True)
+        logger.debug(self.listData)
+        self.listData.to_csv("./lists/" + listName, encoding="utf-8")
+        logger.info(u"リストに登録しました")
+        self.loadListFile(listName)
 
     def makeMapImage(self, romData, startAddr, width, height):
         u''' マップ画像を生成する
