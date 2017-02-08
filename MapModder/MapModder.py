@@ -2,8 +2,6 @@
 # coding: utf-8
 
 u""" Map Modder ver 0.1 by ideal.exe
-
-    Python3用
 """
 
 from PIL import Image
@@ -11,8 +9,10 @@ from PIL.ImageQt import ImageQt
 from PyQt4 import QtCore, QtGui
 #import PyQt5
 import binascii
+import codecs
 import numpy as np
 import os
+import pandas as pd
 import struct
 import sys
 
@@ -65,16 +65,48 @@ class MapModder(QtGui.QMainWindow):
             return -1    # 中断
 
         [title, code] = self.getRomHeader(self.romData)
-        listName = code + "_" + title + ".txt"
+        listName = code + "_" + title + ".csv"
+
         if os.path.exists("./lists/" + listName):
-            print(u"リストファイルを読み込みました")
+            u""" リストファイルの存在判定
+            """
+            self.listData = self.loadListFile(listName)
         else:
+            df = pd.DataFrame({
+            "label":[],
+            "addr":[],
+            "palAddr":[],
+            "width":[],
+            "height":[],
+            "comp":[]
+            },
+            columns=['label', 'addr', 'palAddr', 'width', 'height', 'comp'])    # 並び順を指定
+            df.to_csv("./lists/" + listName, encoding="utf-8")
             print(u"リストファイルを作成しました")
+            self.listData = df
 
-        self.palData = self.parsePaletteData(self.romData, 0x745a4c)
-        image = self.makeMapImage(self.romData, 0x715bcc, 7, 6)
-        self.drawMap(image)
+        #self.palData = self.parsePaletteData(self.romData, 0x745a4c)
+        #image = self.makeMapImage(self.romData, 0x715bcc, 7, 6)
+        #self.drawMap(image)
 
+
+    def loadListFile(self, listName):
+        u""" リストファイルの読み込み
+
+            pandas形式のリストを返す
+        """
+        listData = pd.read_csv("./lists/" + listName, encoding="utf-8")
+        logger.debug(listData)
+        for i, data in listData.iterrows():    # 各行のイテレータ
+            logger.debug(data)
+            logger.debug(data["label"])
+
+            dataStr = unicode(data["label"])    # GUIのリストに表示する文字列
+            item = QtGui.QListWidgetItem(dataStr)  # リストに追加するアイテムの生成
+            self.ui.dataList.addItem(item) # リストへ追加
+        logger.info(u"リストファイルを読み込みました")
+
+        return listData
 
 
     def getRomHeader(self, romData):
@@ -136,6 +168,43 @@ class MapModder(QtGui.QMainWindow):
 
         return palData
 
+
+    def guiDataItemActivated(self):
+        u""" 登録データが選択されたときの処理
+        """
+        index = self.ui.dataList.currentRow()
+        logger.debug("index:\t" + str(index))
+        logger.debug(self.listData)
+
+        label = self.listData["label"][index]
+        self.ui.labelEdit.setText(label)
+
+        addr = int(self.listData["addr"][index], 16)
+        self.ui.addrEdit.setText(hex(addr))
+
+        palAddr = int(self.listData["palAddr"][index], 16)
+        self.ui.palAddrEdit.setText(hex(palAddr))
+
+        tileX = int(self.listData["width"][index])
+        self.ui.xTileBox.setValue(tileX)
+
+        tileY = int(self.listData["height"][index])
+        self.ui.yTileBox.setValue(tileY)
+
+        self.palData = self.parsePaletteData(self.romData, palAddr)
+        image = self.makeMapImage(self.romData, addr, tileX, tileY)
+        self.drawMap(image)
+
+
+    def guiRegButtonPressed(self):
+        u""" 登録ボタンが押されたときの処理
+        """
+        logger.info(u"リストに登録しました")
+
+    def guiPalItemActivated(self):
+        u""" 色が選択されたときの処理
+        """
+        pass
 
     def makeMapImage(self, romData, startAddr, width, height):
         u''' マップ画像を生成する
@@ -204,6 +273,9 @@ class MapModder(QtGui.QMainWindow):
 u""" Main
 """
 def main():
+    reload(sys) # モジュールをリロードしないと文字コードが変更できない
+    sys.setdefaultencoding("utf-8") # コンソールの出力をutf-8に設定
+
     app = QtGui.QApplication(sys.argv)
 
     mapModder = MapModder();

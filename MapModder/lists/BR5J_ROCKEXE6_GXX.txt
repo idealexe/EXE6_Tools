@@ -1,1 +1,0 @@
-﻿{"label":"キャノン","addr":0x715bcc,"palAdder":0x745a4c,"width":7,"height":6,"compress":0}

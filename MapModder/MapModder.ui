@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Map Modder ver 0.1 by ideal.exe</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -148,7 +148,7 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QLineEdit" name="lineEdit">
+           <widget class="QLineEdit" name="labelEdit">
             <property name="minimumSize">
              <size>
               <width>150</width>
@@ -171,7 +171,7 @@
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QLineEdit" name="lineEdit_2">
+           <widget class="QLineEdit" name="addrEdit">
             <property name="minimumSize">
              <size>
               <width>150</width>
@@ -194,7 +194,7 @@
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QLineEdit" name="lineEdit_3">
+           <widget class="QLineEdit" name="palAddrEdit">
             <property name="minimumSize">
              <size>
               <width>150</width>
@@ -217,14 +217,14 @@
            </widget>
           </item>
           <item row="6" column="1">
-           <widget class="QCheckBox" name="checkBox">
+           <widget class="QCheckBox" name="compCheckBox">
             <property name="text">
              <string/>
             </property>
            </widget>
           </item>
           <item row="7" column="1">
-           <widget class="QPushButton" name="pushButton">
+           <widget class="QPushButton" name="regButton">
             <property name="minimumSize">
              <size>
               <width>150</width>
@@ -250,7 +250,7 @@
            </widget>
           </item>
           <item row="4" column="1">
-           <widget class="QSpinBox" name="spinBox">
+           <widget class="QSpinBox" name="xTileBox">
             <property name="maximumSize">
              <size>
               <width>150</width>
@@ -267,7 +267,7 @@
            </widget>
           </item>
           <item row="5" column="1">
-           <widget class="QSpinBox" name="spinBox_2">
+           <widget class="QSpinBox" name="yTileBox">
             <property name="maximumSize">
              <size>
               <width>150</width>
@@ -290,7 +290,7 @@
      <x>0</x>
      <y>0</y>
      <width>938</width>
-     <height>21</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -303,5 +303,59 @@
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>dataList</sender>
+   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiDataItemActivated()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>77</x>
+     <y>163</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>345</x>
+     <y>652</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>regButton</sender>
+   <signal>pressed()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiRegButtonPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>832</x>
+     <y>495</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>833</x>
+     <y>677</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>palList</sender>
+   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiPalItemActivated()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>826</x>
+     <y>150</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>802</x>
+     <y>670</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>guiDataItemActivated()</slot>
+  <slot>guiRegButtonPressed()</slot>
+  <slot>guiPalItemActivated()</slot>
+ </slots>
 </ui>
