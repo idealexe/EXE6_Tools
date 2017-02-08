@@ -1,0 +1,4 @@
+,label,addr,palAddr,width,height,comp
+0,キャノン,0x715bcc,0x745a4c,7,6,0
+1,ハイキャノン,0x715bcc,0x745a6c,7,6,0
+2,メガキャノン,0x715bcc,0x745a8c,7,6,0
