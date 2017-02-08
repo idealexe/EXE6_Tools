@@ -138,7 +138,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
+          <item row="5" column="2">
            <widget class="QLabel" name="label_3">
             <property name="text">
              <string>Step</string>
@@ -160,12 +160,6 @@
               <height>0</height>
              </size>
             </property>
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -175,14 +169,14 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
+          <item row="8" column="0">
            <widget class="QLabel" name="label_8">
             <property name="text">
              <string>圧縮</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="5" column="1">
            <widget class="QSpinBox" name="palAddrBox">
             <property name="maximum">
              <number>100000000</number>
@@ -192,40 +186,28 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
+          <item row="7" column="1">
            <widget class="QSpinBox" name="yTileBox">
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
             <property name="minimum">
              <number>1</number>
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
+          <item row="7" column="0">
            <widget class="QLabel" name="label_2">
             <property name="text">
              <string>Y</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
+          <item row="6" column="1">
            <widget class="QSpinBox" name="xTileBox">
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
             <property name="minimum">
              <number>1</number>
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
+          <item row="8" column="1">
            <widget class="QCheckBox" name="compCheckBox">
             <property name="enabled">
              <bool>false</bool>
@@ -242,14 +224,14 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
+          <item row="5" column="0">
            <widget class="QLabel" name="label_7">
             <property name="text">
              <string>パレット</string>
             </property>
            </widget>
           </item>
-          <item row="6" column="1">
+          <item row="9" column="1">
            <widget class="QPushButton" name="regButton">
             <property name="minimumSize">
              <size>
@@ -257,21 +239,28 @@
               <height>0</height>
              </size>
             </property>
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>16777215</height>
-             </size>
-            </property>
             <property name="text">
              <string>リストに登録</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
+          <item row="6" column="0">
            <widget class="QLabel" name="label">
             <property name="text">
              <string>X</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="3">
+           <widget class="QSpinBox" name="palAddrStep">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>100000</number>
+            </property>
+            <property name="value">
+             <number>32</number>
             </property>
            </widget>
           </item>
@@ -285,18 +274,35 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="3">
-           <widget class="QSpinBox" name="palAddrstep">
-            <property name="minimum">
-             <number>1</number>
-            </property>
-            <property name="maximum">
-             <number>100000</number>
-            </property>
-            <property name="value">
-             <number>32</number>
-            </property>
-           </widget>
+          <item row="3" column="1">
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QPushButton" name="prevButton">
+              <property name="toolTip">
+               <string>アドレスを現在のマップと同じサイズだけ減算し，パレットはStepの値を減算します</string>
+              </property>
+              <property name="statusTip">
+               <string>アドレスを現在のマップと同じサイズだけ減算し，パレットはStepの値を減算します</string>
+              </property>
+              <property name="text">
+               <string>前のマップ</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="nextButton">
+              <property name="toolTip">
+               <string>アドレスを現在のマップと同じサイズだけ加算し，パレットはStepの値を加算します</string>
+              </property>
+              <property name="statusTip">
+               <string>アドレスを現在のマップと同じサイズだけ加算し，パレットはStepの値を加算します</string>
+              </property>
+              <property name="text">
+               <string>次のマップ</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </item>
@@ -397,8 +403,8 @@
    <slot>guiAddrEdited()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>832</x>
-     <y>441</y>
+     <x>824</x>
+     <y>410</y>
     </hint>
     <hint type="destinationlabel">
      <x>883</x>
@@ -414,7 +420,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>888</x>
-     <y>435</y>
+     <y>404</y>
     </hint>
     <hint type="destinationlabel">
      <x>866</x>
@@ -423,7 +429,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>palAddrstep</sender>
+   <sender>palAddrStep</sender>
    <signal>valueChanged(int)</signal>
    <receiver>MainWindow</receiver>
    <slot>guiPalAddrStepChanged(int)</slot>
@@ -470,6 +476,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>nextButton</sender>
+   <signal>pressed()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiNextMapPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>793</x>
+     <y>428</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>795</x>
+     <y>791</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>prevButton</sender>
+   <signal>pressed()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiPrevMapPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>736</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>771</x>
+     <y>807</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>guiDataItemActivated()</slot>
@@ -481,5 +519,7 @@
   <slot>guiPalAddrStepChanged(int)</slot>
   <slot>guiTileXChanged(int)</slot>
   <slot>guiTileYChanged(int)</slot>
+  <slot>guiNextMapPressed()</slot>
+  <slot>guiPrevMapPressed()</slot>
  </slots>
 </ui>

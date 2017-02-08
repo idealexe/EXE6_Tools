@@ -222,6 +222,28 @@ class MapModder(QtGui.QMainWindow):
         """
         self.ui.addrBox.setSingleStep(n)
 
+    def guiNextMapPressed(self):
+        u""" 次のマップらしきものを表示する
+
+            現在のマップと同じサイズだけアドレスを移動するだけ（ついでにパレットも切り替える）
+        """
+        self.addr += self.tileX * self.tileY * 32
+        self.ui.addrBox.setValue(self.addr)
+        self.palAddr += self.ui.palAddrStep.value()
+        self.ui.palAddrBox.setValue(self.palAddr)
+        self.updateImage()
+
+    def guiPrevMapPressed(self):
+        u""" 前のマップらしきものを表示する
+
+            現在のマップと同じサイズだけアドレスを移動するだけ
+        """
+        self.addr -= self.tileX * self.tileY * 32
+        self.ui.addrBox.setValue(self.addr)
+        self.palAddr -= self.ui.palAddrStep.value()
+        self.ui.palAddrBox.setValue(self.palAddr)
+        self.updateImage()
+
 
     def guiPalLineEdited(self):
         u""" パレットアドレスが更新されたときの処理
