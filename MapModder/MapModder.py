@@ -95,7 +95,7 @@ class MapModder(QtGui.QMainWindow):
             "comp":[]
             },
             columns=['label', 'addr', 'palAddr', 'width', 'height', 'comp'])    # 並び順を指定
-            df.to_csv("./lists/" + listName, encoding="utf-8")
+            df.to_csv("./lists/" + listName, encoding="utf-8", index=False)
             print(u"リストファイルを作成しました")
             self.listData = df
 
@@ -105,8 +105,8 @@ class MapModder(QtGui.QMainWindow):
             GUIのリストをセットアップしpandas形式のリストを返す
         """
         self.ui.dataList.clear()
-        listData = pd.read_csv("./lists/" + listName, encoding="utf-8", index_col=0)
-        logger.debug(listData)
+        listData = pd.read_csv("./lists/" + listName, encoding="utf-8", index_col=None)
+        logger.info(listData)
         for i, data in listData.iterrows():    # 各行のイテレータ
             logger.debug(data)
             logger.debug(data["label"])
@@ -306,9 +306,9 @@ class MapModder(QtGui.QMainWindow):
         height = self.ui.yTileBox.value()
 
         se = pd.Series([unicode(label), hex(addr), hex(palAddr), width, height, 0], index=self.listData.columns)
-        self.listData = self.listData.append(se, ignore_index=True).sort_values(by=["palAddr"], ascending=True) # 追加してソート
-        logger.debug(self.listData)
-        self.listData.to_csv("./lists/" + listName, encoding="utf-8")
+        self.listData = self.listData.append(se, ignore_index=True).sort_values(by=["palAddr"], ascending=True).reset_index(drop=True)   # 追加してソート
+        logger.info(self.listData)
+        self.listData.to_csv("./lists/" + listName, encoding="utf-8", index=False)
         logger.info(u"リストに登録しました")
         self.loadListFile(listName)
 
