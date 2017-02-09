@@ -9,7 +9,6 @@ from PIL.ImageQt import ImageQt
 from PyQt4 import QtCore, QtGui
 #import PyQt5
 import binascii
-import codecs
 import numpy as np
 import os
 import pandas as pd
@@ -307,7 +306,7 @@ class MapModder(QtGui.QMainWindow):
         height = self.ui.yTileBox.value()
 
         se = pd.Series([unicode(label), hex(addr), hex(palAddr), width, height, 0], index=self.listData.columns)
-        self.listData = self.listData.append(se, ignore_index=True)
+        self.listData = self.listData.append(se, ignore_index=True).sort_values(by=["palAddr"], ascending=True) # 追加してソート
         logger.debug(self.listData)
         self.listData.to_csv("./lists/" + listName, encoding="utf-8")
         logger.info(u"リストに登録しました")
