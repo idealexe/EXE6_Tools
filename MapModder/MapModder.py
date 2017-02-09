@@ -1,9 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u""" Map Modder ver 0.1 by ideal.exe
-
-ToDo:アドレスのステップを可変にする
+u""" Map Modder ver 0.2 by ideal.exe
 """
 
 from PIL import Image
@@ -245,12 +243,15 @@ class MapModder(QtGui.QMainWindow):
         self.updateImage()
 
 
-    def guiPalLineEdited(self):
+    def guiPalAddrChanged(self):
         u""" パレットアドレスが更新されたときの処理
         """
         self.palAddr = self.ui.palAddrBox.value()
+        self.ui.palAddrBox.setValue(self.palAddr)
+        #self.ui.palAddrBox.lineEdit().setText(hex(self.palAddr))
         logger.debug(hex(self.palAddr))
         self.updateImage()
+
 
     def guiPalAddrStepChanged(self, n):
         u""" パレットアドレスのステップ数の変更
@@ -259,8 +260,8 @@ class MapModder(QtGui.QMainWindow):
 
 
     def guiPalItemActivated(self):
-        u''' GUIで色が選択されたときに行う処理
-        '''
+        u""" GUIで色が選択されたときに行う処理
+        """
         COLOR_SIZE = 2
 
         index = self.ui.palList.currentRow()

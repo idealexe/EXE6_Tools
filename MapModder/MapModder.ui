@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>938</width>
-    <height>600</height>
+    <width>1133</width>
+    <height>690</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Map Modder ver 0.1 by ideal.exe</string>
+   <string>Map Modder ver 0.2 by ideal.exe</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -46,7 +46,7 @@
        <widget class="QListWidget" name="dataList">
         <property name="minimumSize">
          <size>
-          <width>200</width>
+          <width>300</width>
           <height>0</height>
          </size>
         </property>
@@ -106,13 +106,16 @@
           <property name="minimumSize">
            <size>
             <width>200</width>
-            <height>0</height>
+            <height>350</height>
            </size>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="checkBox_2">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>グレースケール</string>
           </property>
@@ -162,13 +165,6 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QSpinBox" name="addrBox">
-            <property name="maximum">
-             <number>100000000</number>
-            </property>
-           </widget>
-          </item>
           <item row="8" column="0">
            <widget class="QLabel" name="label_8">
             <property name="text">
@@ -177,7 +173,7 @@
            </widget>
           </item>
           <item row="5" column="1">
-           <widget class="QSpinBox" name="palAddrBox">
+           <widget class="HexSpinBox" name="palAddrBox">
             <property name="maximum">
              <number>100000000</number>
             </property>
@@ -304,6 +300,13 @@
             </item>
            </layout>
           </item>
+          <item row="1" column="1">
+           <widget class="HexSpinBox" name="addrBox">
+            <property name="maximum">
+             <number>100000000</number>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
        </layout>
@@ -317,8 +320,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>938</width>
-     <height>21</height>
+     <width>1133</width>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -330,6 +333,13 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>HexSpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>hexspinbox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
@@ -355,8 +365,8 @@
    <slot>guiRegButtonPressed()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>832</x>
-     <y>567</y>
+     <x>967</x>
+     <y>654</y>
     </hint>
     <hint type="destinationlabel">
      <x>833</x>
@@ -381,46 +391,14 @@
    </hints>
   </connection>
   <connection>
-   <sender>palAddrBox</sender>
-   <signal>valueChanged(QString)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>guiPalLineEdited()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>832</x>
-     <y>467</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>760</x>
-     <y>556</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>addrBox</sender>
-   <signal>valueChanged(QString)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>guiAddrEdited()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>824</x>
-     <y>410</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>883</x>
-     <y>556</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>addrStep</sender>
    <signal>valueChanged(int)</signal>
    <receiver>MainWindow</receiver>
    <slot>guiAddrStepChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>888</x>
-     <y>404</y>
+     <x>1060</x>
+     <y>497</y>
     </hint>
     <hint type="destinationlabel">
      <x>866</x>
@@ -435,8 +413,8 @@
    <slot>guiPalAddrStepChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>896</x>
-     <y>464</y>
+     <x>1060</x>
+     <y>554</y>
     </hint>
     <hint type="destinationlabel">
      <x>887</x>
@@ -451,8 +429,8 @@
    <slot>guiTileXChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>698</x>
-     <y>483</y>
+     <x>967</x>
+     <y>580</y>
     </hint>
     <hint type="destinationlabel">
      <x>646</x>
@@ -467,8 +445,8 @@
    <slot>guiTileYChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>723</x>
-     <y>511</y>
+     <x>967</x>
+     <y>606</y>
     </hint>
     <hint type="destinationlabel">
      <x>705</x>
@@ -483,12 +461,12 @@
    <slot>guiNextMapPressed()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>793</x>
-     <y>428</y>
+     <x>966</x>
+     <y>527</y>
     </hint>
     <hint type="destinationlabel">
      <x>795</x>
-     <y>791</y>
+     <y>689</y>
     </hint>
    </hints>
   </connection>
@@ -499,12 +477,28 @@
    <slot>guiPrevMapPressed()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>736</x>
-     <y>433</y>
+     <x>885</x>
+     <y>527</y>
     </hint>
     <hint type="destinationlabel">
      <x>771</x>
-     <y>807</y>
+     <y>689</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>palAddrBox</sender>
+   <signal>valueChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiPalAddrChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>935</x>
+     <y>541</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1010</x>
+     <y>618</y>
     </hint>
    </hints>
   </connection>
@@ -513,7 +507,6 @@
   <slot>guiDataItemActivated()</slot>
   <slot>guiRegButtonPressed()</slot>
   <slot>guiPalItemActivated()</slot>
-  <slot>guiPalLineEdited()</slot>
   <slot>guiAddrEdited()</slot>
   <slot>guiAddrStepChanged(int)</slot>
   <slot>guiPalAddrStepChanged(int)</slot>
@@ -521,5 +514,6 @@
   <slot>guiTileYChanged(int)</slot>
   <slot>guiNextMapPressed()</slot>
   <slot>guiPrevMapPressed()</slot>
+  <slot>guiPalAddrChanged()</slot>
  </slots>
 </ui>
