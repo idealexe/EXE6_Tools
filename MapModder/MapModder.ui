@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Map Modder ver 0.2 by ideal.exe</string>
+   <string>Map Modder ver 0.3 by ideal.exe</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -126,13 +126,6 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_5">
         <item>
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>リストに登録</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <layout class="QGridLayout" name="gridLayout">
           <item row="1" column="2">
            <widget class="QLabel" name="label_9">
@@ -174,6 +167,9 @@
           </item>
           <item row="5" column="1">
            <widget class="HexSpinBox" name="palAddrBox">
+            <property name="prefix">
+             <string>0x</string>
+            </property>
             <property name="maximum">
              <number>100000000</number>
             </property>
@@ -302,6 +298,9 @@
           </item>
           <item row="1" column="1">
            <widget class="HexSpinBox" name="addrBox">
+            <property name="prefix">
+             <string>0x</string>
+            </property>
             <property name="maximum">
              <number>100000000</number>
             </property>
@@ -328,10 +327,16 @@
     <property name="title">
      <string>ファイル</string>
     </property>
+    <addaction name="openAction"/>
    </widget>
    <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="openAction">
+   <property name="text">
+    <string>ファイルを開く</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -381,8 +386,8 @@
    <slot>guiPalItemActivated()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>826</x>
-     <y>150</y>
+     <x>1121</x>
+     <y>203</y>
     </hint>
     <hint type="destinationlabel">
      <x>802</x>
@@ -397,7 +402,7 @@
    <slot>guiAddrStepChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1060</x>
+     <x>1120</x>
      <y>497</y>
     </hint>
     <hint type="destinationlabel">
@@ -413,7 +418,7 @@
    <slot>guiPalAddrStepChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1060</x>
+     <x>1120</x>
      <y>554</y>
     </hint>
     <hint type="destinationlabel">
@@ -502,12 +507,43 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>addrBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>guiAddrChanged(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>911</x>
+     <y>489</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>842</x>
+     <y>641</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>openAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>openFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>566</x>
+     <y>344</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>guiDataItemActivated()</slot>
   <slot>guiRegButtonPressed()</slot>
   <slot>guiPalItemActivated()</slot>
-  <slot>guiAddrEdited()</slot>
   <slot>guiAddrStepChanged(int)</slot>
   <slot>guiPalAddrStepChanged(int)</slot>
   <slot>guiTileXChanged(int)</slot>
@@ -515,5 +551,7 @@
   <slot>guiNextMapPressed()</slot>
   <slot>guiPrevMapPressed()</slot>
   <slot>guiPalAddrChanged()</slot>
+  <slot>guiAddrChanged(int)</slot>
+  <slot>openFile()</slot>
  </slots>
 </ui>

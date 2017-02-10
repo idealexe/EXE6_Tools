@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u""" Map Modder ver 0.2 by ideal.exe
+u""" Map Modder ver 0.3 by ideal.exe
 """
 
 from PIL import Image
@@ -14,6 +14,9 @@ import os
 import pandas as pd
 import struct
 import sys
+
+import gettext
+_ = gettext.gettext # 後の翻訳用
 
 import UI_MapModder as designer
 
@@ -98,6 +101,7 @@ class MapModder(QtGui.QMainWindow):
             df.to_csv("./lists/" + listName, encoding="utf-8", index=False)
             print(u"リストファイルを作成しました")
             self.listData = df
+            self.ui.dataList.clear()
 
     def loadListFile(self, listName):
         u""" リストファイルの読み込み
@@ -208,7 +212,7 @@ class MapModder(QtGui.QMainWindow):
         return [label, addr, palAddr, tileX, tileY]
 
 
-    def guiAddrEdited(self):
+    def guiAddrChanged(self, value):
         u""" アドレスが更新されたときの処理
         """
         self.addr = self.ui.addrBox.value()

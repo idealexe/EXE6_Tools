@@ -12,7 +12,11 @@ class HexSpinBox(QtGui.QSpinBox):
         super(HexSpinBox, self).__init__(parent)    # HexSpinBoxが継承しているQSpinBoxのコンストラクタを呼ぶ
 
     def textFromValue(self, value):
-        return hex(value)
+        return hex(value)[2:].upper()
 
     def valueFromText(self, text):
-        return int(16, text)
+        value = int(str(text), 16)
+        return value
+
+    def validate(self, input, pos):
+        return (QtGui.QValidator.Acceptable, pos)
