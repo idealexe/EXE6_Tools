@@ -11,6 +11,7 @@ import binascii
 import numpy as np
 import os
 import pandas as pd
+import re
 import struct
 import sys
 
@@ -316,7 +317,7 @@ class MapModder(QtGui.QMainWindow):
 
         se = pd.Series([unicode(label), hex(addr), hex(palAddr), width, height, 0], index=self.listData.columns)
         self.listData = self.listData.append(se, ignore_index=True).sort_values(by=["palAddr"], ascending=True).reset_index(drop=True)   # 追加してソート
-        logger.info(self.listData)
+        logger.debug(self.listData)
         self.listData.to_csv("./lists/" + listName, encoding="utf-8", index=False)
         logger.info(u"リストに登録しました")
         self.loadListFile(listName)
@@ -333,6 +334,38 @@ class MapModder(QtGui.QMainWindow):
                 logger.info(u"ファイルを保存しました")
         except:
             logger.info(u"ファイルの保存をキャンセルしました")
+
+    def changeViewScale(self, value):
+        u""" ビューを拡大縮小する
+        """
+        self.ui.graphicsView.resetTransform()   # 一度オリジナルサイズに戻す
+        scale = pow(2, value/10.0)   # 指数で拡大したほうが自然にスケールしてる感じがする
+        self.ui.graphicsView.scale(scale, scale)
+
+    def searchBinary(self):
+        u""" データを検索する
+        """
+        searchText = str(self.ui.searchEdit.text())
+        try:
+            searchValue = binascii.unhexlify(searchText)   # "0a" -> 0x0A
+        except:
+            logger.warning(u"入力はバイト列として解釈できるテキストのみ受けつけます")
+            return -1
+        logger.debug("Search Value:\t" + searchText)
+
+        self.ui.searchBrowser.clear()
+        matchIter = re.finditer(searchValue, self.romData)
+
+        count = 0
+        for m in matchIter:
+            logger.debug(hex( m.start() ))
+            resultText = hex(m.start())
+            self.ui.searchBrowser.append(resultText)
+            count += 1
+            if count >= 100:
+                logger.info(u"マッチ結果が多すぎます．100件以降は省略しました")
+                return -1
+
 
     def makeMapImage(self, romData, startAddr, width, height):
         u''' マップ画像を生成する

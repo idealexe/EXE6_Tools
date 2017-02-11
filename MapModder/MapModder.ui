@@ -22,41 +22,77 @@
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_2">
     <item>
-     <layout class="QVBoxLayout" name="listLayout">
+     <layout class="QVBoxLayout" name="leftLayout">
       <item>
-       <widget class="QLabel" name="dataLabel">
-        <property name="minimumSize">
-         <size>
-          <width>200</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>200</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>登録データ</string>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="listLayout">
+        <item>
+         <widget class="QLabel" name="dataLabel">
+          <property name="minimumSize">
+           <size>
+            <width>200</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>登録データ</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="dataList">
+          <property name="minimumSize">
+           <size>
+            <width>300</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>16777215</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <widget class="QListWidget" name="dataList">
-        <property name="minimumSize">
-         <size>
-          <width>300</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>200</width>
-          <height>16777215</height>
-         </size>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="searchLayout">
+        <item>
+         <widget class="QLabel" name="searchLabel">
+          <property name="text">
+           <string>バイナリ検索</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QLineEdit" name="searchEdit"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="searchButton">
+            <property name="text">
+             <string>検索</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTextBrowser" name="searchBrowser">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
@@ -88,10 +124,40 @@
         </property>
        </widget>
       </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLabel" name="scaleLabel">
+          <property name="text">
+           <string>Scale</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSlider" name="scaleSlider">
+          <property name="maximum">
+           <number>40</number>
+          </property>
+          <property name="singleStep">
+           <number>5</number>
+          </property>
+          <property name="pageStep">
+           <number>5</number>
+          </property>
+          <property name="value">
+           <number>10</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <layout class="QVBoxLayout" name="rightLayout">
       <item>
        <layout class="QVBoxLayout" name="palLayout">
         <item>
@@ -398,7 +464,7 @@
   </connection>
   <connection>
    <sender>regButton</sender>
-   <signal>pressed()</signal>
+   <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
    <slot>guiRegButtonPressed()</slot>
    <hints>
@@ -604,6 +670,70 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>scaleSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>changeViewScale(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>500</x>
+     <y>651</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>501</x>
+     <y>664</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>searchEdit</sender>
+   <signal>returnPressed()</signal>
+   <receiver>searchButton</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>192</x>
+     <y>383</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>240</x>
+     <y>382</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>searchButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>searchBinary()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>291</x>
+     <y>387</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>296</x>
+     <y>363</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>labelEdit</sender>
+   <signal>returnPressed()</signal>
+   <receiver>regButton</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>991</x>
+     <y>462</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1005</x>
+     <y>644</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>guiDataItemActivated()</slot>
@@ -619,5 +749,8 @@
   <slot>guiAddrChanged(int)</slot>
   <slot>openFile()</slot>
   <slot>saveFile()</slot>
+  <slot>scaleChanged()</slot>
+  <slot>changeViewScale(int)</slot>
+  <slot>searchBinary()</slot>
  </slots>
 </ui>
