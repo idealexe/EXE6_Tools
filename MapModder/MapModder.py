@@ -7,7 +7,6 @@ u""" Map Modder ver 0.3 by ideal.exe
 from PIL import Image
 from PIL.ImageQt import ImageQt
 from PyQt4 import QtCore, QtGui
-#import PyQt5
 import binascii
 import numpy as np
 import os
@@ -31,6 +30,8 @@ import argparse
 parser = argparse.ArgumentParser(description=u"入力ファイルに対して指定の処理を行います")
 parser.add_argument("file", help=u"処理対象のファイル")
 args = parser.parse_args()
+
+LIST_FILE_PATH = os.path.join(os.path.dirname(sys.argv[0]), "lists/") # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
 
 
 u""" Map Modder
@@ -73,6 +74,8 @@ class MapModder(QtGui.QMainWindow):
             """
             filename = QtGui.QFileDialog.getOpenFileName( self, _("Open File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
             filename = unicode(filename)
+        self.openedFileName = filename  # 保存時にパスを利用したいので
+
 
         try:
             with open( filename, 'rb' ) as romFile:
@@ -84,7 +87,7 @@ class MapModder(QtGui.QMainWindow):
         [title, code] = self.getRomHeader(self.romData)
         listName = code + "_" + title + ".csv"
 
-        if os.path.exists("./lists/" + listName):
+        if os.path.exists(LIST_FILE_PATH + listName):
             u""" リストファイルの存在判定
             """
             self.listData = self.loadListFile(listName)
@@ -98,10 +101,12 @@ class MapModder(QtGui.QMainWindow):
             "comp":[]
             },
             columns=['label', 'addr', 'palAddr', 'width', 'height', 'comp'])    # 並び順を指定
-            df.to_csv("./lists/" + listName, encoding="utf-8", index=False)
+            df.to_csv(LIST_FILE_PATH + listName, encoding="utf-8", index=False)
             print(u"リストファイルを作成しました")
             self.listData = df
             self.ui.dataList.clear()
+
+        self.updateImage()
 
     def loadListFile(self, listName):
         u""" リストファイルの読み込み
@@ -109,8 +114,8 @@ class MapModder(QtGui.QMainWindow):
             GUIのリストをセットアップしpandas形式のリストを返す
         """
         self.ui.dataList.clear()
-        listData = pd.read_csv("./lists/" + listName, encoding="utf-8", index_col=None)
-        logger.info(listData)
+        listData = pd.read_csv(LIST_FILE_PATH + listName, encoding="utf-8", index_col=None)
+        logger.debug(listData)
         for i, data in listData.iterrows():    # 各行のイテレータ
             logger.debug(data)
             logger.debug(data["label"])
@@ -316,15 +321,28 @@ class MapModder(QtGui.QMainWindow):
         logger.info(u"リストに登録しました")
         self.loadListFile(listName)
 
+    def saveFile(self):
+        u""" ファイルの保存
+        """
+
+        filename = QtGui.QFileDialog.getSaveFileName(self, _(u"ROMを保存する"), \
+            os.path.expanduser(os.path.dirname(self.openedFileName)), _("Rom File (*.gba *.bin)"))
+        try:
+            with open( unicode(filename), 'wb') as saveFile:
+                saveFile.write(self.romData)
+                logger.info(u"ファイルを保存しました")
+        except:
+            logger.info(u"ファイルの保存をキャンセルしました")
+
     def makeMapImage(self, romData, startAddr, width, height):
         u''' マップ画像を生成する
 
-            グラフィックデータは4bitで1pxを表現する．アクセス可能な最小単位は8*8pxのタイルでサイズは32byteとなる
+            グラフィックデータは4bitで1pxを表現する．アクセス可能な最小単位は8*8pxのタイルでデータサイズは32byteとなる
         '''
 
-        TILE_WIDTH = 8
+        TILE_WIDTH = 8  # px
         TILE_HEIGHT = 8
-        TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT / 2
+        TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT / 2   # bytes
 
         logger.debug("Image Width:\t" + str(width) + " Tile")
         logger.debug("Image Height:\t" + str(height) + " Tile")

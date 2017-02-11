@@ -176,7 +176,10 @@ class Ui_MainWindow(object):
         self.openAction.setObjectName(_fromUtf8("openAction"))
         self.quitAction = QtGui.QAction(MainWindow)
         self.quitAction.setObjectName(_fromUtf8("quitAction"))
+        self.saveAction = QtGui.QAction(MainWindow)
+        self.saveAction.setObjectName(_fromUtf8("saveAction"))
         self.menu.addAction(self.openAction)
+        self.menu.addAction(self.saveAction)
         self.menu.addAction(self.quitAction)
         self.menubar.addAction(self.menu.menuAction())
 
@@ -194,6 +197,7 @@ class Ui_MainWindow(object):
         QtCore.QObject.connect(self.addrBox, QtCore.SIGNAL(_fromUtf8("valueChanged(int)")), MainWindow.guiAddrChanged)
         QtCore.QObject.connect(self.openAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.openFile)
         QtCore.QObject.connect(self.quitAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.close)
+        QtCore.QObject.connect(self.saveAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.saveFile)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -224,5 +228,7 @@ class Ui_MainWindow(object):
         self.openAction.setShortcut(_translate("MainWindow", "Ctrl+O", None))
         self.quitAction.setText(_translate("MainWindow", "終了", None))
         self.quitAction.setShortcut(_translate("MainWindow", "Ctrl+Q", None))
+        self.saveAction.setText(_translate("MainWindow", "名前をつけて保存", None))
+        self.saveAction.setShortcut(_translate("MainWindow", "Ctrl+S", None))
 
 from hexspinbox import HexSpinBox

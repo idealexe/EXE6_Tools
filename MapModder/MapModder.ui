@@ -340,6 +340,7 @@
      <string>ファイル</string>
     </property>
     <addaction name="openAction"/>
+    <addaction name="saveAction"/>
     <addaction name="quitAction"/>
    </widget>
    <addaction name="menu"/>
@@ -359,6 +360,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="saveAction">
+   <property name="text">
+    <string>名前をつけて保存</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>
@@ -579,6 +588,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>saveAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>saveFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>566</x>
+     <y>344</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>guiDataItemActivated()</slot>
@@ -593,5 +618,6 @@
   <slot>guiPalAddrChanged()</slot>
   <slot>guiAddrChanged(int)</slot>
   <slot>openFile()</slot>
+  <slot>saveFile()</slot>
  </slots>
 </ui>
