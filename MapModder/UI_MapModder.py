@@ -26,6 +26,9 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(1137, 690)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(_fromUtf8("bug.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        MainWindow.setWindowIcon(icon)
         self.centralwidget = QtGui.QWidget(MainWindow)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
@@ -47,6 +50,7 @@ class Ui_MainWindow(object):
         self.dataList = QtGui.QListWidget(self.centralwidget)
         self.dataList.setMinimumSize(QtCore.QSize(300, 0))
         self.dataList.setMaximumSize(QtCore.QSize(200, 16777215))
+        self.dataList.setAlternatingRowColors(True)
         self.dataList.setObjectName(_fromUtf8("dataList"))
         self.listLayout.addWidget(self.dataList)
         self.leftLayout.addLayout(self.listLayout)
@@ -208,6 +212,8 @@ class Ui_MainWindow(object):
         self.menubar.setObjectName(_fromUtf8("menubar"))
         self.menu = QtGui.QMenu(self.menubar)
         self.menu.setObjectName(_fromUtf8("menu"))
+        self.menu_2 = QtGui.QMenu(self.menubar)
+        self.menu_2.setObjectName(_fromUtf8("menu_2"))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtGui.QStatusBar(MainWindow)
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
@@ -218,10 +224,14 @@ class Ui_MainWindow(object):
         self.quitAction.setObjectName(_fromUtf8("quitAction"))
         self.saveAction = QtGui.QAction(MainWindow)
         self.saveAction.setObjectName(_fromUtf8("saveAction"))
+        self.saveImageAction = QtGui.QAction(MainWindow)
+        self.saveImageAction.setObjectName(_fromUtf8("saveImageAction"))
         self.menu.addAction(self.openAction)
         self.menu.addAction(self.saveAction)
         self.menu.addAction(self.quitAction)
+        self.menu_2.addAction(self.saveImageAction)
         self.menubar.addAction(self.menu.menuAction())
+        self.menubar.addAction(self.menu_2.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QObject.connect(self.dataList, QtCore.SIGNAL(_fromUtf8("itemDoubleClicked(QListWidgetItem*)")), MainWindow.guiDataItemActivated)
@@ -242,6 +252,7 @@ class Ui_MainWindow(object):
         QtCore.QObject.connect(self.xTileBox, QtCore.SIGNAL(_fromUtf8("valueChanged(int)")), MainWindow.guiTileXChanged)
         QtCore.QObject.connect(self.yTileBox, QtCore.SIGNAL(_fromUtf8("valueChanged(int)")), MainWindow.guiTileYChanged)
         QtCore.QObject.connect(self.regButton, QtCore.SIGNAL(_fromUtf8("pressed()")), MainWindow.guiRegButtonPressed)
+        QtCore.QObject.connect(self.saveImageAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.saveImageFile)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -271,11 +282,13 @@ class Ui_MainWindow(object):
         self.nextButton.setText(_translate("MainWindow", "次のマップ", None))
         self.addrBox.setPrefix(_translate("MainWindow", "0x", None))
         self.menu.setTitle(_translate("MainWindow", "ファイル", None))
+        self.menu_2.setTitle(_translate("MainWindow", "ユーティリティ", None))
         self.openAction.setText(_translate("MainWindow", "ファイルを開く", None))
         self.openAction.setShortcut(_translate("MainWindow", "Ctrl+O", None))
         self.quitAction.setText(_translate("MainWindow", "終了", None))
         self.quitAction.setShortcut(_translate("MainWindow", "Ctrl+Q", None))
         self.saveAction.setText(_translate("MainWindow", "名前をつけて保存", None))
         self.saveAction.setShortcut(_translate("MainWindow", "Ctrl+S", None))
+        self.saveImageAction.setText(_translate("MainWindow", "画像を保存", None))
 
 from hexspinbox import HexSpinBox

@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Map Modder ver 0.3 by ideal.exe</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>bug.png</normaloff>bug.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
@@ -57,6 +61,9 @@
             <width>200</width>
             <height>16777215</height>
            </size>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -417,7 +424,14 @@
     <addaction name="saveAction"/>
     <addaction name="quitAction"/>
    </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>ユーティリティ</string>
+    </property>
+    <addaction name="saveImageAction"/>
+   </widget>
    <addaction name="menu"/>
+   <addaction name="menu_2"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="openAction">
@@ -442,6 +456,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="saveImageAction">
+   <property name="text">
+    <string>画像を保存</string>
    </property>
   </action>
  </widget>
@@ -742,6 +761,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>saveImageAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>saveImageFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>568</x>
+     <y>344</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>guiDataItemActivated()</slot>
@@ -760,5 +795,6 @@
   <slot>scaleChanged()</slot>
   <slot>changeViewScale(int)</slot>
   <slot>searchBinary()</slot>
+  <slot>saveImageFile()</slot>
  </slots>
 </ui>

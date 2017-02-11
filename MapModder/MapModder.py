@@ -19,6 +19,7 @@ import gettext
 _ = gettext.gettext # 後の翻訳用
 
 import UI_MapModder as designer
+import CommonAction as commonAction
 
 from logging import getLogger,StreamHandler,INFO,DEBUG
 logger = getLogger(__name__)
@@ -365,6 +366,9 @@ class MapModder(QtGui.QMainWindow):
             if count >= 100:
                 logger.info(u"マッチ結果が多すぎます．100件以降は省略しました")
                 return -1
+
+    def saveImageFile(self):
+        commonAction.saveSceneImage(self.graphicsScene)
 
 
     def makeMapImage(self, romData, startAddr, width, height):
