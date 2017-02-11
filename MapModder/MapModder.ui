@@ -183,6 +183,12 @@
             <property name="minimum">
              <number>1</number>
             </property>
+            <property name="maximum">
+             <number>256</number>
+            </property>
+            <property name="value">
+             <number>16</number>
+            </property>
            </widget>
           </item>
           <item row="7" column="0">
@@ -196,6 +202,12 @@
            <widget class="QSpinBox" name="xTileBox">
             <property name="minimum">
              <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>256</number>
+            </property>
+            <property name="value">
+             <number>16</number>
             </property>
            </widget>
           </item>
@@ -328,6 +340,7 @@
      <string>ファイル</string>
     </property>
     <addaction name="openAction"/>
+    <addaction name="quitAction"/>
    </widget>
    <addaction name="menu"/>
   </widget>
@@ -335,6 +348,17 @@
   <action name="openAction">
    <property name="text">
     <string>ファイルを開く</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="quitAction">
+   <property name="text">
+    <string>終了</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
    </property>
   </action>
  </widget>
@@ -528,6 +552,22 @@
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
    <slot>openFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>566</x>
+     <y>344</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>quitAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>

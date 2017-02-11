@@ -104,6 +104,8 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.palAddrBox, 5, 1, 1, 1)
         self.yTileBox = QtGui.QSpinBox(self.centralwidget)
         self.yTileBox.setMinimum(1)
+        self.yTileBox.setMaximum(256)
+        self.yTileBox.setProperty("value", 16)
         self.yTileBox.setObjectName(_fromUtf8("yTileBox"))
         self.gridLayout.addWidget(self.yTileBox, 7, 1, 1, 1)
         self.label_2 = QtGui.QLabel(self.centralwidget)
@@ -111,6 +113,8 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.label_2, 7, 0, 1, 1)
         self.xTileBox = QtGui.QSpinBox(self.centralwidget)
         self.xTileBox.setMinimum(1)
+        self.xTileBox.setMaximum(256)
+        self.xTileBox.setProperty("value", 16)
         self.xTileBox.setObjectName(_fromUtf8("xTileBox"))
         self.gridLayout.addWidget(self.xTileBox, 6, 1, 1, 1)
         self.compCheckBox = QtGui.QCheckBox(self.centralwidget)
@@ -170,7 +174,10 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.openAction = QtGui.QAction(MainWindow)
         self.openAction.setObjectName(_fromUtf8("openAction"))
+        self.quitAction = QtGui.QAction(MainWindow)
+        self.quitAction.setObjectName(_fromUtf8("quitAction"))
         self.menu.addAction(self.openAction)
+        self.menu.addAction(self.quitAction)
         self.menubar.addAction(self.menu.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -186,6 +193,7 @@ class Ui_MainWindow(object):
         QtCore.QObject.connect(self.palAddrBox, QtCore.SIGNAL(_fromUtf8("valueChanged(QString)")), MainWindow.guiPalAddrChanged)
         QtCore.QObject.connect(self.addrBox, QtCore.SIGNAL(_fromUtf8("valueChanged(int)")), MainWindow.guiAddrChanged)
         QtCore.QObject.connect(self.openAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.openFile)
+        QtCore.QObject.connect(self.quitAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.close)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -213,5 +221,8 @@ class Ui_MainWindow(object):
         self.addrBox.setPrefix(_translate("MainWindow", "0x", None))
         self.menu.setTitle(_translate("MainWindow", "ファイル", None))
         self.openAction.setText(_translate("MainWindow", "ファイルを開く", None))
+        self.openAction.setShortcut(_translate("MainWindow", "Ctrl+O", None))
+        self.quitAction.setText(_translate("MainWindow", "終了", None))
+        self.quitAction.setShortcut(_translate("MainWindow", "Ctrl+Q", None))
 
 from hexspinbox import HexSpinBox

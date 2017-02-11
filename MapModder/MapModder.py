@@ -51,8 +51,8 @@ class MapModder(QtGui.QMainWindow):
         """
         self.addr = 0
         self.palAddr = 0
-        self.tileX = 1
-        self.tileY = 1
+        self.tileX = self.ui.xTileBox.value()
+        self.tileY = self.ui.yTileBox.value()
 
     def updateImage(self):
         u""" 画像を更新する
