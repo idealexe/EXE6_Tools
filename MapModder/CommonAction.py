@@ -20,6 +20,7 @@ _ = gettext.gettext
 
 import os
 
+
 def saveSceneImage(graphicsScene):
     u""" QGraphicsSceneを画像として保存する
     """

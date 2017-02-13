@@ -347,15 +347,19 @@ class MapModder(QtGui.QMainWindow):
         u""" データを検索する
         """
         searchText = str(self.ui.searchEdit.text())
+        logger.info("Search Text:\t" + searchText)
+
         try:
             searchValue = binascii.unhexlify(searchText)   # "0a" -> 0x0A
         except:
             logger.warning(u"入力はバイト列として解釈できるテキストのみ受けつけます")
             return -1
-        logger.debug("Search Value:\t" + searchText)
+
+        logger.info("Search Value:\t" + searchValue )
 
         self.ui.searchBrowser.clear()
-        matchIter = re.finditer(searchValue, self.romData)
+        pattern = re.compile(re.escape(searchValue) )   # エスケープが必要な文字（0x3f = "?" とか）が含まれている可能性がある
+        matchIter = re.finditer(pattern, self.romData)
 
         count = 0
         for m in matchIter:
