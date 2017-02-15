@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1137</width>
+    <width>1153</width>
     <height>690</height>
    </rect>
   </property>
@@ -50,18 +50,6 @@
         </item>
         <item>
          <widget class="QListWidget" name="dataList">
-          <property name="minimumSize">
-           <size>
-            <width>300</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>200</width>
-            <height>16777215</height>
-           </size>
-          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
@@ -199,7 +187,7 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_5">
         <item>
-         <widget class="QFrame" name="">
+         <widget class="QFrame" name="frame">
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
           </property>
@@ -412,7 +400,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1137</width>
+     <width>1153</width>
      <height>24</height>
     </rect>
    </property>

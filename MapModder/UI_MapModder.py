@@ -25,7 +25,7 @@ except AttributeError:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
-        MainWindow.resize(1137, 690)
+        MainWindow.resize(1153, 690)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(_fromUtf8("bug.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
@@ -48,8 +48,6 @@ class Ui_MainWindow(object):
         self.dataLabel.setObjectName(_fromUtf8("dataLabel"))
         self.listLayout.addWidget(self.dataLabel)
         self.dataList = QtGui.QListWidget(self.centralwidget)
-        self.dataList.setMinimumSize(QtCore.QSize(300, 0))
-        self.dataList.setMaximumSize(QtCore.QSize(200, 16777215))
         self.dataList.setAlternatingRowColors(True)
         self.dataList.setObjectName(_fromUtf8("dataList"))
         self.listLayout.addWidget(self.dataList)
@@ -208,7 +206,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addLayout(self.rightLayout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1137, 24))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1153, 24))
         self.menubar.setObjectName(_fromUtf8("menubar"))
         self.menu = QtGui.QMenu(self.menubar)
         self.menu.setObjectName(_fromUtf8("menu"))
