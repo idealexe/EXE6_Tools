@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u''' EXE Sprite Reader ver 1.3 by ideal.exe
+u''' EXE Sprite Reader ver 1.4 by ideal.exe
 
 
     データ構造仕様
@@ -175,6 +175,10 @@ class SpriteReader(QtGui.QMainWindow):
         elif romName == "ROCKMAN_EXE2":
             logger.info(_(u"ロックマンエグゼ2 jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKMAN_EXE2
+
+        elif romName == "ROCKMAN_EXE\x00":
+            logger.info(_(u"ロックマンエグゼ jp としてロードしました"))
+            EXE_Addr = SpriteDict.ROCKMAN_EXE
 
         else:
             logger.info( _(u"対応していないバージョンです" ) )
@@ -432,6 +436,7 @@ class SpriteReader(QtGui.QMainWindow):
 
         [currentFrame] = [frame for frame in self.frameDataList if frame["animNum"] == animIndex and frame["frameNum"] == index]
         self.parsePaletteData(self.spriteData, currentFrame["palSizeAddr"], palIndex)
+        logger.info("Palette Size Address:\t" + hex(currentFrame["palSizeAddr"]))
 
         currentFrameOam = [oam for oam in self.oamDataList if oam["animNum"] == animIndex and oam["frameNum"] == index]
         self.ui.oamLabel.setText(u"OAM：" + str(len(currentFrameOam)))
@@ -457,6 +462,7 @@ class SpriteReader(QtGui.QMainWindow):
         # パレットサイズの読み取り
         palSize = spriteData[palSizePtr:palSizePtr+OFFSET_SIZE]
         palSize = struct.unpack("<L", palSize)[0]
+        logger.info("Palette Size:\t" + hex(palSize))
         if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x00にしてることもあったので無視
             palSize = 0x20
 
@@ -470,11 +476,12 @@ class SpriteReader(QtGui.QMainWindow):
             color = spriteData[readPos:readPos+COLOR_SIZE]
             color = struct.unpack("<H", color)[0]
 
-            binColor = bin(color)[2:].zfill(15) # GBAのオブジェクトは15bitカラー（0BBBBBGGGGGRRRRR）
-            binB = int( binColor[0:5], 2 ) * 8  #   文字列化されているので数値に直す（255階調での近似色にするため8倍する）
-            binG = int( binColor[5:10], 2 ) * 8
-            binR = int( binColor[10:15], 2 ) * 8
-            #print "R: " + hex(binR) + "\tG: " + hex(binG) + "\tB: " + hex(binB)
+            binColor = bin(color)[2:].zfill(16) # GBAのオブジェクトは15bitカラー（0BBBBBGGGGGRRRRR）
+            logger.debug(bin(color)[2:].zfill(16))
+            binB = int( binColor[1:6], 2 ) * 8  #   文字列化されているので数値に直す（255階調での近似色にするため8倍する）
+            binG = int( binColor[6:11], 2 ) * 8
+            binR = int( binColor[11:16], 2 ) * 8
+
             if palCount == 0:
                 self.palData.append( {"color":[binR, binG, binB, 0], "addr":readPos } ) # 最初の色は透過色
             else:

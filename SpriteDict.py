@@ -92,8 +92,8 @@ ROCKMAN_EXE2 = {
 }
 
 ROCKMAN_EXE = {
-"startAddr":0,
-"endAddr":0,
+"startAddr":0x12614,
+"endAddr":0x12B74,
 "classHeadAddr":[],
 "ignoreAddr":[]
 }

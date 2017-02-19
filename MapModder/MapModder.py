@@ -319,7 +319,7 @@ class MapModder(QtGui.QMainWindow):
         se = pd.Series([unicode(label), hex(addr), hex(palAddr), width, height, 0], index=self.listData.columns)
         self.listData = self.listData.append(se, ignore_index=True).sort_values(by=["palAddr"], ascending=True).reset_index(drop=True)   # 追加してソート
         logger.debug(self.listData)
-        self.listData.to_csv("./lists/" + listName, encoding="utf-8", index=False)
+        self.listData.to_csv(LIST_FILE_PATH + listName, encoding="utf-8", index=False)
         logger.info(u"リストに登録しました")
         self.loadListFile(listName)
 
