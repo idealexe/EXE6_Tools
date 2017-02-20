@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u''' EXE Sprite Reader ver 1.4 by ideal.exe
+u''' EXE Sprite Reader ver 1.5 by ideal.exe
 
 
     データ構造仕様
@@ -265,8 +265,8 @@ class SpriteReader(QtGui.QMainWindow):
         self.oamDataList = oamDataList
 
         self.ui.animLabel.setText(u"アニメーション：" + str(len(animPtrList)))
-        for animPtr in animPtrList:
-            animPtrStr = hex(animPtr["value"])[2:].zfill(6).upper() # GUIに表示する文字列
+        for i, animPtr in enumerate(animPtrList):
+            animPtrStr = str(i).zfill(2) + ":   " + hex(animPtr["value"])[2:].zfill(6).upper() # GUIに表示する文字列
             animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
             self.ui.animList.addItem(animItem) # アニメーションリストへ追加
 
@@ -436,7 +436,7 @@ class SpriteReader(QtGui.QMainWindow):
 
         [currentFrame] = [frame for frame in self.frameDataList if frame["animNum"] == animIndex and frame["frameNum"] == index]
         self.parsePaletteData(self.spriteData, currentFrame["palSizeAddr"], palIndex)
-        logger.info("Palette Size Address:\t" + hex(currentFrame["palSizeAddr"]))
+        logger.debug("Palette Size Address:\t" + hex(currentFrame["palSizeAddr"]))
 
         currentFrameOam = [oam for oam in self.oamDataList if oam["animNum"] == animIndex and oam["frameNum"] == index]
         self.ui.oamLabel.setText(u"OAM：" + str(len(currentFrameOam)))
@@ -462,7 +462,7 @@ class SpriteReader(QtGui.QMainWindow):
         # パレットサイズの読み取り
         palSize = spriteData[palSizePtr:palSizePtr+OFFSET_SIZE]
         palSize = struct.unpack("<L", palSize)[0]
-        logger.info("Palette Size:\t" + hex(palSize))
+        logger.debug("Palette Size:\t" + hex(palSize))
         if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x00にしてることもあったので無視
             palSize = 0x20
 
@@ -786,6 +786,43 @@ class SpriteReader(QtGui.QMainWindow):
             # リロード
             self.extractSpriteAddr(self.romData)
             self.ui.spriteList.setCurrentRow(index)
+        else:
+            logger.info(u"リポイントをキャンセルしました")
+
+    def repointAnimation(self, item):
+        u""" アニメーションポインタの書き換え
+        """
+        index = self.ui.animList.currentRow()
+        if index == 0:
+            logger.info(u"一つ目のアニメーションポインタはポインタテーブルのサイズに影響するので変更できません")
+            return -1
+
+        targetSprite = self.getCurrentSprite()
+        if targetSprite["compFlag"] == 1:
+            logger.info(u"現在圧縮スプライトのアニメーションリポイントは非対応です")
+            return -1
+
+        targetAddr = targetSprite["spriteAddr"] + HEADER_SIZE + self.animPtrList[index]["addr"]
+        logger.info( u"書き換えるアドレス：\t" + hex( targetAddr ) )
+
+        dialog = QtGui.QDialog()
+        dialog.ui = repointDialog()
+        dialog.ui.setupUi(dialog)
+        dialog.show()
+        dialog.exec_()
+
+        if dialog.result() == 1:
+            addrText = dialog.ui.addrText.text()
+            try:
+                addr = int(str(addrText), 16)   # QStringから戻さないとダメ
+                data = struct.pack("L", addr)
+                self.romData = self.romData[:targetAddr] + data + self.romData[targetAddr+len(data):]
+            except:
+                logger.info(u"不正な値です")
+            # リロード
+            spriteIndex = self.ui.spriteList.currentRow()
+            self.extractSpriteAddr(self.romData)
+            self.ui.spriteList.setCurrentRow(spriteIndex)
         else:
             logger.info(u"リポイントをキャンセルしました")
 

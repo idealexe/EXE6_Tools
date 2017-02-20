@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>ロックマンエグゼ スプライトリーダー by ideal</string>
+   <string>ロックマンエグゼ スプライトリーダー ver 1.5 by ideal</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="enabled">
@@ -107,6 +107,9 @@
         </item>
         <item>
          <widget class="QSlider" name="graphicsScaleSlider">
+          <property name="statusTip">
+           <string>表示サイズを変更できます</string>
+          </property>
           <property name="minimum">
            <number>0</number>
           </property>
@@ -152,6 +155,9 @@
             <height>16777215</height>
            </size>
           </property>
+          <property name="statusTip">
+           <string>アイテムをダブルクリックするとアニメーションをリポイントできます</string>
+          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
@@ -185,6 +191,9 @@
         </item>
         <item>
          <widget class="QCheckBox" name="animCheck">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>アニメーション再生（未実装）</string>
           </property>
@@ -247,6 +256,9 @@
             <height>300</height>
            </size>
           </property>
+          <property name="statusTip">
+           <string>アイテムをダブルクリックすると色を変更できます</string>
+          </property>
           <property name="isWrapping" stdset="0">
            <bool>false</bool>
           </property>
@@ -287,7 +299,7 @@
      <x>0</x>
      <y>0</y>
      <width>1265</width>
-     <height>21</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -551,8 +563,8 @@
    <slot>changePalet(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1253</x>
-     <y>539</y>
+     <x>1244</x>
+     <y>536</y>
     </hint>
     <hint type="destinationlabel">
      <x>599</x>
@@ -599,8 +611,8 @@
    <slot>guiOAMItemActivated(QListWidgetItem*)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1253</x>
-     <y>189</y>
+     <x>1244</x>
+     <y>186</y>
     </hint>
     <hint type="destinationlabel">
      <x>599</x>
@@ -704,6 +716,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>animList</sender>
+   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>repointAnimation()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>956</x>
+     <y>88</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>995</x>
+     <y>48</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -723,5 +751,6 @@
   <slot>exDumpSprite()</slot>
   <slot>changeViewScale(int)</slot>
   <slot>importSprite()</slot>
+  <slot>repointAnimation()</slot>
  </slots>
 </ui>
