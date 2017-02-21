@@ -19,6 +19,7 @@ import gettext
 _ = gettext.gettext # 後の翻訳用
 
 import UI_MapModder as designer
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
 import CommonAction as commonAction
 
 from logging import getLogger,StreamHandler,INFO,DEBUG

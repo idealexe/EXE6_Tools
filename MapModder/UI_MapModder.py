@@ -232,7 +232,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menu_2.menuAction())
 
         self.retranslateUi(MainWindow)
-        QtCore.QObject.connect(self.dataList, QtCore.SIGNAL(_fromUtf8("itemDoubleClicked(QListWidgetItem*)")), MainWindow.guiDataItemActivated)
+        QtCore.QObject.connect(self.dataList, QtCore.SIGNAL(_fromUtf8("currentRowChanged(int)")), MainWindow.guiDataItemActivated)
         QtCore.QObject.connect(self.palList, QtCore.SIGNAL(_fromUtf8("itemDoubleClicked(QListWidgetItem*)")), MainWindow.guiPalItemActivated)
         QtCore.QObject.connect(self.openAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.openFile)
         QtCore.QObject.connect(self.quitAction, QtCore.SIGNAL(_fromUtf8("triggered()")), MainWindow.close)

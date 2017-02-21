@@ -463,7 +463,7 @@
  <connections>
   <connection>
    <sender>dataList</sender>
-   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <signal>currentRowChanged(int)</signal>
    <receiver>MainWindow</receiver>
    <slot>guiDataItemActivated()</slot>
    <hints>
@@ -596,8 +596,8 @@
    <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>876</x>
-     <y>464</y>
+     <x>1038</x>
+     <y>462</y>
     </hint>
     <hint type="destinationlabel">
      <x>948</x>
