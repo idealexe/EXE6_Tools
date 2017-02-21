@@ -830,11 +830,21 @@ class SpriteReader(QtGui.QMainWindow):
                 addr = int(str(addrText), 16)   # QStringから戻さないとダメ
                 data = struct.pack("L", addr)
                 self.romData = self.romData[:targetAddr] + data + self.romData[targetAddr+len(data):]
+                logger.info(u"アニメーションポインタを書き換えました")
             except:
                 logger.info(u"不正な値です")
             # リロード
             spriteIndex = self.ui.spriteList.currentRow()
-            self.extractSpriteAddr(self.romData)
+            if "EXE_Addr" in globals():
+                self.extractSpriteAddr(self.romData)
+            else:   # スプライトをロードした場合はアドレスリストが未定義になるので別途処理
+                self.spriteList = []
+                self.ui.spriteList.clear()
+                self.spriteList.append( {"spriteAddr":0, "compFlag":0, "readPos":0} )
+
+                spriteItemStr = "Opened Sprite"  # GUIのリストに表示する文字列
+                spriteItem = QtGui.QListWidgetItem( spriteItemStr )  # GUIのスプライトリストに追加するアイテムの生成
+                self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
             self.ui.spriteList.setCurrentRow(spriteIndex)
         else:
             logger.info(u"リポイントをキャンセルしました")
