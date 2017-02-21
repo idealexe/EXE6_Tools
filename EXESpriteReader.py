@@ -41,7 +41,7 @@ OFFSET_SIZE = 4
 COLOR_SIZE  = 2 # 1色あたりのサイズ
 FRAME_DATA_SIZE = 20
 OAM_DATA_SIZE = 5
-OAM_DATA_END = "\xFF\xFF\xFF\xFF\xFF"
+OAM_DATA_END = ["\xFF\xFF\xFF\xFF\xFF", "\xFF\xFF\xFF\xFF\x00"]
 EXPAND_ANIMATION_NUM = 64   # 拡張ダンプのアニメーション数
 EXPAND_FRAME_NUM = 16   # 拡張ダンプのフレーム数
 
@@ -269,6 +269,7 @@ class SpriteReader(QtGui.QMainWindow):
             animPtrStr = str(i).zfill(2) + ":   " + hex(animPtr["value"])[2:].zfill(6).upper() # GUIに表示する文字列
             animItem = QtGui.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
             self.ui.animList.addItem(animItem) # アニメーションリストへ追加
+            logger.debug(hex(animPtr["value"]))
 
         self.ui.animList.setCurrentRow(0)   # self.guiAnimItemActivated(0)  が呼ばれる
 
@@ -317,17 +318,28 @@ class SpriteReader(QtGui.QMainWindow):
         """
         frameDataList = []
         graphAddrList = []    # グラフィックデータは共有しているフレームも多いので別のリストで保持
-        for animPtr in animPtrList:
+        for i, animPtr in enumerate(animPtrList):
             readAddr = animPtr["value"]
-            logger.debug("Animation at " + hex(readAddr))
+            logger.debug("Animation " + str(i) + " at " + hex(readAddr))
 
             frameCount = 0
             while True: # do while文がないので代わりに無限ループ＋breakを使う
                 frameData = spriteData[readAddr:readAddr+FRAME_DATA_SIZE]
                 [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
+                logger.debug("Frame Type:\t" + hex(frameType))
+                if graphSizeAddr in [0x0000, 0x2000]:  # 流星のロックマンのスプライトを表示するための応急処置
+                    logger.warning(u"不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
+                    break
+
                 if graphSizeAddr not in graphAddrList:
                     graphAddrList.append(graphSizeAddr)
-                [graphicSize] = struct.unpack("L", spriteData[graphSizeAddr:graphSizeAddr+OFFSET_SIZE])
+                logger.debug("Graphics Size Address:\t" + hex(graphSizeAddr))
+
+                try:
+                    [graphicSize] = struct.unpack("L", spriteData[graphSizeAddr:graphSizeAddr+OFFSET_SIZE])
+                except:
+                    logger.warning(u"不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
+                    break
                 graphicData = spriteData[graphSizeAddr+OFFSET_SIZE:graphSizeAddr+OFFSET_SIZE+graphicSize]
 
                 frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "frameData":frameData, \
@@ -344,7 +356,7 @@ class SpriteReader(QtGui.QMainWindow):
         """
         oamDataList = []
         for frameData in frameDataList:
-            logger.debug("Frame at " + hex(frameData["address"]))
+            logger.info("Frame at " + hex(frameData["address"]))
             logger.debug("  Animation Number:\t" + str(frameData["animNum"]))
             logger.debug("  Frame Number:\t\t" + str(frameData["frameNum"]))
             logger.debug("  Address of OAM Pointer:\t" + hex(frameData["oamPtrAddr"]))
@@ -354,7 +366,7 @@ class SpriteReader(QtGui.QMainWindow):
 
             while True:
                 oamData = spriteData[readAddr:readAddr+OAM_DATA_SIZE]
-                if oamData == OAM_DATA_END:
+                if oamData in OAM_DATA_END:
                     break
                 logger.debug("OAM at " + hex(readAddr))
 
@@ -386,7 +398,7 @@ class SpriteReader(QtGui.QMainWindow):
         u""" 無圧縮スプライトデータの切り出し
         """
         if compFlag == 0:
-            endAddr = oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END)
+            endAddr = oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END[0])
             spriteData = spriteData[:endAddr]
 
         return [spriteData, animPtrList, frameDataList, oamDataList]
