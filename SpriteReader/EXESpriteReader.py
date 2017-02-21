@@ -26,6 +26,7 @@ from PIL.ImageQt import ImageQt
 _ = gettext.gettext # 後の翻訳用
 
 import SpriteDict
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
 import LZ77Util
 import UI_EXESpriteReader as designer
 
@@ -356,7 +357,7 @@ class SpriteReader(QtGui.QMainWindow):
         """
         oamDataList = []
         for frameData in frameDataList:
-            logger.info("Frame at " + hex(frameData["address"]))
+            logger.debug("Frame at " + hex(frameData["address"]))
             logger.debug("  Animation Number:\t" + str(frameData["animNum"]))
             logger.debug("  Frame Number:\t\t" + str(frameData["frameNum"]))
             logger.debug("  Address of OAM Pointer:\t" + hex(frameData["oamPtrAddr"]))
