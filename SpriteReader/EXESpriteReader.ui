@@ -256,6 +256,12 @@
             <height>300</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <family>ＭＳ ゴシック</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="statusTip">
            <string>アイテムをダブルクリックすると色を変更できます</string>
           </property>

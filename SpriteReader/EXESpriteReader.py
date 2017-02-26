@@ -245,7 +245,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             return -1
 
         self.graphicsScene = QtWidgets.QGraphicsScene(self) # スプライトを描画するためのシーン（親がNULLだとメインウインドウが閉じたときに残ってアクセス違反を起こす）
-        self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
+        #self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         self.ui.graphicsView.setScene(self.graphicsScene)
         self.ui.palSelect.setValue(0)   # パレットをリセット
         self.ui.animList.clear()
@@ -498,8 +498,8 @@ class SpriteReader(QtWidgets.QMainWindow):
 
             colorStr = hex(color)[2:].zfill(4).upper() + "\t(" + str(binR).rjust(3) + ", " + str(binG).rjust(3) + ", " + str(binB).rjust(3) + ")"  # GUIに表示する文字列
             colorItem = QtWidgets.QListWidgetItem(colorStr)
-            #colorItem.setBackgroundColor( QtWidgets.QColor(binR, binG, binB) )  # 背景色をパレットの色に
-            #colorItem.setTextColor( QtWidgets.QColor(255-binR, 255-binG, 255-binB) )    # 文字は反転色
+            colorItem.setBackground( QtGui.QColor(binR, binG, binB) )  # 背景色をパレットの色に
+            colorItem.setForeground( QtGui.QColor(255-binR, 255-binG, 255-binB) )    # 文字は反転色
             self.ui.palList.addItem(colorItem) # フレームリストへ追加
 
             palCount += 1
@@ -541,16 +541,16 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
         writePos = self.palData[index]["addr"]  # 色データを書き込む位置
-        color = QtWidgets.QColorDialog.getColor( QtWidgets.QColor(r, g, b) )    # カラーダイアログを開く
+        color = QtWidgets.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
         if color.isValid() == False: # キャンセルしたとき
             logger.info(u"色の選択をキャンセルしました")
             return 0
 
         r,g,b,a = color.getRgb()    # ダイアログでセットされた色に更新
 
-        binR = bin(r/8)[2:].zfill(5)    # 5bitカラーに変換
-        binG = bin(g/8)[2:].zfill(5)
-        binB = bin(b/8)[2:].zfill(5)
+        binR = bin(r//8)[2:].zfill(5)    # 5bitカラーに変換
+        binG = bin(g//8)[2:].zfill(5)
+        binB = bin(b//8)[2:].zfill(5)
         gbaColor = int(binB + binG + binR, 2)  # GBAのカラーコードに変換
         colorStr = struct.pack("H", gbaColor)
         self.spriteData = self.spriteData[:writePos] + colorStr + self.spriteData[writePos+COLOR_SIZE:]  # ロード中のスプライトデータの色を書き換える
