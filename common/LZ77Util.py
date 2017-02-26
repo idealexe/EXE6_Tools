@@ -87,7 +87,7 @@ def decompLZ77_10(data, startAddr):
                 readPos += 1    # 次の読み取り位置へ
                 if readPos >= len(data):    # ここ適当
                     break
-                currentChar = data[readPos:readPos+1] # 1バイト読み込み
+                currentChar = data[readPos:readPos+1] # 1バイト読み込み（data[readPos]だとbytes型ではなく整数値になる）
                 output += currentChar   # そのまま出力
                 writePos += 1   # 次の書き込み位置へ
             else:
