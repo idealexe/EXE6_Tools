@@ -45,12 +45,12 @@ def decompLZ77_10(data, startAddr):
 
     """
 
-
     uncompSize = int.from_bytes(data[startAddr+1:startAddr+4], "little")
 
     def ascii2bit(a):
         u"""
             ASCII文字列を2進数文字列に変換（1文字8ケタ）
+            ※現在未使用
         """
 
         b = ""
@@ -59,8 +59,11 @@ def decompLZ77_10(data, startAddr):
         return b
 
     def byte2bit(byte):
+        u""" byte列を2進数文字列に変換（1バイト8ケタ）
+        """
+
         bit = ""
-        
+
         if isinstance(byte, int):
             bit = bin(byte)[2:].zfill(8)
         else:
@@ -68,7 +71,7 @@ def decompLZ77_10(data, startAddr):
                 bit += bin(b)[2:].zfill(8)
         return bit
 
-    output = "" # 復号結果を格納する文字列
+    output = b"" # 復号結果を格納するバイト列
     writePos = 0    # 復号データの書き込み位置
     readPos = startAddr+4 # 圧縮データの読み取り開始位置
 
@@ -84,7 +87,7 @@ def decompLZ77_10(data, startAddr):
                 readPos += 1    # 次の読み取り位置へ
                 if readPos >= len(data):    # ここ適当
                     break
-                currentChar = str(data[readPos]) # 1バイト読み込み
+                currentChar = data[readPos:readPos+1] # 1バイト読み込み
                 output += currentChar   # そのまま出力
                 writePos += 1   # 次の書き込み位置へ
             else:
