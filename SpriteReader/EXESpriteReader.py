@@ -414,12 +414,12 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         currentAnimFrame = [frame for frame in self.frameDataList if frame["animNum"] == index]
         self.ui.frameLabel.setText(u"フレーム：" + str(len(currentAnimFrame)))
-        for frame in currentAnimFrame:
-            frameStr = hex(frame["address"])[2:].zfill(8).upper()   # GUIに表示する文字列
+        for i, frame in enumerate(currentAnimFrame):
+            frameStr = str(i).zfill(2) + ":   " + hex(frame["address"])[2:].zfill(6).upper() + "\t" + str(frame["frameDelay"]) + "F\t"   # GUIに表示する文字列
             if frame["frameType"] == 128:
-                frameStr += "\tStop"
+                frameStr += "Stop"
             elif frame["frameType"] == 192:
-                frameStr += "\tLoop"
+                frameStr += "Loop"
             frameItem = QtWidgets.QListWidgetItem( frameStr )    # GUIのフレームリストに追加するアイテムの生成
             self.ui.frameList.addItem(frameItem) # フレームリストへ追加
 
