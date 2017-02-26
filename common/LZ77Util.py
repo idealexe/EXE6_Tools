@@ -45,10 +45,10 @@ def decompLZ77_10(data, startAddr):
 
     """
 
-    uncompSize = struct.unpack('l', data[startAddr+1 : startAddr+4] + "\x00")[0]
-    #print( hex(startAddr) + "\t" + str(uncompSize) + " Bytes" )
 
-    def ascii2bin(a):
+    uncompSize = int.from_bytes(data[startAddr+1:startAddr+4], "little")
+
+    def ascii2bit(a):
         u"""
             ASCII文字列を2進数文字列に変換（1文字8ケタ）
         """
@@ -58,13 +58,23 @@ def decompLZ77_10(data, startAddr):
             b += bin( struct.unpack("B", c)[0] )[2:].zfill(8)
         return b
 
+    def byte2bit(byte):
+        bit = ""
+        
+        if isinstance(byte, int):
+            bit = bin(byte)[2:].zfill(8)
+        else:
+            for b in byte:
+                bit += bin(b)[2:].zfill(8)
+        return bit
+
     output = "" # 復号結果を格納する文字列
     writePos = 0    # 復号データの書き込み位置
     readPos = startAddr+4 # 圧縮データの読み取り開始位置
 
     while len(output) < uncompSize:
         currentChar = data[readPos] # ブロックヘッダ（１バイト）の読み込み
-        blockHeader = ascii2bin(currentChar)    # ブロックヘッダを2進数文字列に変換
+        blockHeader = byte2bit(currentChar)    # ブロックヘッダを2進数文字列に変換
         for i in range(8):  # 8ブロックで1セット
             if blockHeader[i] == str(0):
                 u"""
@@ -74,7 +84,7 @@ def decompLZ77_10(data, startAddr):
                 readPos += 1    # 次の読み取り位置へ
                 if readPos >= len(data):    # ここ適当
                     break
-                currentChar = data[readPos] # 1バイト読み込み
+                currentChar = str(data[readPos]) # 1バイト読み込み
                 output += currentChar   # そのまま出力
                 writePos += 1   # 次の書き込み位置へ
             else:
@@ -84,7 +94,7 @@ def decompLZ77_10(data, startAddr):
                 """
                 readPos += 2
                 blockData = data[readPos-1:readPos+1]   # 2バイトをブロック情報として読み込み
-                blockData = ascii2bin(blockData)    # ブロック情報を2進数文字列に変換
+                blockData = byte2bit(blockData)    # ブロック情報を2進数文字列に変換
                 #print "Block Data: " + blockData
 
                 offs = int(blockData[4:16], 2) + 1
