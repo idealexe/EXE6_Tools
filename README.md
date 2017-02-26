@@ -3,7 +3,18 @@
 * ※開発中のプログラムなので危険です．必ずデータのバックアップを取った状態で使用してください
 * コードはだいたいPythonで書いているので実行にはPythonの環境が必要です
 * 実行時にインポートエラーが出た場合は適宜該当のライブラリをインストールしてください
-* 動作確認環境はWindows10 (64bit) + Python2.7.13 + PyQt4です
+* 動作確認環境はWindows10 (64bit) + Python3.5.2 + PyQt5です
+
+## 実行環境の用意
+Windows向けの手順です．他のOSはすんなりインストールできると思います
+* AnacondaのPython3系をインストール（現時点では3.6）
+  * https://www.continuum.io/downloads#windows
+* PyQt5用の仮想環境を作成
+  * `conda create -n pyqt5`
+  * `activate pyqt5`
+* 必要なものをインストール
+  * `conda install python=3.5 anaconda`
+  * `conda install --channel https://conda.anaconda.org/bpentz pyqt5`
 
 ## 各プログラムの説明
 ### EXE6Dict.py
