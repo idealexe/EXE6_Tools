@@ -39,18 +39,18 @@ parser = argparse.ArgumentParser(description='対応しているROMのスプラ�
 parser.add_argument("-f", "--file", help="開くROMファイル")
 args = parser.parse_args()
 
+""" 定数
+
+    スプライトデータのフォーマットで決められている定数
+"""
 HEADER_SIZE = 4 # スプライトヘッダのサイズ
 OFFSET_SIZE = 4
 COLOR_SIZE  = 2 # 1色あたりのサイズ
 FRAME_DATA_SIZE = 20
 OAM_DATA_SIZE = 5
 OAM_DATA_END = [b"\xFF\xFF\xFF\xFF\xFF", b"\xFF\xFF\xFF\xFF\x00"]
-EXPAND_ANIMATION_NUM = 64   # 拡張ダンプのアニメーション数
-EXPAND_FRAME_NUM = 16   # 拡張ダンプのフレーム数
-
 # フラグと形状の対応を取る辞書[size+shape]:[x,y]
-# キーにリストが使えないのでこんなことに・・・
-objDim = {
+OAM_DIMENSION = {
 "0000":[8,8],
 "0001":[16,8],
 "0010":[8,16],
@@ -64,6 +64,14 @@ objDim = {
 "1101":[64,32],
 "1110":[32,64]
 }
+
+""" 設定用定数
+
+    そのうちGUI上で設定できるようにするかもしれない定数
+"""
+EXPAND_ANIMATION_NUM = 64   # 拡張ダンプのアニメーション数
+EXPAND_FRAME_NUM = 16   # 拡張ダンプのフレーム数
+
 
 class SpriteReader(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
@@ -382,7 +390,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
                 objSize = flag1[-2:]
                 objShape = flag2[-2:]
-                [sizeX, sizeY] = objDim[objSize+objShape]
+                [sizeX, sizeY] = OAM_DIMENSION[objSize+objShape]
                 logger.debug("  Size X:\t" + str(sizeX))
                 logger.debug("  Size Y:\t" + str(sizeY))
 
@@ -647,7 +655,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         item = QtWidgets.QGraphicsPixmapItem(image)
         item.setOffset(posX , posY)
-        imageBounds = item.boundingRect()
+        #imageBounds = item.boundingRect()
         self.graphicsScene.addItem(item)
         #self.graphicsScene.addRect(imageBounds)
 
@@ -676,7 +684,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         u""" スプライトを拡張してダンプ
 
             スプライトを32アニメーション，各16フレームのスペースを確保したスプライトに変換して保存する
-            拡張した部分には１個めのアニメーションをコピーする
+            拡張した部分には停止フレームをコピーする
             アニメーション数が少ないスプライトを移植するときも安心
         """
 
@@ -701,7 +709,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         # 先頭のフレームが先頭のグラフィックデータを使ってないパターンがあったら死ぬ
         output += self.spriteData[self.frameDataList[0]["graphSizeAddr"]:]  # グラフィックデータ先頭からスプライトの終端までコピー
 
-        u""" フレームデータのコピー
+        u""" アニメーション，フレームデータのコピー
         """
         for frameData in self.frameDataList:
             writeAddr = animDataStart + ANIMATION_SIZE * frameData["animNum"] + FRAME_DATA_SIZE * frameData["frameNum"]
@@ -717,7 +725,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 dummy = data
             output = output[:writeAddr] + data + output[writeAddr+len(data):]
 
-        for i in range(len(self.animPtrList), EXPAND_ANIMATION_NUM):    # 拡張した分のアニメーション
+        for i in range(len(self.animPtrList), EXPAND_ANIMATION_NUM):    # 拡張した部分のアニメーション
             u""" プラグイン時などはアニメーションが再生し終わらないと移動できないのでループアニメーションだと操作不能になってしまう
             """
             writeAddr = animDataStart + ANIMATION_SIZE * i
@@ -749,9 +757,8 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"フレーム画像を保存する"), os.path.expanduser('./'), _("image File (*.png)"))[0]
         try:
-            with open( filename, 'wb') as saveFile:
-                image.save(filename, "PNG")
-                logger.info(u"ファイルを保存しました")
+            image.save(filename, "PNG")
+            logger.info(u"フレーム画像を保存しました")
         except:
             logger.info(u"ファイルの保存をキャンセルしました")
 
@@ -884,7 +891,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
             objSize = bin(flag1)[2:].zfill(8)[-2:]
             objShape = bin(flag2)[2:].zfill(8)[-2:]
-            [sizeX, sizeY] = objDim[objSize+objShape]
+            [sizeX, sizeY] = OAM_DIMENSION[objSize+objShape]
             logger.debug("  Size X:\t" + str(sizeX))
             logger.debug("  Size Y:\t" + str(sizeY))
 
