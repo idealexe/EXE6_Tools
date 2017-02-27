@@ -305,7 +305,7 @@
      <x>0</x>
      <y>0</y>
      <width>1265</width>
-     <height>21</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -566,7 +566,7 @@
    <sender>palSelect</sender>
    <signal>valueChanged(int)</signal>
    <receiver>MainWindow</receiver>
-   <slot>changePalet(int)</slot>
+   <slot>changePalette(int)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>1244</x>
@@ -745,7 +745,7 @@
   <slot>guiAnimItemActivated(int)</slot>
   <slot>guiFrameItemActivated(int)</slot>
   <slot>openSprite()</slot>
-  <slot>changePalet(int)</slot>
+  <slot>changePalette(int)</slot>
   <slot>dumpSprite()</slot>
   <slot>guiPalItemActivated(QListWidgetItem*)</slot>
   <slot>saveFrameImage()</slot>

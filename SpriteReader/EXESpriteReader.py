@@ -83,11 +83,13 @@ class SpriteReader(QtWidgets.QMainWindow):
         self.romData = ""   # ファイルを読み込んだ時点でその内容がコピーされる．このデータを読み書きする．
 
 
-    def openFile(self):
+    def openFile(self, filename=""):
         u''' ファイルを開くときの処理
         '''
 
-        filename = QtWidgets.QFileDialog.getOpenFileName( self, _("Open EXE_ROM File"), os.path.expanduser('./') )[0]   # ファイル名のタプルが返される
+        if filename == "":
+            filename = QtWidgets.QFileDialog.getOpenFileName( self, _("Open EXE_ROM File"), os.path.expanduser('./') )[0]   # ファイル名とフィルタのタプルが返される
+
         try:
             with open( filename, 'rb' ) as romFile:
                 self.romData = romFile.read()
@@ -512,7 +514,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             readPos += COLOR_SIZE
 
 
-    def changePalet(self, n):
+    def changePalette(self, n):
         index = self.ui.frameList.currentRow()
         self.guiFrameItemActivated(index)
 
