@@ -12,10 +12,8 @@ u''' EXE Sprite Reader  by ideal.exe
 '''
 
 
-import binascii
 import gettext
 import os
-import re
 import sys
 import struct
 import numpy as np
@@ -224,7 +222,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t"  # GUIのリストに表示する文字列
                 if romName == "ROCKEXE6_GXX":
                     try:
-                        spriteAddrStr += unicode( SpriteDict.GXX_Sprite_List[hex(spriteAddr)] )
+                        spriteAddrStr += SpriteDict.GXX_Sprite_List[hex(spriteAddr)]
                     except:
                         pass
                 spriteItem = QtWidgets.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
