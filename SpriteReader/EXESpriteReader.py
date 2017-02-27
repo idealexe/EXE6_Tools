@@ -11,6 +11,7 @@ u''' EXE Sprite Reader  by ideal.exe
 
 '''
 
+PROGRAM_NAME = "EXE Sprite Reader  ver1.6  by ideal.exe"
 
 import gettext
 import os
@@ -78,6 +79,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = designer.Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowTitle(PROGRAM_NAME)
         self.ui.graphicsView.scale(2,2) # なぜかQt Designer上で設定できない
 
         self.romData = ""   # ファイルを読み込んだ時点でその内容がコピーされる．このデータを読み書きする．
