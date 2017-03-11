@@ -10,23 +10,29 @@ u""" GBA MIDI Corrector by idealexe
 import time
 startTime = time.time() # 実行時間計測開始
 
-import binascii
 import os
 import re
-import sys
 import struct
 
-# 引数が足りないよ！
-if len(sys.argv) < 2:
-    print(u"引数が足りません")
-    sys.exit()
+import argparse
+parser = argparse.ArgumentParser(description='Sappyで書き出した標準形式のMIDIデータをmid2agb.exeで正しく変換できるようにします')
+parser.add_argument("file", help="開くMIDIファイル")
+parser.add_argument("-o", "--output", help="出力するファイルの名前")
+args = parser.parse_args()
 
-f = sys.argv[1]  # 1つめの引数をファイルパスとして格納
+from logging import getLogger,StreamHandler,INFO
+logger = getLogger(__name__)
+handler = StreamHandler()
+handler.setLevel(INFO)
+logger.setLevel(INFO)
+logger.addHandler(handler)
+
+
+f = args.file  # 1つめの引数をファイルパスとして格納
 name, ext = os.path.splitext(f) # ファイル名と拡張子を取得
 
-# 2つめの引数があれば出力ファイル名として使う
-if len(sys.argv) == 3:
-    outName = sys.argv[2]
+if args.output != None:
+    outName = args.output
 else:
     outName = name + "_corr" + ext  # 標準の出力ファイル名
 
@@ -42,7 +48,6 @@ readPos = 0 # 読み取り位置
 # ヘッダーの読み取り
 headerChunkSize = 14 # ヘッダーチャンクは１４バイト
 header = struct.unpack(">4sLHHH", data[0 : headerChunkSize])
-#print(header)
 #chunkType = header[0]
 #chunkSize = header[1]
 #midFormat = header[2]
@@ -62,7 +67,7 @@ for i in range(trackNum):
     readPos += dataSize
 
 # 各イベントをコントロールチェンジに書き換える
-reEvent = re.compile("LFOS|LFODL|MODT|XCMD xIECV|XCMD xIECL") # 検索パターンをコンパイル
+reEvent = re.compile(b"LFOS|LFODL|MODT|XCMD xIECV|XCMD xIECL") # 検索パターンをコンパイル
 for i in range(trackNum):
     while True:
         m = reEvent.search(tracks[i])
@@ -70,34 +75,36 @@ for i in range(trackNum):
             break
 
         eventStart = m.start() - 3  # マッチした位置の３バイト前がテキストイベントの開始位置
-        n = struct.unpack("B", tracks[i][m.start()-1])[0]   # マッチした位置の１バイト前がデータ長
+        n = tracks[i][m.start()-1]  # マッチした位置の１バイト前がデータ長
         eventSize = n + 3;  # イベント全体のサイズ
 
         code = struct.pack("B", 0xB0 + i)
         value = tracks[i][m.end()+1:m.end()+3]  # かなり決め打ち（文字列の後１つスペースを開けて値があることを仮定している）
-        value = re.match("\d*", value).group()  # 数字部分のみ取り出し
-        if value == "": # 値が数字ではない場合（MODTを想定）
-            value = "0"
-        value = struct.pack( "B", int(value) )
+        value = re.match(b"\d*", value).group() # 数字部分のみ取り出し
+        
+        if value == b"": # 値が数字ではない場合（MODTを想定）
+            value = b"\x00"
+        else:
+            value = int(value).to_bytes(1, "little")
 
-        if m.group() == "LFOS":
-            cc = code + "\x15" + value   # LFOSのコントロールチェンジは BX 15 VV （Xはチャンネル）
-        elif m.group() == "LFODL":
-            cc = code + "\x1A" + value
-        elif m.group() == "MODT":
-            cc = code + "\x16" + value
-        elif m.group() == "XCMD xIECV":
-            cc = code + "\x1E\x08\x00" + code + "\x1F" + value
-        elif m.group() == "XCMD xIECL":
-            cc = code + "\x1E\x09\x00" + code + "\x1F" + value
+        if m.group() == b"LFOS":
+            cc = code + b"\x15" + value   # LFOSのコントロールチェンジは BX 15 VV （Xはチャンネル）
+        elif m.group() == b"LFODL":
+            cc = code + b"\x1A" + value
+        elif m.group() == b"MODT":
+            cc = code + b"\x16" + value
+        elif m.group() == b"XCMD xIECV":
+            cc = code + b"\x1E\x08\x00" + code + b"\x1F" + value
+        elif m.group() == b"XCMD xIECL":
+            cc = code + b"\x1E\x09\x00" + code + b"\x1F" + value
 
         tracks[i] = tracks[i][0:eventStart] + cc + tracks[i][eventStart+eventSize:] # ここで長さが変わってしまうため以前のマッチ位置が使えなくなる->whileで回す方式にした
 
     dataSizeStr = struct.pack(">L", len(tracks[i]) )    # データサイズを更新
-    tracks[i] = "".join( ["MTrk", dataSizeStr, tracks[i]] ) # トラックチャンクを結合
+    tracks[i] = b"MTrk" + dataSizeStr + tracks[i]   # トラックチャンクを結合
 
-output = "".join(tracks)
-output = "".join( [header, output] )
+output = b"".join(tracks)
+output = b"".join( [header, output] )
 
 # ファイル出力
 try:
