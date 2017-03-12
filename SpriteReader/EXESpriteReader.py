@@ -15,6 +15,7 @@ PROGRAM_NAME = "EXE Sprite Reader  ver1.6  by ideal.exe"
 
 import gettext
 import os
+import pandas as pd
 import sys
 import struct
 import numpy as np
@@ -28,7 +29,7 @@ sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
 import LZ77Util
 import UI_EXESpriteReader as designer
 
-from logging import getLogger,StreamHandler,INFO,DEBUG
+from logging import getLogger,StreamHandler,INFO
 logger = getLogger(__name__)    # 出力元の明確化
 handler = StreamHandler()
 handler.setLevel(INFO)
@@ -72,6 +73,7 @@ OAM_DIMENSION = {
 """
 EXPAND_ANIMATION_NUM = 64   # 拡張ダンプのアニメーション数
 EXPAND_FRAME_NUM = 16   # 拡張ダンプのフレーム数
+LIST_FILE_PATH = os.path.join(os.path.dirname(sys.argv[0]), "lists/") # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
 
 
 class SpriteReader(QtWidgets.QMainWindow):
@@ -104,9 +106,40 @@ class SpriteReader(QtWidgets.QMainWindow):
             """
             return -1
 
+        title = self.romData[0xA0:0xAC].decode("utf-8")
+        code = self.romData[0xAC:0xB0].decode("utf-8")
+        listName = code + "_" + title + ".csv"
+
+        if os.path.exists(LIST_FILE_PATH + listName):
+            u""" リストファイルの存在判定
+            """
+            self.listData = self.loadListFile(listName)
+        else:
+            df = pd.DataFrame({
+            "addr":[],
+            "label":[],
+            },
+            columns=["addr", "label"])    # 並び順を指定
+            df.to_csv(LIST_FILE_PATH + listName, encoding="utf-8", index=False)
+            print(u"リストファイルを作成しました")
+            self.listData = df
+
         self.extractSpriteAddr(self.romData)
         self.ui.spriteList.setCurrentRow(0)
 
+    def loadListFile(self, listName):
+        u""" リストファイルの読み込み
+
+            pandas形式のリストを返す
+        """
+        listData = pd.read_csv(LIST_FILE_PATH + listName, encoding="utf-8", index_col=None)
+        logger.debug(listData)
+        for i, data in listData.iterrows():    # 各行のイテレータ
+            logger.debug(data)
+            logger.debug(data["label"])
+
+        logger.info(u"リストファイルを読み込みました")
+        return listData
 
     def openSprite(self):
         u""" スプライトファイルを開くときの処理
@@ -232,11 +265,9 @@ class SpriteReader(QtWidgets.QMainWindow):
                 self.spriteList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "pointerAddr":readPos} )
 
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t"  # GUIのリストに表示する文字列
-                if romName == "ROCKEXE6_GXX":
-                    try:
-                        spriteAddrStr += SpriteDict.GXX_Sprite_List[hex(spriteAddr)]
-                    except:
-                        pass
+                if not self.listData.loc[(self.listData.addr == hex(spriteAddr)), "label"].empty:
+                    spriteAddrStr += self.listData.loc[(self.listData.addr == hex(spriteAddr)), "label"].values[0]
+                    
                 spriteItem = QtWidgets.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
