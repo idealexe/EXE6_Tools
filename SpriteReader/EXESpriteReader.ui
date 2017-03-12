@@ -738,6 +738,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>spriteList</sender>
+   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>labelSprite()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>130</x>
+     <y>97</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>162</x>
+     <y>47</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -758,5 +774,6 @@
   <slot>changeViewScale(int)</slot>
   <slot>importSprite()</slot>
   <slot>repointAnimation()</slot>
+  <slot>labelSprite()</slot>
  </slots>
 </ui>

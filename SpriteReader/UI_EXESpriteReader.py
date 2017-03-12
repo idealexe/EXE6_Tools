@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'EXESpriteReader.ui'
+# Form implementation generated from reading ui file 'SpriteReader\EXESpriteReader.ui'
 #
 # Created by: PyQt5 UI code generator 5.6
 #
@@ -211,6 +211,7 @@ class Ui_MainWindow(object):
         self.graphicsScaleSlider.valueChanged['int'].connect(MainWindow.changeViewScale)
         self.importAction.triggered.connect(MainWindow.importSprite)
         self.animList.itemDoubleClicked['QListWidgetItem*'].connect(MainWindow.repointAnimation)
+        self.spriteList.itemDoubleClicked['QListWidgetItem*'].connect(MainWindow.labelSprite)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

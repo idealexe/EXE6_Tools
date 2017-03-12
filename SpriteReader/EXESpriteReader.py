@@ -108,21 +108,21 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         title = self.romData[0xA0:0xAC].decode("utf-8")
         code = self.romData[0xAC:0xB0].decode("utf-8")
-        listName = code + "_" + title + ".csv"
+        self.listName = code + "_" + title + ".csv"
 
-        if os.path.exists(LIST_FILE_PATH + listName):
+        if os.path.exists(LIST_FILE_PATH + self.listName):
             u""" リストファイルの存在判定
             """
-            self.listData = self.loadListFile(listName)
+            self.listData = self.loadListFile(self.listName)
         else:
             df = pd.DataFrame({
             "addr":[],
             "label":[],
             },
             columns=["addr", "label"])    # 並び順を指定
-            df.to_csv(LIST_FILE_PATH + listName, encoding="utf-8", index=False)
+            df.to_csv(LIST_FILE_PATH + self.listName, encoding="utf-8", index=False)
             print(u"リストファイルを作成しました")
-            self.listData = self.loadListFile(listName)
+            self.listData = self.loadListFile(self.listName)
 
         self.extractSpriteAddr(self.romData)
         self.ui.spriteList.setCurrentRow(0)
@@ -1000,6 +1000,37 @@ class SpriteReader(QtWidgets.QMainWindow):
         else:
             logger.info(u"インポートをキャンセルしました")
 
+    def labelSprite(self):
+        index = self.ui.spriteList.currentRow()
+        logger.debug(index)
+        addr = self.spriteList[index]["spriteAddr"]
+        logger.debug(hex(addr))
+
+        dialog = QtWidgets.QDialog()
+        dialog.ui = labelDialog()
+        dialog.ui.setupUi(dialog)
+        dialog.show()
+        dialog.exec_()
+
+        if dialog.result() == 1:
+            label = dialog.ui.addrText.text()
+
+            logger.debug(label)
+            se = pd.Series([hex(addr), label], index=self.listData.columns)
+            self.listData = self.listData.append(se, ignore_index=True).sort_values(by=["addr"], ascending=True).reset_index(drop=True)   # 追加してソート
+            logger.debug(self.listData)
+            self.listData.to_csv(LIST_FILE_PATH + self.listName, encoding="utf-8", index=False)
+            logger.info(u"リストに登録しました")
+
+            # リロード
+            self.loadListFile(self.listName)
+            index = self.ui.spriteList.currentRow()
+            self.extractSpriteAddr(self.romData)
+            self.ui.spriteList.setCurrentRow(index)
+        else:
+            logger.info(u"ラベルの入力をキャンセルしました")
+
+
 
 class repointDialog(object):
     def setupUi(self, Dialog):
@@ -1058,6 +1089,35 @@ class importDialog(object):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "インポート"))
         self.label.setText(_translate("Dialog", "アドレス（16進数で指定してください）"))
+
+class labelDialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Dialog")
+        Dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        Dialog.resize(300, 100)
+        self.verticalLayout = QtWidgets.QVBoxLayout(Dialog)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.label = QtWidgets.QLabel(Dialog)
+        self.label.setObjectName("label")
+        self.verticalLayout.addWidget(self.label)
+        self.addrText = QtWidgets.QLineEdit(Dialog)
+        self.addrText.setObjectName("addrText")
+        self.verticalLayout.addWidget(self.addrText)
+        self.buttonBox = QtWidgets.QDialogButtonBox(Dialog)
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName("buttonBox")
+        self.verticalLayout.addWidget(self.buttonBox)
+
+        self.retranslateUi(Dialog)
+        self.buttonBox.accepted.connect(Dialog.accept)
+        self.buttonBox.rejected.connect(Dialog.reject)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Dialog", "ラベル"))
+        self.label.setText(_translate("Dialog", "スプライトのラベル名を入力してください"))
 
 '''
 main
