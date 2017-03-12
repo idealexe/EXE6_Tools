@@ -3,7 +3,7 @@
 
 u""" GBA MIDI Corrector by idealexe
 
-    Sappyで出力した標準形式のMIDIデータをmid2agb.exeで正しく変換できるようにするプログラム
+    Sappyで書き出した標準形式のMIDIデータをmid2agb.exeで正しく変換できるようにするプログラム
     （ループは手作業で・・・）
 """
 
@@ -16,7 +16,7 @@ import struct
 
 import argparse
 parser = argparse.ArgumentParser(description='Sappyで書き出した標準形式のMIDIデータをmid2agb.exeで正しく変換できるようにします')
-parser.add_argument("file", help="開くMIDIファイル")
+parser.add_argument("file", help="修正するMIDIファイル")
 parser.add_argument("-o", "--output", help="出力するファイルの名前")
 args = parser.parse_args()
 
@@ -26,6 +26,10 @@ handler = StreamHandler()
 handler.setLevel(INFO)
 logger.setLevel(INFO)
 logger.addHandler(handler)
+
+
+HEADER_CHUNK_SIZE = 14 # ヘッダーチャンクは１４バイト
+TRACK_CHUNK_SIZE = 8  # トラックチャンクは８バイト
 
 
 f = args.file  # 1つめの引数をファイルパスとして格納
@@ -39,30 +43,28 @@ else:
 # ファイルを開く
 try:
     with open(f, 'rb') as midFile:   # 読み取り専用、バイナリファイルとして開く
-        data = midFile.read()   # データのバイナリ文字列（バイナリエディタのASCIIのとこみたいな感じ）
+        data = midFile.read()
 except:
     print("ファイルを開けませんでした")
 
 readPos = 0 # 読み取り位置
 
 # ヘッダーの読み取り
-headerChunkSize = 14 # ヘッダーチャンクは１４バイト
-header = struct.unpack(">4sLHHH", data[0 : headerChunkSize])
+header = struct.unpack(">4sLHHH", data[0 : HEADER_CHUNK_SIZE])
 #chunkType = header[0]
 #chunkSize = header[1]
 #midFormat = header[2]
 trackNum = header[3]
 #timeUnit = header[4]
-header = data[0 : headerChunkSize]  # あとで結合するのでとっておく
-readPos += headerChunkSize
+header = data[0 : HEADER_CHUNK_SIZE]  # あとで結合するのでとっておく
+readPos += HEADER_CHUNK_SIZE
 
-# トラックの読み取り
+# 各トラックの読み取り
 tracks = [] * trackNum
 for i in range(trackNum):
-    trackChunkSize = 8  # トラックチャンクは８バイト
-    trackChunk = struct.unpack(">4sL", data[readPos : readPos + trackChunkSize])
+    trackChunk = struct.unpack(">4sL", data[readPos : readPos + TRACK_CHUNK_SIZE])
     dataSize = trackChunk[1]
-    readPos += trackChunkSize
+    readPos += TRACK_CHUNK_SIZE
     tracks.append( data[readPos : readPos + dataSize] )
     readPos += dataSize
 
@@ -81,11 +83,11 @@ for i in range(trackNum):
         code = struct.pack("B", 0xB0 + i)
         value = tracks[i][m.end()+1:m.end()+3]  # かなり決め打ち（文字列の後１つスペースを開けて値があることを仮定している）
         value = re.match(b"\d*", value).group() # 数字部分のみ取り出し
-        
+
         if value == b"": # 値が数字ではない場合（MODTを想定）
             value = b"\x00"
         else:
-            value = int(value).to_bytes(1, "little")
+            value = int(value).to_bytes(1, "little")    # b"28" -> (int)28 -> b"0x1C"
 
         if m.group() == b"LFOS":
             cc = code + b"\x15" + value   # LFOSのコントロールチェンジは BX 15 VV （Xはチャンネル）
