@@ -122,7 +122,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             columns=["addr", "label"])    # 並び順を指定
             df.to_csv(LIST_FILE_PATH + listName, encoding="utf-8", index=False)
             print(u"リストファイルを作成しました")
-            self.listData = df
+            self.listData = self.loadListFile(listName)
 
         self.extractSpriteAddr(self.romData)
         self.ui.spriteList.setCurrentRow(0)
@@ -267,7 +267,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t"  # GUIのリストに表示する文字列
                 if not self.listData.loc[(self.listData.addr == hex(spriteAddr)), "label"].empty:
                     spriteAddrStr += self.listData.loc[(self.listData.addr == hex(spriteAddr)), "label"].values[0]
-                    
+
                 spriteItem = QtWidgets.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
