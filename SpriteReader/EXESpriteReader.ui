@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>ロックマンエグゼ スプライトリーダー ver 1.6 by ideal</string>
+   <string>ロックマンエグゼ スプライトリーダー by ideal</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="enabled">
@@ -48,6 +48,9 @@
             <width>400</width>
             <height>16777215</height>
            </size>
+          </property>
+          <property name="statusTip">
+           <string>アイテムをダブルクリックするとラベルをつけられます</string>
           </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
@@ -305,7 +308,7 @@
      <x>0</x>
      <y>0</y>
      <width>1265</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">

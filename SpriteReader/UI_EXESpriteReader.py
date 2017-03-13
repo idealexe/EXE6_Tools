@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'SpriteReader\EXESpriteReader.ui'
+# Form implementation generated from reading ui file 'EXESpriteReader.ui'
 #
 # Created by: PyQt5 UI code generator 5.6
 #
@@ -138,7 +138,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addLayout(self.baseHLayout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1265, 24))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1265, 21))
         self.menubar.setObjectName("menubar")
         self.fileMenu = QtWidgets.QMenu(self.menubar)
         self.fileMenu.setObjectName("fileMenu")
@@ -216,8 +216,9 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "ロックマンエグゼ スプライトリーダー ver 1.6 by ideal"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "ロックマンエグゼ スプライトリーダー by ideal"))
         self.spriteLabel.setText(_translate("MainWindow", "スプライト"))
+        self.spriteList.setStatusTip(_translate("MainWindow", "アイテムをダブルクリックするとラベルをつけられます"))
         self.graphicsLabel.setText(_translate("MainWindow", "スプライトビュー"))
         self.graphicsScaleSlider.setStatusTip(_translate("MainWindow", "表示サイズを変更できます"))
         self.animLabel.setText(_translate("MainWindow", "アニメーション"))

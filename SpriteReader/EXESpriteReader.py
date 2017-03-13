@@ -11,7 +11,7 @@ u''' EXE Sprite Reader  by ideal.exe
 
 '''
 
-PROGRAM_NAME = "EXE Sprite Reader  ver1.6  by ideal.exe"
+PROGRAM_NAME = "EXE Sprite Reader  ver1.7  by ideal.exe"
 
 import gettext
 import os
@@ -90,8 +90,8 @@ class SpriteReader(QtWidgets.QMainWindow):
     def openFile(self, filename=""):
         u''' ファイルを開くときの処理
         '''
-
-        if filename == "":
+        logger.info(filename)
+        if filename == "" or filename == False:
             filename = QtWidgets.QFileDialog.getOpenFileName( self, _("Open EXE_ROM File"), os.path.expanduser('./') )[0]   # ファイル名とフィルタのタプルが返される
 
         try:
