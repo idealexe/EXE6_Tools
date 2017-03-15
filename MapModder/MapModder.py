@@ -6,7 +6,7 @@ u""" Map Modder ver 0.3 by ideal.exe
 
 from PIL import Image
 from PIL.ImageQt import ImageQt
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtGui
 import binascii
 import numpy as np
 import os
@@ -22,7 +22,7 @@ import UI_MapModder as designer
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
 import CommonAction as commonAction
 
-from logging import getLogger,StreamHandler,INFO,DEBUG
+from logging import getLogger,StreamHandler,INFO
 logger = getLogger(__name__)
 handler = StreamHandler()
 handler.setLevel(INFO)
@@ -76,7 +76,6 @@ class MapModder(QtGui.QMainWindow):
             u""" 引数がない場合はファイルを開く
             """
             filename = QtGui.QFileDialog.getOpenFileName( self, _("Open File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
-            filename = unicode(filename)
         self.openedFileName = filename  # 保存時にパスを利用したいので
 
 
@@ -123,7 +122,7 @@ class MapModder(QtGui.QMainWindow):
             logger.debug(data)
             logger.debug(data["label"])
 
-            dataStr = unicode(data["label"])    # GUIのリストに表示する文字列
+            dataStr = data["label"]    # GUIのリストに表示する文字列
             item = QtGui.QListWidgetItem(dataStr)  # リストに追加するアイテムの生成
             self.ui.dataList.addItem(item) # リストへ追加
         logger.info(u"リストファイルを読み込みました")
@@ -144,7 +143,7 @@ class MapModder(QtGui.QMainWindow):
         self.graphicsScene.clear()
         item = QtGui.QGraphicsPixmapItem(image)
         item.setOffset(image.width()/2*-1, image.height()/2*-1)
-        imageBounds = item.boundingRect()
+        #imageBounds = item.boundingRect()
         self.graphicsScene.addItem(item)
         #self.graphicsScene.addRect(imageBounds)
 
@@ -317,7 +316,7 @@ class MapModder(QtGui.QMainWindow):
         width = self.ui.xTileBox.value()
         height = self.ui.yTileBox.value()
 
-        se = pd.Series([unicode(label), hex(addr), hex(palAddr), width, height, 0], index=self.listData.columns)
+        se = pd.Series([label, hex(addr), hex(palAddr), width, height, 0], index=self.listData.columns)
         self.listData = self.listData.append(se, ignore_index=True).sort_values(by=["palAddr"], ascending=True).reset_index(drop=True)   # 追加してソート
         logger.debug(self.listData)
         self.listData.to_csv(LIST_FILE_PATH + listName, encoding="utf-8", index=False)
@@ -331,7 +330,7 @@ class MapModder(QtGui.QMainWindow):
         filename = QtGui.QFileDialog.getSaveFileName(self, _(u"ROMを保存する"), \
             os.path.expanduser(os.path.dirname(self.openedFileName)), _("Rom File (*.gba *.bin)"))
         try:
-            with open( unicode(filename), 'wb') as saveFile:
+            with open( filename, 'wb') as saveFile:
                 saveFile.write(self.romData)
                 logger.info(u"ファイルを保存しました")
         except:
@@ -443,9 +442,6 @@ class MapModder(QtGui.QMainWindow):
 u""" Main
 """
 def main():
-    reload(sys) # モジュールをリロードしないと文字コードが変更できない
-    sys.setdefaultencoding("utf-8") # コンソールの出力をutf-8に設定
-
     app = QtGui.QApplication(sys.argv)
 
     mapModder = MapModder();
