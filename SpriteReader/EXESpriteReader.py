@@ -26,6 +26,7 @@ _ = gettext.gettext # 後の翻訳用
 
 import SpriteDict
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
+import CommonAction
 import LZ77Util
 import UI_EXESpriteReader as designer
 
@@ -525,12 +526,8 @@ class SpriteReader(QtWidgets.QMainWindow):
         while readPos < endAddr:
             color = spriteData[readPos:readPos+COLOR_SIZE]
             color = struct.unpack("<H", color)[0]
-
-            binColor = bin(color)[2:].zfill(16) # GBAのオブジェクトは15bitカラー（0BBBBBGGGGGRRRRR）
-            logger.debug(bin(color)[2:].zfill(16))
-            binB = int( binColor[1:6], 2 ) * 8  #   文字列化されているので数値に直す（255階調での近似色にするため8倍する）
-            binG = int( binColor[6:11], 2 ) * 8
-            binR = int( binColor[11:16], 2 ) * 8
+            
+            [binR, binG, binB] = CommonAction.gba2rgb(color)
 
             if palCount == 0:
                 self.palData.append( {"color":[binR, binG, binB, 0], "addr":readPos } ) # 最初の色は透過色
