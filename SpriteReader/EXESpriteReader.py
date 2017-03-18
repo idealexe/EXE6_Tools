@@ -525,9 +525,9 @@ class SpriteReader(QtWidgets.QMainWindow):
         palCount = 0
         while readPos < endAddr:
             color = spriteData[readPos:readPos+COLOR_SIZE]
-            color = struct.unpack("<H", color)[0]
-            
+
             [binR, binG, binB] = CommonAction.gba2rgb(color)
+            color = struct.unpack("<H", color)[0]
 
             if palCount == 0:
                 self.palData.append( {"color":[binR, binG, binB, 0], "addr":readPos } ) # 最初の色は透過色
