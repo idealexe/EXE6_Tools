@@ -20,6 +20,6 @@ class HexSpinBox(QtWidgets.QSpinBox):
         return value
 
     def validate(self, text, pos):
-        print(self.validator.validate(text, pos))
+        #print(self.validator.validate(text, pos))
         return self.validator.validate(text, pos)
         #return (QtGui.QValidator.Acceptable, text, pos)
