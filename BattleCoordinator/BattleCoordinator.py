@@ -35,6 +35,7 @@ import sys
 import yaml
 
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
+name, ext = os.path.splitext(args.file) # ファイル名と拡張子を取得
 import EXE6Dict
 
 """ 定数
@@ -136,7 +137,7 @@ class BattleCoordinator():
             self.romData = self.romData[:address] + battleData + self.romData[address+BATTLE_DATA_SIZE:]
             self.romData = self.romData[:objAddr] + objData + self.romData[objAddr+len(objData):]
 
-        with open(args.file, "wb") as outFile:
+        with open(name + "_mod" + ext, "wb") as outFile:
             outFile.write(self.romData)
 
 
