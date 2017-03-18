@@ -3,10 +3,12 @@
 
 """ EXE6 Battle Coordinator  by ideal.exe
 
+    バトルデータの再利用可能なテキストベースでの管理を目指すツール
+
     使い方
-    ・DUMP_STARTとDUMP_ENDをバトルデータの範囲にあわせて設定する
-    ・ダンプする`>Python BattleCoordinator.py [ROMFILE] -d`
-    ・ダンプしたファイルから編集したいバトルのデータを探す
+    * DUMP_STARTとDUMP_ENDをバトルデータの範囲にあわせて設定する
+    * ダンプする `>Python BattleCoordinator.py [ROMFILE] -d`
+    * ダンプしたファイルから編集したいバトルのデータを探す
 """
 
 PROGRAM_NAME = "EXE6 Battle Coordinator  ver 0.1  by ideal.exe"
