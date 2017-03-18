@@ -1123,7 +1123,7 @@ main
 def main():
     app = QtWidgets.QApplication(sys.argv)
 
-    spriteReader = SpriteReader();
+    spriteReader = SpriteReader()
     spriteReader.show()
     if args.file != None:
         spriteReader.openFile(args.file)
