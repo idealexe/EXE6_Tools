@@ -1,0 +1,15 @@
+﻿- _comments: [ヒートマンSP] # 出力時にコメントを含められないので編集元の敵の名前をここに出してます
+  address: '0xb2ca0' # バトルデータがインポートされるアドレスです
+  area: '111000'
+  bg: '0xff'
+  bgm: '0x16'
+  count: 0
+  effect: '0x4188d7'
+  field: '0x0'
+  mode: '0x0'
+  objAddr: '0xb3d36' # オブジェクトデータがインポートされるアドレスです
+  objects:
+  - {objType: '0x0', position: '0x22', value: '0x0'} # 自機ロックマン
+  - {objType: '0x11', position: '0x25', value: '0x104'} # ヒートマンRVに変更
+  x1: 100
+  x2: 0
