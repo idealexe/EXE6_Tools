@@ -387,6 +387,9 @@
              <property name="maximum">
               <number>100000000</number>
              </property>
+             <property name="singleStep">
+              <number>32</number>
+             </property>
             </widget>
            </item>
           </layout>

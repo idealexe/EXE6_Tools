@@ -186,6 +186,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addLayout(self.horizontalLayout, 3, 1, 1, 1)
         self.addrBox = HexSpinBox(self.frame)
         self.addrBox.setMaximum(100000000)
+        self.addrBox.setSingleStep(32)
         self.addrBox.setObjectName("addrBox")
         self.gridLayout.addWidget(self.addrBox, 1, 1, 1, 1)
         self.verticalLayout_5.addWidget(self.frame)
