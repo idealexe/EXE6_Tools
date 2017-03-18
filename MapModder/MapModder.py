@@ -353,7 +353,7 @@ class MapModder(QtWidgets.QMainWindow):
             logger.warning(u"入力はバイト列として解釈できるテキストのみ受けつけます")
             return -1
 
-        logger.info("Search Value:\t" + searchValue )
+        logger.info("Search Value:\t" + str(searchValue) )
 
         self.ui.searchBrowser.clear()
         pattern = re.compile(re.escape(searchValue) )   # エスケープが必要な文字（0x3f = "?" とか）が含まれている可能性がある
