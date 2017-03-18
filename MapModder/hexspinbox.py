@@ -1,13 +1,13 @@
 #!/usr/bin/python
 # coding: utf-8
 
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 
 u""" Hex Spin Box
 
     QSpinBoxを16進数表示にしたやつ
 """
-class HexSpinBox(QtGui.QSpinBox):
+class HexSpinBox(QtWidgets.QSpinBox):
     def __init__(self, parent=None):
         super(HexSpinBox, self).__init__(parent)    # HexSpinBoxが継承しているQSpinBoxのコンストラクタを呼ぶ
 
@@ -17,6 +17,7 @@ class HexSpinBox(QtGui.QSpinBox):
     def valueFromText(self, text):
         value = int(str(text), 16)
         return value
-
+    """
     def validate(self, input, pos):
         return (QtGui.QValidator.Acceptable, pos)
+        """

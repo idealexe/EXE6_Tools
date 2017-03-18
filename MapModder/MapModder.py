@@ -1,12 +1,14 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u""" Map Modder ver 0.3 by ideal.exe
+u""" Map Modder by ideal.exe
 """
+
+PROGRAM_NAME = "Map Modder  ver 0.4  by ideal.exe"
 
 from PIL import Image
 from PIL.ImageQt import ImageQt
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtWidgets
 import binascii
 import numpy as np
 import os
@@ -31,7 +33,7 @@ logger.addHandler(handler)
 
 import argparse
 parser = argparse.ArgumentParser(description=u"入力ファイルに対して指定の処理を行います")
-parser.add_argument("file", help=u"処理対象のファイル")
+parser.add_argument("-f", "--file", help=u"処理対象のファイル")
 args = parser.parse_args()
 
 LIST_FILE_PATH = os.path.join(os.path.dirname(sys.argv[0]), "lists/") # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
@@ -39,13 +41,14 @@ LIST_FILE_PATH = os.path.join(os.path.dirname(sys.argv[0]), "lists/") # プロ�
 
 u""" Map Modder
 """
-class MapModder(QtGui.QMainWindow):
+class MapModder(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.ui = designer.Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowTitle(PROGRAM_NAME)
         self.ui.graphicsView.scale(2,2)
-        self.graphicsScene = QtGui.QGraphicsScene()
+        self.graphicsScene = QtWidgets.QGraphicsScene(self)
         self.graphicsScene.setSceneRect(-120,-80,240,160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         self.ui.graphicsView.setScene(self.graphicsScene)
 
@@ -65,17 +68,14 @@ class MapModder(QtGui.QMainWindow):
         image = self.makeMapImage(self.romData, self.addr, self.tileX, self.tileY)
         self.drawMap(image)
 
-    def openFile(self, *args):
+    def openFile(self, filename=""):
         u""" ファイルを開くときの処理
         """
-        if len(args) != 0:
-            u""" 引数がある場合はそれをファイル名にする
-            """
-            filename = args[0]
-        else:
+
+        if filename == False:
             u""" 引数がない場合はファイルを開く
             """
-            filename = QtGui.QFileDialog.getOpenFileName( self, _("Open File"), os.path.expanduser('./') )   # ファイル名がQString型で返される
+            filename = QtWidgets.QFileDialog.getOpenFileName( self, _("Open File"), os.path.expanduser('./') )[0]   # ファイル名がQString型で返される
         self.openedFileName = filename  # 保存時にパスを利用したいので
 
 
@@ -108,23 +108,23 @@ class MapModder(QtGui.QMainWindow):
             self.listData = df
             self.ui.dataList.clear()
 
-        self.updateImage()
 
     def loadListFile(self, listName):
         u""" リストファイルの読み込み
 
             GUIのリストをセットアップしpandas形式のリストを返す
         """
+
         self.ui.dataList.clear()
         listData = pd.read_csv(LIST_FILE_PATH + listName, encoding="utf-8", index_col=None)
         logger.debug(listData)
-        for i, data in listData.iterrows():    # 各行のイテレータ
-            logger.debug(data)
-            logger.debug(data["label"])
 
+        for i, data in listData.iterrows():    # 各行のイテレータ
+            logger.debug(data["label"])
             dataStr = data["label"]    # GUIのリストに表示する文字列
-            item = QtGui.QListWidgetItem(dataStr)  # リストに追加するアイテムの生成
+            item = QtWidgets.QListWidgetItem(dataStr)  # リストに追加するアイテムの生成
             self.ui.dataList.addItem(item) # リストへ追加
+
         logger.info(u"リストファイルを読み込みました")
         return listData
 
@@ -141,7 +141,7 @@ class MapModder(QtGui.QMainWindow):
         u''' マップ画像を描画する
         '''
         self.graphicsScene.clear()
-        item = QtGui.QGraphicsPixmapItem(image)
+        item = QtWidgets.QGraphicsPixmapItem(image)
         item.setOffset(image.width()/2*-1, image.height()/2*-1)
         #imageBounds = item.boundingRect()
         self.graphicsScene.addItem(item)
@@ -165,22 +165,18 @@ class MapModder(QtGui.QMainWindow):
         palCount = 0
         while readAddr < endAddr:
             color = romData[readAddr:readAddr+COLOR_SIZE]
-            color = struct.unpack("<H", color)[0]
 
-            binColor = bin(color)[2:].zfill(15) # GBAのオブジェクトは15bitカラー（0BBBBBGGGGGRRRRR）
-            b = int( binColor[0:5], 2 ) * 8  #   文字列化されているので数値に直す（255階調での近似色にするため8倍する）
-            g = int( binColor[5:10], 2 ) * 8
-            r = int( binColor[10:15], 2 ) * 8
+            [r, g, b] = commonAction.gba2rgb(color)
 
             if palCount == 0:
                 palData.append( {"color":[r, g, b, 0], "addr":readAddr } ) # 最初の色は透過色
             else:
                 palData.append( {"color":[r, g, b, 255], "addr":readAddr } )
 
-            colorStr = hex(color)[2:].zfill(4).upper() + "\t(" + str(r).rjust(3) + ", " + str(g).rjust(3) + ", " + str(b).rjust(3) + ")"  # GUIに表示する文字列
-            colorItem = QtGui.QListWidgetItem(colorStr)
-            colorItem.setBackgroundColor( QtGui.QColor(r, g, b) )  # 背景色をパレットの色に
-            colorItem.setTextColor( QtGui.QColor(255-r, 255-g, 255-b) )    # 文字は反転色
+            colorStr = hex(int.from_bytes(color, "little"))[2:].zfill(4).upper() + "\t(" + str(r).rjust(3) + ", " + str(g).rjust(3) + ", " + str(b).rjust(3) + ")"  # GUIに表示する文字列
+            colorItem = QtWidgets.QListWidgetItem(colorStr)
+            colorItem.setBackground( QtGui.QColor(r, g, b) )  # 背景色をパレットの色に
+            colorItem.setForeground( QtGui.QColor(255-r, 255-g, 255-b) )    # 文字は反転色
             self.ui.palList.addItem(colorItem) # フレームリストへ追加
 
             palCount += 1
@@ -222,6 +218,7 @@ class MapModder(QtGui.QMainWindow):
     def guiAddrChanged(self, value):
         u""" アドレスが更新されたときの処理
         """
+        logger.debug("Addr Changed")
         self.addr = self.ui.addrBox.value()
         self.updateImage()
 
@@ -256,6 +253,7 @@ class MapModder(QtGui.QMainWindow):
     def guiPalAddrChanged(self):
         u""" パレットアドレスが更新されたときの処理
         """
+        logger.debug("Palette Addr Changed")
         self.palAddr = self.ui.palAddrBox.value()
         self.ui.palAddrBox.setValue(self.palAddr)
         #self.ui.palAddrBox.lineEdit().setText(hex(self.palAddr))
@@ -280,7 +278,7 @@ class MapModder(QtGui.QMainWindow):
 
         r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
         writePos = self.palData[index]["addr"]  # 色データを書き込む位置
-        color = QtGui.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
+        color = QtWidgets.QColorDialog.getColor( QtWidgets.QColor(r, g, b) )    # カラーダイアログを開く
         if color.isValid() == False: # キャンセルしたとき
             logger.info(u"色の選択をキャンセルしました")
             return 0
@@ -327,7 +325,7 @@ class MapModder(QtGui.QMainWindow):
         u""" ファイルの保存
         """
 
-        filename = QtGui.QFileDialog.getSaveFileName(self, _(u"ROMを保存する"), \
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"ROMを保存する"), \
             os.path.expanduser(os.path.dirname(self.openedFileName)), _("Rom File (*.gba *.bin)"))
         try:
             with open( filename, 'wb') as saveFile:
@@ -374,36 +372,33 @@ class MapModder(QtGui.QMainWindow):
     def saveImageFile(self):
         commonAction.saveSceneImage(self.graphicsScene)
 
-
-    def makeMapImage(self, romData, startAddr, width, height):
-        u''' マップ画像を生成する
-
-            グラフィックデータは4bitで1pxを表現する．アクセス可能な最小単位は8*8pxのタイルでデータサイズは32byteとなる
-        '''
-
+    def makeMapImage(self, romData, startAddr, tileX, tileY, flipV=0, flipH=0):
         TILE_WIDTH = 8  # px
         TILE_HEIGHT = 8
-        TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT / 2   # bytes
+        TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT // 2  # 1タイルあたりのデータサイズ（python3で整数値の除算結果を得るには//を使う）
 
-        logger.debug("Image Width:\t" + str(width) + " Tile")
-        logger.debug("Image Height:\t" + str(height) + " Tile")
+        logger.debug("Image Width:\t" + str(tileX*TILE_WIDTH) + "px")
+        logger.debug("Image Height:\t" + str(tileY*TILE_HEIGHT) + "px")
 
-        imgDataSize = TILE_DATA_SIZE * width * height
-        imgData = romData[startAddr:startAddr+imgDataSize]  # 使う部分を切り出し
-        imgData = binascii.hexlify(imgData).upper()   # バイナリ値をそのまま文字列にしたデータに変換（0xFF -> "FF"）
+        imgDataSize = TILE_DATA_SIZE * tileX * tileY
+
+        imgData = romData[startAddr:startAddr+imgDataSize]   # 使う部分を切り出し
+        imgData = (imgData.hex()).upper()   # バイナリ値をそのまま文字列にしたデータに変換（0xFF -> "FF"）
         imgData = list(imgData) # 1文字ずつのリストに変換
+
         # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
         for i in range(0, len(imgData))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
             imgData[i], imgData[i+1] = imgData[i+1], imgData[i] # これで値を入れ替えられる
 
+        totalSize = len(imgData)    # 全ドット数
         imgArray = []
-        imgDotNum = len(imgData)
+
         # 色情報に変換する
-        readAddr = 0
-        while readAddr < imgDotNum:
-            currentPixel = int(imgData[readAddr], 16)    # 1ドット分読み込み，文字列から数値に変換
+        readPos = 0
+        while readPos < totalSize:
+            currentPixel = int(imgData[readPos], 16)    # 1ドット分読み込み
             imgArray.append(self.palData[currentPixel]["color"])    # 対応する色に変換
-            readAddr += 1
+            readPos += 1
 
         imgArray = np.array(imgArray)   # ndarrayに変換
         imgArray = imgArray.reshape( (-1, TILE_WIDTH, 4) )  # 横8ドットのタイルに並べ替える（-1を設定すると自動で縦の値を算出してくれる）
@@ -416,7 +411,7 @@ class MapModder(QtGui.QMainWindow):
             □
         """
 
-        tileNum = width * height  # 合計タイル数
+        tileNum = tileX * tileY  # 合計タイル数
 
         # タイルの切り出し
         tile = []  # pythonのリストとして先に宣言する（ndarrayとごっちゃになりやすい）
@@ -425,15 +420,19 @@ class MapModder(QtGui.QMainWindow):
 
         # タイルの並び替え
         h = []  # 水平方向に結合したタイルを格納するリスト
-        for i in range(0, height):
+        for i in range(0, tileY):
             h.append( np.zeros_like(tile[0]) )    # タイルを詰めるダミー
-            for j in range(0, width):
-                h[i] = np.hstack( (h[i], tile[i*width + j]) )
+            for j in range(0, tileX):
+                h[i] = np.hstack( (h[i], tile[i*tileX + j]) )
             if i != 0:
                 h[0] = np.vstack((h[0], h[i]))
         img = h[0][:, 8:, :]    # ダミー部分を切り取る（ださい）
 
         dataImg = Image.fromarray( np.uint8(img) )  # 色情報の行列から画像を生成（PILのImage形式）
+        if flipH == 1:
+            dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
+        if flipV == 1:
+            dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
         qImg = ImageQt(dataImg) # QImage形式に変換
         pixmap = QtGui.QPixmap.fromImage(qImg)  # QPixmap形式に変換
         return pixmap
@@ -442,13 +441,14 @@ class MapModder(QtGui.QMainWindow):
 u""" Main
 """
 def main():
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     mapModder = MapModder();
     mapModder.show()
 
-    if len(sys.argv) >= 2:
-        mapModder.openFile(sys.argv[1])
+    logger.debug(args.file)
+    if args.file != None:
+        mapModder.openFile(args.file)
 
     sys.exit(app.exec_())
 

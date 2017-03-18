@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Map Modder ver 0.3 by ideal.exe</string>
+   <string>Map Modder by ideal.exe</string>
   </property>
   <property name="windowIcon">
    <iconset>
@@ -344,6 +344,9 @@
              <property name="maximum">
               <number>100000</number>
              </property>
+             <property name="value">
+              <number>32</number>
+             </property>
             </widget>
            </item>
            <item row="3" column="1">
@@ -401,7 +404,7 @@
      <x>0</x>
      <y>0</y>
      <width>1153</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -596,8 +599,8 @@
    <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1038</x>
-     <y>462</y>
+     <x>1034</x>
+     <y>465</y>
     </hint>
     <hint type="destinationlabel">
      <x>948</x>
