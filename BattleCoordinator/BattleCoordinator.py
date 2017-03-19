@@ -133,6 +133,7 @@ class BattleCoordinator():
                 position = int(obj["position"], 16)
                 value = int(obj["value"], 16)
                 objData += struct.pack("BBH", objType, position, value)
+            objData += b"\xF0"
 
             self.romData = self.romData[:address] + battleData + self.romData[address+BATTLE_DATA_SIZE:]
             self.romData = self.romData[:objAddr] + objData + self.romData[objAddr+len(objData):]
