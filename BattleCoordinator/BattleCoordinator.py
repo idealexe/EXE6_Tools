@@ -8,9 +8,14 @@
     使い方
     * DUMP_STARTとDUMP_ENDをバトルデータの範囲にあわせて設定する
     * ダンプする `>Python BattleCoordinator.py [ROMFILE] -d`
-    * ダンプしたファイルから編集したいバトルのデータを探す
+    * ダンプしたファイルから編集したいバトルデータを探す
     * バトルデータを編集する（sample.yamlを参照してください）
     * 編集したバトルデータをインポートする `>Python BattleCoordinator.py [ROMFILE] -i [BATTLE_DATA.yaml]`
+
+    バトルデータの構造については以下を参考にしてください
+    * https://www65.atwiki.jp/mmnbhack/pages/13.html
+    * http://forums.therockmanexezone.com/topic/8831454/1/
+
 """
 
 PROGRAM_NAME = "EXE6 Battle Coordinator  ver 0.1  by ideal.exe"
