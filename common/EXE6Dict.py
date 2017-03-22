@@ -764,6 +764,9 @@ ENEMY_LIST={
 0x01AB:"ブルース"
 }
 
+# 逆引き辞書
+ENEMY_LIST_INV = { v:k for k, v in ENEMY_LIST.items() }
+
 MUSIC_LIST = {
 0x00:"No Music",
 0x01:"Title Screen",

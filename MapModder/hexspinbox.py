@@ -10,7 +10,7 @@ u""" Hex Spin Box
 class HexSpinBox(QtWidgets.QSpinBox):
     def __init__(self, parent=None):
         super(HexSpinBox, self).__init__(parent)    # HexSpinBoxが継承しているQSpinBoxのコンストラクタを呼ぶ
-        self.validator = QtGui.QRegExpValidator(QtCore.QRegExp('0x[0-9A-Fa-f]{1,8}'))
+        self.validator = QtGui.QRegExpValidator(QtCore.QRegExp('0x[0-9A-Fa-f]{1,8}'))   # 8ケタまでの16進数を入力として許可
 
     def textFromValue(self, value):
         return hex(value)[2:].upper()
@@ -20,6 +20,4 @@ class HexSpinBox(QtWidgets.QSpinBox):
         return value
 
     def validate(self, text, pos):
-        #print(self.validator.validate(text, pos))
         return self.validator.validate(text, pos)
-        #return (QtGui.QValidator.Acceptable, text, pos)
