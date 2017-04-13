@@ -11,7 +11,7 @@ u''' EXE Sprite Reader  by ideal.exe
 
 '''
 
-PROGRAM_NAME = "EXE Sprite Reader  ver 1.7  by ideal.exe"
+PROGRAM_NAME = "EXE Sprite Reader  ver 1.8  by ideal.exe"
 
 import gettext
 import numpy as np
