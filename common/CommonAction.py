@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u""" Common Action
+u""" Common Action  by ideal.exe
 
     共用できるアクションをまとめたモジュール
 """
@@ -70,6 +70,8 @@ def loadData(message):
 
 
 def printBinary(binary):
+    """ バイナリデータを見やすく出力する
+    """
     baseStr = binary.hex().upper()
     for i, c in enumerate(baseStr):
         print(c, end="", flush=True)
