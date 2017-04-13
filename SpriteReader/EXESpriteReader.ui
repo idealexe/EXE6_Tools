@@ -284,6 +284,19 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="useDefaultPalBox">
+          <property name="text">
+           <string>OAM指定のパレットで表示</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <property name="tristate">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="palSaveButton">
           <property name="maximumSize">
            <size>
@@ -308,7 +321,7 @@
      <x>0</x>
      <y>0</y>
      <width>1295</width>
-     <height>31</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">

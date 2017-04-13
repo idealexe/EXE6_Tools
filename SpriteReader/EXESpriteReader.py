@@ -11,7 +11,7 @@ u''' EXE Sprite Reader  by ideal.exe
 
 '''
 
-PROGRAM_NAME = "EXE Sprite Reader  ver 1.8  by ideal.exe"
+PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.1  by ideal.exe"
 
 import gettext
 import numpy as np
@@ -479,12 +479,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         self.ui.oamList.clear()
         animIndex = self.ui.animList.currentRow()
 
-        u""" フレームが指定している色を無視してUIで選択中のパレットで表示する仕様にしています
-        """
-        palIndex = self.ui.palSelect.value()
-
         [currentFrame] = [frame for frame in self.frameDataList if frame["animNum"] == animIndex and frame["frameNum"] == index]
-        self.parsePaletteData(self.spriteData, currentFrame["palSizeAddr"], palIndex)
         logger.debug("Palette Size Address:\t" + hex(currentFrame["palSizeAddr"]))
 
         currentFrameOam = [oam for oam in self.oamDataList if oam["animNum"] == animIndex and oam["frameNum"] == index]
@@ -497,6 +492,16 @@ class SpriteReader(QtWidgets.QMainWindow):
 
             # OAM画像の生成，描画
             graphicData = currentFrame["graphicData"]
+
+            # OAM指定色か，GUIで指定した色で表示
+            if self.ui.useDefaultPalBox.isChecked() == True:
+                palIndex = oam["palIndex"]
+                self.ui.palSelect.setValue(palIndex)
+            else:
+                palIndex = self.ui.palSelect.value()
+            self.parsePaletteData(self.spriteData, currentFrame["palSizeAddr"], palIndex)
+
+
             image = self.makeOAMImage(graphicData, oam["startTile"], oam["sizeX"], oam["sizeY"], oam["flipV"], oam["flipH"])
             self.drawOAM(image, oam["sizeX"], oam["sizeY"], oam["posX"], oam["posY"])
 
