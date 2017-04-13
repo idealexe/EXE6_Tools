@@ -40,7 +40,7 @@ def saveSceneImage(graphicsScene):
             logger.info(u"ファイルを保存しました")
     except:
         logger.info(u"ファイルの保存をキャンセルしました")
-        
+
 
 def gba2rgb(gbaColor):
     """ GBAの色情報からRGB値に変換する
@@ -53,3 +53,25 @@ def gba2rgb(gbaColor):
     r = int( binColor[11:16], 2 ) * 8
 
     return [r, g, b]
+
+
+def loadData(message):
+    """ ファイルからバイナリデータを読み込む
+    """
+    filename = QtWidgets.QFileDialog.getOpenFileName( None, _(message), os.path.expanduser('./') )[0]   # ファイル名がQString型で返される
+
+    try:
+        with open( filename, 'rb' ) as openFile:
+            data = openFile.read()
+        return data
+    except:
+        logger.info( _(u"ファイルの選択をキャンセルしました") )
+        return -1
+
+
+def printBinary(binary):
+    baseStr = binary.hex().upper()
+    for i, c in enumerate(baseStr):
+        print(c, end="", flush=True)
+        if i % 2 == 1: print(" ", end="")
+        if i % 32 == 31: print("")

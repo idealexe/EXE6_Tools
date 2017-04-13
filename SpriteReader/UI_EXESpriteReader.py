@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1265, 600)
+        MainWindow.resize(1295, 639)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setEnabled(True)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -138,7 +138,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addLayout(self.baseHLayout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1265, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1295, 31))
         self.menubar.setObjectName("menubar")
         self.fileMenu = QtWidgets.QMenu(self.menubar)
         self.fileMenu.setObjectName("fileMenu")
@@ -175,6 +175,8 @@ class Ui_MainWindow(object):
         self.flipAction.setObjectName("flipAction")
         self.exDumpAction = QtWidgets.QAction(MainWindow)
         self.exDumpAction.setObjectName("exDumpAction")
+        self.combineAction = QtWidgets.QAction(MainWindow)
+        self.combineAction.setObjectName("combineAction")
         self.fileMenu.addAction(self.openAction)
         self.fileMenu.addAction(self.openSpriteAction)
         self.fileMenu.addAction(self.saveAction)
@@ -185,6 +187,7 @@ class Ui_MainWindow(object):
         self.spriteMenu.addAction(self.importAction)
         self.spriteMenu.addAction(self.saveImageAction)
         self.spriteMenu.addAction(self.flipAction)
+        self.spriteMenu.addAction(self.combineAction)
         self.helpMenu.addAction(self.linkAction)
         self.helpMenu.addAction(self.aboutAction)
         self.menubar.addAction(self.fileMenu.menuAction())
@@ -212,6 +215,7 @@ class Ui_MainWindow(object):
         self.importAction.triggered.connect(MainWindow.importSprite)
         self.animList.itemDoubleClicked['QListWidgetItem*'].connect(MainWindow.repointAnimation)
         self.spriteList.itemDoubleClicked['QListWidgetItem*'].connect(MainWindow.labelSprite)
+        self.combineAction.triggered.connect(MainWindow.combineSprite)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -254,4 +258,6 @@ class Ui_MainWindow(object):
         self.flipAction.setText(_translate("MainWindow", "水平反転"))
         self.exDumpAction.setText(_translate("MainWindow", "拡張してダンプ"))
         self.exDumpAction.setStatusTip(_translate("MainWindow", "選択しているスプライトを32アニメーション，各16フレームのスペースを確保したスプライトに変換して出力します"))
+        self.combineAction.setText(_translate("MainWindow", "スプライトを結合"))
+        self.combineAction.setStatusTip(_translate("MainWindow", "選択中のスプライトとファイルから読み込んだスプライトを結合します"))
 

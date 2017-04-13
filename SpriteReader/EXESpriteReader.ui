@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1265</width>
-    <height>600</height>
+    <width>1295</width>
+    <height>639</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -307,8 +307,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1265</width>
-     <height>21</height>
+     <width>1295</width>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu">
@@ -330,6 +330,7 @@
     <addaction name="importAction"/>
     <addaction name="saveImageAction"/>
     <addaction name="flipAction"/>
+    <addaction name="combineAction"/>
    </widget>
    <widget class="QMenu" name="helpMenu">
     <property name="title">
@@ -432,6 +433,14 @@
    </property>
    <property name="statusTip">
     <string>選択しているスプライトを32アニメーション，各16フレームのスペースを確保したスプライトに変換して出力します</string>
+   </property>
+  </action>
+  <action name="combineAction">
+   <property name="text">
+    <string>スプライトを結合</string>
+   </property>
+   <property name="statusTip">
+    <string>選択中のスプライトとファイルから読み込んだスプライトを結合します</string>
    </property>
   </action>
  </widget>
@@ -588,8 +597,8 @@
    <slot>guiPalItemActivated(QListWidgetItem*)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1066</x>
-     <y>427</y>
+     <x>1279</x>
+     <y>517</y>
     </hint>
     <hint type="destinationlabel">
      <x>599</x>
@@ -620,8 +629,8 @@
    <slot>guiOAMItemActivated(QListWidgetItem*)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1244</x>
-     <y>186</y>
+     <x>1279</x>
+     <y>181</y>
     </hint>
     <hint type="destinationlabel">
      <x>599</x>
@@ -652,8 +661,8 @@
    <slot>writePalData()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1088</x>
-     <y>554</y>
+     <x>1279</x>
+     <y>593</y>
     </hint>
     <hint type="destinationlabel">
      <x>599</x>
@@ -700,8 +709,8 @@
    <slot>changeViewScale(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>568</x>
-     <y>557</y>
+     <x>825</x>
+     <y>593</y>
     </hint>
     <hint type="destinationlabel">
      <x>632</x>
@@ -757,6 +766,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>combineAction</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>combineSprite()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>647</x>
+     <y>319</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFile()</slot>
@@ -778,5 +803,6 @@
   <slot>importSprite()</slot>
   <slot>repointAnimation()</slot>
   <slot>labelSprite()</slot>
+  <slot>combineSprite()</slot>
  </slots>
 </ui>
