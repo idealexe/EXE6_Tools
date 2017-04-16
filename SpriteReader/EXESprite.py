@@ -3,7 +3,7 @@
 
 """ EXE Sprite  by ideal.exe
 
-    EXESpriteReaderのコードが煩雑化してきたのでスプライトデータの処理をクラス化する
+    EXESpriteReaderのコードが煩雑化してきたのでスプライトデータに関する処理をクラス化する
 """
 
 import os
@@ -23,7 +23,7 @@ import LZ77Util
 
 HEADER_SIZE = 4
 OFFSET_SIZE = 4
-COLOR_SIZE  = 2 # 1色あたりのサイズ
+COLOR_SIZE  = 2 # 1色あたりのサイズ（byte）
 FRAME_DATA_SIZE = 20
 OAM_DATA_SIZE = 5
 OAM_DATA_END = [b"\xFF\xFF\xFF\xFF\xFF", b"\xFF\xFF\xFF\xFF\x00"]
@@ -46,8 +46,13 @@ OAM_DIMENSION = {
 
 
 class EXESprite:
-    def __init__(self, romData, spriteAddr, compFlag):
-        u""" スプライトを読み取る
+    def __init__(self, data, spriteAddr, compFlag):
+        """ スプライトデータを読み込んでオブジェクトを初期化する
+
+            data内のspriteAddrをスプライトデータの先頭アドレスとして処理します。
+            compFlag=1の場合圧縮スプライトとして扱います。
+            スプライトデータのみのファイルを読み込む場合はspriteAddr=0, compFlag=0とすることで同様に扱えます。
+
 
             spriteData
 
@@ -61,9 +66,9 @@ class EXESprite:
         """
 
         if compFlag == 0:
-            spriteData = romData[spriteAddr+HEADER_SIZE:]   # スプライトはサイズ情報を持たないので仮の範囲を切り出し
+            spriteData = data[spriteAddr+HEADER_SIZE:]   # スプライトはサイズ情報を持たないので仮の範囲を切り出し
         elif compFlag == 1:
-            spriteData = LZ77Util.decompLZ77_10(romData, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
+            spriteData = LZ77Util.decompLZ77_10(data, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
         else:
             logger.info(u"不明なエラーです")
             return -1
@@ -170,7 +175,7 @@ class EXESprite:
                 readAddr += OAM_DATA_SIZE
         self.oamDataList = oamDataList
 
-        u""" 無圧縮スプライトデータの切り出し
+        u""" 無圧縮スプライトの場合は余分なデータを切り離す
         """
         if compFlag == 0:
             endAddr = oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END[0])
@@ -234,7 +239,7 @@ class EXESprite:
     def getBaseData(self):
         """ グラフィック、OAM、パレットデータを返す
 
-            スプライトのうちポインタを含まないデータ
+            （つまりスプライトのうちポインタを含まないデータすべて）
         """
         baseData = self.binSpriteData[self.frameDataList[0]["graphSizeAddr"]:]  # グラフィックデータ先頭からスプライトの終端までコピー
         return baseData
