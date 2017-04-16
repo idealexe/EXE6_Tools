@@ -293,152 +293,20 @@ class SpriteReader(QtWidgets.QMainWindow):
         spriteAddr = self.spriteList[index]["spriteAddr"]
         compFlag = self.spriteList[index]["compFlag"]
 
-        [spriteData, animPtrList, frameDataList, oamDataList] = self.parseAllData(self.romData, spriteAddr, compFlag)
-        self.spriteData = spriteData
-        self.animPtrList = animPtrList
-        self.frameDataList = frameDataList
-        self.oamDataList = oamDataList
+        self.sprite = EXESprite.EXESprite(self.romData, spriteAddr, compFlag)
+        self.spriteData = self.sprite.binSpriteData
+        self.animPtrList = self.sprite.animPtrList
+        self.frameDataList = self.sprite.frameDataList
+        self.oamDataList = self.sprite.oamDataList
 
-        self.ui.animLabel.setText(u"アニメーション：" + str(len(animPtrList)))
-        for i, animPtr in enumerate(animPtrList):
+        self.ui.animLabel.setText(u"アニメーション：" + str(len(self.animPtrList)))
+        for i, animPtr in enumerate(self.animPtrList):
             animPtrStr = str(i).zfill(2) + ":   " + hex(animPtr["value"])[2:].zfill(6).upper() # GUIに表示する文字列
             animItem = QtWidgets.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
             self.ui.animList.addItem(animItem) # アニメーションリストへ追加
             logger.debug(hex(animPtr["value"]))
 
         self.ui.animList.setCurrentRow(0)   # self.guiAnimItemActivated(0)  が呼ばれる
-
-
-    def parseAllData(self, romData, spriteAddr, compFlag):
-        u""" スプライトの読み取り
-
-            以下のリストを返す
-
-            spriteData
-
-            animPtrList.append({"animNum":animCount, "addr":readAddr, "value":animPtr})
-
-            frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "frameData":frameData, \
-                "graphSizeAddr":graphSizeAddr, "palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
-                "oamPtrAddr":oamPtrAddr, "frameDelay":frameDelay, "frameType":frameType})
-
-            oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData})
-        """
-
-        if compFlag == 0:
-            spriteData = romData[spriteAddr+HEADER_SIZE:]   # スプライトはサイズ情報を持たないので仮の範囲を切り出し
-        elif compFlag == 1:
-            spriteData = LZ77Util.decompLZ77_10(romData, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
-        else:
-            logger.info(u"不明なエラーです")
-            return -1
-
-        readAddr = 0
-        animDataStart = int.from_bytes(spriteData[readAddr:readAddr+OFFSET_SIZE], "little")
-        logger.debug("Animation Data Start:\t" + hex(animDataStart))
-        #animDataStart = struct.unpack("<L", animDataStart)[0]
-
-        u""" アニメーションオフセットのテーブルからアニメーションのアドレスを取得
-        """
-        animPtrList = []
-        animCount = 0
-        while readAddr < animDataStart:
-            animPtr = int.from_bytes(spriteData[readAddr:readAddr+OFFSET_SIZE], "little")
-            logger.debug("Animation Pointer:\t" + hex(animPtr))
-            #animPtr = struct.unpack("<L", animPtr)[0]
-            animPtrList.append({"animNum":animCount, "addr":readAddr, "value":animPtr})
-            readAddr += OFFSET_SIZE
-            animCount += 1
-
-        u""" アニメーションのアドレスから各フレームのデータを取得
-        """
-        frameDataList = []
-        graphAddrList = []    # グラフィックデータは共有しているフレームも多いので別のリストで保持
-        for i, animPtr in enumerate(animPtrList):
-            readAddr = animPtr["value"]
-            logger.debug("Animation " + str(i) + " at " + hex(readAddr))
-
-            frameCount = 0
-            while True: # do while文がないので代わりに無限ループ＋breakを使う
-                frameData = spriteData[readAddr:readAddr+FRAME_DATA_SIZE]
-                [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType] = struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
-                logger.debug("Frame Type:\t" + hex(frameType))
-                if graphSizeAddr in [0x0000, 0x2000]:  # 流星のロックマンのスプライトを表示するための応急処置
-                    logger.warning(u"不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
-                    break
-
-                if graphSizeAddr not in graphAddrList:
-                    graphAddrList.append(graphSizeAddr)
-                logger.debug("Graphics Size Address:\t" + hex(graphSizeAddr))
-
-                try:
-                    [graphicSize] = struct.unpack("L", spriteData[graphSizeAddr:graphSizeAddr+OFFSET_SIZE])
-                except:
-                    logger.warning(u"不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
-                    break
-                graphicData = spriteData[graphSizeAddr+OFFSET_SIZE:graphSizeAddr+OFFSET_SIZE+graphicSize]
-
-                frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "frameData":frameData, \
-                    "graphSizeAddr":graphSizeAddr, "graphicData":graphicData,"palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
-                    "oamPtrAddr":oamPtrAddr, "frameDelay":frameDelay, "frameType":frameType})
-
-                readAddr += FRAME_DATA_SIZE
-                frameCount += 1
-
-                if frameType in [0x80, 0xC0]: # 終端フレームならループを終了
-                    break
-
-        u""" フレームデータからOAMデータを取得
-        """
-        oamDataList = []
-        for frameData in frameDataList:
-            logger.debug("Frame at " + hex(frameData["address"]))
-            logger.debug("  Animation Number:\t" + str(frameData["animNum"]))
-            logger.debug("  Frame Number:\t\t" + str(frameData["frameNum"]))
-            logger.debug("  Address of OAM Pointer:\t" + hex(frameData["oamPtrAddr"]))
-            oamPtrAddr = frameData["oamPtrAddr"]
-            [oamPtr] = struct.unpack("L", spriteData[oamPtrAddr:oamPtrAddr+OFFSET_SIZE])
-            readAddr = oamPtrAddr + oamPtr
-
-            while True:
-                oamData = spriteData[readAddr:readAddr+OAM_DATA_SIZE]
-                if oamData in OAM_DATA_END:
-                    break
-                logger.debug("OAM at " + hex(readAddr))
-                logger.debug("OAM Data:\t" + str(oamData))
-
-                [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
-                logger.debug("  Start Tile:\t" + str(startTile))
-                logger.debug("  Offset X:\t" + str(posX))
-                logger.debug("  Offset Y:\t" + str(posY))
-
-                flag1 = bin(flag1)[2:].zfill(8)
-                flag2 = bin(flag2)[2:].zfill(8)
-                logger.debug("  Flag1 (VHNNNNSS)\t" + flag1)
-                logger.debug("  Flag2 (PPPPNNSS)\t" + flag2)
-
-                flipV = int( flag1[0], 2 ) # 垂直反転フラグ
-                flipH = int( flag1[1], 2 ) # 水平反転フラグ
-
-                palIndex = int(flag2[0:4], 2)
-
-                objSize = flag1[-2:]
-                objShape = flag2[-2:]
-                [sizeX, sizeY] = OAM_DIMENSION[objSize+objShape]
-                logger.debug("  Size X:\t" + str(sizeX))
-                logger.debug("  Size Y:\t" + str(sizeY))
-
-                oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], "address":readAddr, "oamData":oamData, \
-                    "startTile":startTile, "posX":posX, "posY":posY, "sizeX":sizeX, "sizeY":sizeY, "flipV":flipV, "flipH":flipH, "palIndex":palIndex})
-                readAddr += OAM_DATA_SIZE
-
-        u""" 無圧縮スプライトデータの切り出し
-        """
-        if compFlag == 0:
-            endAddr = oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END[0])
-            spriteData = spriteData[:endAddr]
-
-        return [spriteData, animPtrList, frameDataList, oamDataList]
 
 
     def guiAnimItemActivated(self, index):
@@ -1027,8 +895,8 @@ class SpriteReader(QtWidgets.QMainWindow):
         currentSprite = self.spriteList[index]
         baseSprite = EXESprite.EXESprite(self.romData, currentSprite["spriteAddr"], currentSprite["compFlag"])
 
-        binAddingSprite = CommonAction.loadData("結合するスプライトを選択")
-        addingSprite = EXESprite.EXESprite(binAddingSprite, 0, 0)
+        binAddingSprite = CommonAction.loadData("結合するスプライトを選択") # 追加するスプライトのバイナリを読み込む
+        addingSprite = EXESprite.EXESprite(binAddingSprite, 0, 0)   # スプライトオブジェクトを作成
 
         addingTableSize = addingSprite.getAnimPtrTableSize()
         combSprite += baseSprite.getOffsetAnimPtrTable(addingTableSize) # 追加するテーブルの分だけオフセットを調整する
