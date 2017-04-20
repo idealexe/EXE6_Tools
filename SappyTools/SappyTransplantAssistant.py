@@ -23,7 +23,7 @@ from logging import getLogger,FileHandler,StreamHandler,DEBUG,INFO
 logger = getLogger(__name__)
 handler = StreamHandler()
 handler.setLevel(INFO)
-fhandler = FileHandler("./SappyTransplantAssistant.log", "w")
+fhandler = FileHandler(os.path.join(os.path.dirname(__file__), "SappyTransplantAssistant.log"), "w")
 fhandler.setLevel(DEBUG)
 logger.setLevel(DEBUG)
 logger.addHandler(handler)
@@ -53,13 +53,12 @@ def main():
     print(PROGRAM_NAME +"\n")
 
     parser = argparse.ArgumentParser()  # コマンドラインオプション解析
-    parser.add_argument("romFile", help=u"処理対象のファイル")
+    parser.add_argument("romFile", help="移植元のファイル")
+    #parser.add_argument("-t", "--target", help="移植先のファイル")
     args = parser.parse_args()
 
     filePath = args.romFile
     name, ext = os.path.splitext(filePath) # ファイル名と拡張子を取得
-    outName = name + "_forTransplant" + ext  # 標準の出力ファイル名
-
     romData = openFile(filePath)
 
     sys.stdout.write(u"ソングテーブルのアドレス（0xXXXXXX）： ")
@@ -69,6 +68,7 @@ def main():
     print("")
     data = voiceTransplanter(romData, songTableAddr, transplantOffs)
 
+    outName = name + "_Voices_" + hex(transplantOffs) + ext  # 出力ファイル名
     saveFile(data, outName)
     executionTime = time.time() - startTime    # 実行時間計測終了
     logger.info( "\nExecution Time:\t" + str(executionTime) + " sec" )
@@ -78,6 +78,7 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
     """ 指定したソングテーブル内の曲が使用しているボイスセットのポインタを調整する
 
     """
+    logger.info(romData[0xA0:0xAC].decode("utf-8"))
 
     songAddrList = songTableParser(romData, songTableAddr)
     voicesAddrList = []
@@ -87,13 +88,14 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
             voicesAddrList.append( songData["voicesAddr"] )
 
     offsAddrList = []   # 処理すべきポインタが追加されていくリスト
+    # 切り出す音源データの仮の範囲
     voiceDataStart = voicesAddrList[0]
     voiceDataEnd = voicesAddrList[0]
 
     for voices in voicesAddrList:
         # ここの処理がいまいちださい
         [offsAddrList, start, end, drumsAddr] = voiceTableParser(romData, voices, offsAddrList)
-        if len(drumsAddr) > 0:
+        if len(drumsAddr) > 0:  # ドラムパートを使用していれば
             [offsAddrList, start2, end2, drumsAddr] = voiceTableParser(romData, drumsAddr[0], offsAddrList) # ドラムパートは1個だけ分析する
         else:
             start2 = start
@@ -150,6 +152,7 @@ def songTableParser(romData, startAddr):
         readAddr += dataSize
         count += 1
 
+    logger.info(str(count) + " entry found\n")
     return songAddrList
 
 
@@ -236,10 +239,8 @@ def voiceTableParser(romData, tableAddr, offsAddrList):
     readAddr = tableAddr
     drumsAddr = []  # ドラム音源はボイスセットの構造を内包しているので後で同様の処理を行う
 
-    #print("## Voices at " + fmtHex(tableAddr) + "\n")
-    #print("| Sound | Device | Address |\n|----:|:---:|----:|")
     for i in range(128):
-        [device, baseNote, st, ss, addr, atk, dec, sus, rel] = struct.unpack("BBBBLBBBB", romData[readAddr:readAddr+VOICE_SIZE])
+        [device, baseNote, sweepTime, sweepShift, addr, atk, dec, sus, rel] = struct.unpack("BBBBLBBBB", romData[readAddr:readAddr+VOICE_SIZE])
         if addr >= MEMORY_OFFSET and addr - MEMORY_OFFSET < len(romData):  # まともなポインタだったら
             addr -= MEMORY_OFFSET
             if readAddr+4 not in offsAddrList:  # まだリストに追加していないなら
@@ -247,7 +248,7 @@ def voiceTableParser(romData, tableAddr, offsAddrList):
 
             if addr < voiceDataStart:
                 voiceDataStart = addr   # ボイステーブルより前に楽器データがあったらそこからコピーしなければいけない
-            #print(fmtHex(readAddr+4))
+
             if device == 0x80 and addr not in drumsAddr:  # 既にリストに追加済みのドラムセットでなければ
                 drumsAddr.append(addr)
 
@@ -264,14 +265,6 @@ def voiceTableParser(romData, tableAddr, offsAddrList):
         readAddr += VOICE_SIZE
         if voiceDataEnd < readAddr:
             voiceDataEnd = readAddr+VOICE_SIZE
-
-            """
-        try:
-            print( "| Sound " + str(i).zfill(3) + " |\t" + devices[fmtHex(device)] + "\t| " + fmtHex(addr) + " |" )
-        except:
-            print( "| Sound " + str(i).zfill(3) + " |\t??? (" + fmtHex(device) + ")\t|" + fmtHex(addr) + " |")
-    print("\n---\n")
-    """
 
     return [offsAddrList, voiceDataStart, voiceDataEnd, drumsAddr]
 
