@@ -17,6 +17,8 @@ Windows向けの手順です．他のOSはすんなりインストールでき�
   * `conda install --channel https://conda.anaconda.org/bpentz pyqt5`
 
 ## 各プログラムの説明
+詳細は各プログラムのREADMEを参照してください
+
 ### EXESpriteReader.py
 * スプライトを閲覧するツール
 * パレット編集，水平反転，アニメーション数拡張，スプライト結合などの機能付き
