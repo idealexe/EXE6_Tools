@@ -108,8 +108,7 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
         if voiceDataEnd < max(end, end2) < len(romData):
             voiceDataEnd = max(end, end2)
 
-    """ ポインタ書き換え
-    """
+    # ポインタ書き換え
     for addr in offsAddrList:
         [baseData] = struct.unpack("L", romData[addr:addr+OFFSET_SIZE])   # もともとのポインタ
         data = struct.pack("L", baseData + transplantOffs)
@@ -138,8 +137,7 @@ def songTableParser(romData, startAddr):
         [addr, data] = struct.unpack("LL", romData[readAddr:readAddr+dataSize])
 
         if addr == 0:
-            """ addr = 0x00000000が終端らしい
-            """
+            # addr = 0x00000000が終端らしい
             break
 
         logger.debug("Entry" + str(count) + " at " + fmtHex(readAddr) + "{")
@@ -182,15 +180,13 @@ def songDataParser(romData, songAddr):
     logger.debug([x1, x2, x3])
     readAddr += SONG_HEADER_SIZE
 
-    """ ボイステーブルのアドレス
-    """
+    # ボイステーブルのアドレス
     voicesAddrPtr = readAddr
     voicesAddr = struct.unpack("L", romData[readAddr:readAddr+OFFSET_SIZE])[0] - MEMORY_OFFSET
     readAddr += OFFSET_SIZE
     logger.debug("Voices Addr:\t" + fmtHex(voicesAddr) + "\n")
 
-    """ 各トラックのアドレス
-    """
+    # 各トラックのアドレス
     trackList = []
     trackPtrList = []
     for i in range(trackNum):
