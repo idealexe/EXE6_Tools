@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # coding: utf-8
+# pylint: disable=C0103
 
 """ EXE Sprite  by ideal.exe
 
@@ -45,6 +46,8 @@ OAM_DIMENSION = {
 }
 
 class EXESprite:
+    """ ロックマンエグゼシリーズのスプライトデータを扱うクラス
+    """
     def __init__(self, data, spriteAddr, compFlag):
         """ スプライトデータを読み込んでオブジェクトを初期化する
 
@@ -99,15 +102,21 @@ class EXESprite:
                 logger.debug("Graphics Size Address:\t" + hex(graphSizeAddr))
 
                 try:
-                    [graphicSize] = struct.unpack("L", spriteData[graphSizeAddr:graphSizeAddr+OFFSET_SIZE])
+                    [graphicSize] = \
+                        struct.unpack("L", spriteData[graphSizeAddr:graphSizeAddr+OFFSET_SIZE])
                 except struct.error:
                     logger.warning(u"不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
                     break
-                graphicData = spriteData[graphSizeAddr+OFFSET_SIZE:graphSizeAddr+OFFSET_SIZE+graphicSize]
+                graphicData = \
+                    spriteData[graphSizeAddr+OFFSET_SIZE:graphSizeAddr+OFFSET_SIZE+graphicSize]
 
-                frameDataList.append({"animNum":animPtr["animNum"], "frameNum":frameCount, "address":readAddr, "frameData":frameData, \
-                    "graphSizeAddr":graphSizeAddr, "graphicData":graphicData,"palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
-                    "oamPtrAddr":oamPtrAddr, "frameDelay":frameDelay, "frameType":frameType})
+                frameDataList.append({\
+                    "animNum":animPtr["animNum"], "frameNum":frameCount, \
+                    "address":readAddr, "frameData":frameData, \
+                    "graphSizeAddr":graphSizeAddr, "graphicData":graphicData, \
+                    "palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
+                    "oamPtrAddr":oamPtrAddr, "frameDelay":frameDelay, \
+                    "frameType":frameType})
 
                 readAddr += FRAME_DATA_SIZE
                 frameCount += 1
@@ -156,7 +165,8 @@ class EXESprite:
                 logger.debug("  Size X:\t" + str(sizeX))
                 logger.debug("  Size Y:\t" + str(sizeY))
 
-                oamDataList.append({"animNum":frameData["animNum"], "frameNum":frameData["frameNum"], \
+                oamDataList.append({\
+                    "animNum":frameData["animNum"], "frameNum":frameData["frameNum"], \
                     "address":readAddr, "oamData":oamData, "startTile":startTile, \
                     "posX":posX, "posY":posY, "sizeX":sizeX, "sizeY":sizeY, \
                     "flipV":flipV, "flipH":flipH, "palIndex":palIndex})
@@ -219,7 +229,8 @@ class EXESprite:
             oamPtrAddr = frameData["oamPtrAddr"] + offset
             frameDelay = frameData["frameDelay"]
             frameType = frameData["frameType"]
-            data = struct.pack("<LLLLHH", graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
+            data = struct.pack("<LLLLHH", \
+                graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
             offsetFrameData += data
         return offsetFrameData
 

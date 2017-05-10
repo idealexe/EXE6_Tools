@@ -18,12 +18,12 @@ import gettext
 import os
 import sys
 import struct
-import numpy as np
-import pandas as pd
 from logging import getLogger, StreamHandler, INFO
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PIL import Image
 from PIL.ImageQt import ImageQt
+import numpy as np
+import pandas as pd
 _ = gettext.gettext # 後の翻訳用
 
 import SpriteDict
