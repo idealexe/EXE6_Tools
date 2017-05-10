@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # coding: utf-8
+# pylint: disable=C0103
 
 """ EXE6 Battle Coordinator  by ideal.exe
 
@@ -20,10 +21,10 @@
 
 import argparse
 import os
+from logging import getLogger, StreamHandler, INFO
 import struct
 import sys
 import yaml
-from logging import getLogger, StreamHandler, INFO
 
 parser = argparse.ArgumentParser(description="バトル設定を出力します")
 parser.add_argument("file", help="開くROMファイル")
@@ -42,8 +43,7 @@ sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
 name, ext = os.path.splitext(args.file) # ファイル名と拡張子を取得
 import EXE6Dict
 
-""" 定数
-"""
+# 定数
 PROGRAM_NAME = "EXE6 Battle Coordinator  ver 0.2  by ideal.exe"
 BATTLE_DATA_SIZE = 0x10
 MEMORY_OFFSET = 0x08000000
