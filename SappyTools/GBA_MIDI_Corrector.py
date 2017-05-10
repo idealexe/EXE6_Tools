@@ -8,19 +8,17 @@ u""" GBA MIDI Corrector by idealexe
 """
 
 import time
-startTime = time.time() # 実行時間計測開始
-
 import os
 import re
 import struct
-
 import argparse
+from logging import getLogger, StreamHandler, INFO
+
 parser = argparse.ArgumentParser(description='Sappyで書き出した標準形式のMIDIデータをmid2agb.exeで正しく変換できるようにします')
 parser.add_argument("file", help="修正するMIDIファイル")
 parser.add_argument("-o", "--output", help="出力するファイルの名前")
 args = parser.parse_args()
 
-from logging import getLogger,StreamHandler,INFO
 logger = getLogger(__name__)
 handler = StreamHandler()
 handler.setLevel(INFO)
@@ -31,20 +29,20 @@ logger.addHandler(handler)
 HEADER_CHUNK_SIZE = 14 # ヘッダーチャンクは１４バイト
 TRACK_CHUNK_SIZE = 8  # トラックチャンクは８バイト
 
-
+startTime = time.time() # 実行時間計測開始
 f = args.file  # 1つめの引数をファイルパスとして格納
 name, ext = os.path.splitext(f) # ファイル名と拡張子を取得
 
 if args.output != None:
-    outName = args.output
+    OUTPUT_NAME = args.output
 else:
-    outName = name + "_corr" + ext  # 標準の出力ファイル名
+    OUTPUT_NAME = name + "_corr" + ext  # 標準の出力ファイル名
 
 # ファイルを開く
 try:
     with open(f, 'rb') as midFile:   # 読み取り専用、バイナリファイルとして開く
         data = midFile.read()
-except:
+except OSError:
     print("ファイルを開けませんでした")
 
 readPos = 0 # 読み取り位置
@@ -65,7 +63,7 @@ for i in range(trackNum):
     trackChunk = struct.unpack(">4sL", data[readPos : readPos + TRACK_CHUNK_SIZE])
     dataSize = trackChunk[1]
     readPos += TRACK_CHUNK_SIZE
-    tracks.append( data[readPos : readPos + dataSize] )
+    tracks.append(data[readPos : readPos + dataSize])
     readPos += dataSize
 
 # 各イベントをコントロールチェンジに書き換える
@@ -78,7 +76,7 @@ for i in range(trackNum):
 
         eventStart = m.start() - 3  # マッチした位置の３バイト前がテキストイベントの開始位置
         n = tracks[i][m.start()-1]  # マッチした位置の１バイト前がデータ長
-        eventSize = n + 3;  # イベント全体のサイズ
+        eventSize = n + 3 # イベント全体のサイズ
 
         code = struct.pack("B", 0xB0 + i)
         value = tracks[i][m.end()+1:m.end()+3]  # かなり決め打ち（文字列の後１つスペースを開けて値があることを仮定している）
@@ -100,20 +98,21 @@ for i in range(trackNum):
         elif m.group() == b"XCMD xIECL":
             cc = code + b"\x1E\x09\x00" + code + b"\x1F" + value
 
-        tracks[i] = tracks[i][0:eventStart] + cc + tracks[i][eventStart+eventSize:] # ここで長さが変わってしまうため以前のマッチ位置が使えなくなる->whileで回す方式にした
+        tracks[i] = tracks[i][0:eventStart] + cc + \
+                    tracks[i][eventStart+eventSize:] # ここで長さが変わってしまうため以前のマッチ位置が使えなくなる->whileで回す方式にした
 
-    dataSizeStr = struct.pack(">L", len(tracks[i]) )    # データサイズを更新
+    dataSizeStr = struct.pack(">L", len(tracks[i]))    # データサイズを更新
     tracks[i] = b"MTrk" + dataSizeStr + tracks[i]   # トラックチャンクを結合
 
 output = b"".join(tracks)
-output = b"".join( [header, output] )
+output = b"".join([header, output])
 
 # ファイル出力
 try:
-    with open(outName, "wb") as outFile:
+    with open(OUTPUT_NAME, "wb") as outFile:
         outFile.write(output)
-except:
+except OSError:
     print("ファイルを正しく出力できませんでした")
 
 executionTime = time.time() - startTime    # 実行時間計測終了
-print( "Execution Time:\t" + str( round(executionTime, 3) ) + " sec" )
+print("Execution Time:\t" + str(round(executionTime, 3)) + " sec")
