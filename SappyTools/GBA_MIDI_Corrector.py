@@ -71,7 +71,7 @@ reEvent = re.compile(b"LFOS|LFODL|MODT|XCMD xIECV|XCMD xIECL") # 検索パター
 for i in range(trackNum):
     while True:
         m = reEvent.search(tracks[i])
-        if m == None:   # マッチするパターンがなくなったらおわり
+        if m is None:   # マッチするパターンがなくなったらおわり
             break
 
         eventStart = m.start() - 3  # マッチした位置の３バイト前がテキストイベントの開始位置
