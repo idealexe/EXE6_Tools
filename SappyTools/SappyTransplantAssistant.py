@@ -10,8 +10,6 @@
     ソングテーブル以外のアドレスを入力するとどうなるかはわかりません
 """
 
-PROGRAM_NAME = "Sappy Transplant Assistant ver 1.4  by ideal.exe"
-
 import argparse
 import binascii
 import os
@@ -19,7 +17,7 @@ import struct
 import sys
 import time
 
-from logging import getLogger,FileHandler,StreamHandler,DEBUG,INFO
+from logging import getLogger, FileHandler, StreamHandler, DEBUG, INFO
 logger = getLogger(__name__)
 handler = StreamHandler()
 handler.setLevel(INFO)
@@ -32,23 +30,26 @@ logger.addHandler(fhandler)
 
 """ 定数
 """
+PROGRAM_NAME = "Sappy Transplant Assistant ver 1.4.1  by ideal.exe"
 OFFSET_SIZE = 4 # オフセットサイズは4バイト
 MEMORY_OFFSET = 0x08000000   # ROMがマッピングされるメモリ上のアドレス
-SONG_HEADER_SIZE =4
+SONG_HEADER_SIZE = 4
 VOICE_SIZE = 0xC # 音源定義データのサイズ
 devices = {
-"0x0":"Direct Sound",
-"0x1":"Square Wave 1",
-"0x2":"Square Wave 2",
-"0x3":"Wave Memory",
-"0x4":"Noise",
-"0x8":"Direct Sound",
-"0x40":"Multi Sample",
-"0x80":"Drum Part"
+    "0x0":"Direct Sound",
+    "0x1":"Square Wave 1",
+    "0x2":"Square Wave 2",
+    "0x3":"Wave Memory",
+    "0x4":"Noise",
+    "0x8":"Direct Sound",
+    "0x40":"Multi Sample",
+    "0x80":"Drum Part"
 }
 
 
 def main():
+    """ Main
+    """
     startTime = time.time() # 実行時間計測開始
     print(PROGRAM_NAME +"\n")
 
@@ -71,7 +72,7 @@ def main():
     outName = name + "_Voices_" + hex(transplantOffs) + ext  # 出力ファイル名
     saveFile(data, outName)
     executionTime = time.time() - startTime    # 実行時間計測終了
-    logger.info( "\nExecution Time:\t" + str(executionTime) + " sec" )
+    logger.info("\nExecution Time:\t" + str(executionTime) + " sec")
 
 
 def voiceTransplanter(romData, songTableAddr, transplantOffs):
@@ -85,7 +86,7 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
     for song in songAddrList:
         songData = songDataParser(romData, song)
         if songData != -1:
-            voicesAddrList.append( songData["voicesAddr"] )
+            voicesAddrList.append(songData["voicesAddr"])
 
     offsAddrList = []   # 処理すべきポインタが追加されていくリスト
     # 切り出す音源データの仮の範囲
@@ -96,7 +97,8 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
         # ここの処理がいまいちださい
         [offsAddrList, start, end, drumsAddr] = voiceTableParser(romData, voices, offsAddrList)
         if len(drumsAddr) > 0:  # ドラムパートを使用していれば
-            [offsAddrList, start2, end2, drumsAddr] = voiceTableParser(romData, drumsAddr[0], offsAddrList) # ドラムパートは1個だけ分析する
+            [offsAddrList, start2, end2, drumsAddr] = \
+                voiceTableParser(romData, drumsAddr[0], offsAddrList) # ドラムパートは1個だけ分析する
         else:
             start2 = start
             end2 = end
@@ -110,15 +112,16 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
     """
     for addr in offsAddrList:
         [baseData] = struct.unpack("L", romData[addr:addr+OFFSET_SIZE])   # もともとのポインタ
-        data = struct.pack("L", baseData + transplantOffs )
+        data = struct.pack("L", baseData + transplantOffs)
         romData = writeDataToRom(romData, addr, data)
         print(".", end="", flush=True)
     print("done\n")
 
     print(fmtHex(voiceDataStart) + u"から" + fmtHex(voiceDataEnd) + u"まで切り出しました")
-    print( u"出力データを移植先の " + fmtHex(voiceDataStart + transplantOffs) + u" にペーストしてください")
-    print( u"各ボイスセットには元のアドレス＋" + fmtHex(transplantOffs) + u"でアクセス出来ます" )
-    print( u"例）" + fmtHex(voicesAddrList[0]) + u" → " + fmtHex(voicesAddrList[0]+transplantOffs) +"\n" )
+    print(u"出力データを移植先の " + fmtHex(voiceDataStart + transplantOffs) + u" にペーストしてください")
+    print(u"各ボイスセットには元のアドレス＋" + fmtHex(transplantOffs) + u"でアクセス出来ます")
+    print(u"例）" + fmtHex(voicesAddrList[0]) + u" → " + \
+        fmtHex(voicesAddrList[0]+transplantOffs) +"\n")
 
     return romData[voiceDataStart:voiceDataEnd]
 
@@ -175,7 +178,7 @@ def songDataParser(romData, songAddr):
     if trackNum == 0:
         return -1
 
-    logger.debug("Track Number:\t" + str(trackNum) )
+    logger.debug("Track Number:\t" + str(trackNum))
     logger.debug([x1, x2, x3])
     readAddr += SONG_HEADER_SIZE
 
@@ -184,7 +187,7 @@ def songDataParser(romData, songAddr):
     voicesAddrPtr = readAddr
     voicesAddr = struct.unpack("L", romData[readAddr:readAddr+OFFSET_SIZE])[0] - MEMORY_OFFSET
     readAddr += OFFSET_SIZE
-    logger.debug( "Voices Addr:\t" + fmtHex(voicesAddr) + "\n")
+    logger.debug("Voices Addr:\t" + fmtHex(voicesAddr) + "\n")
 
     """ 各トラックのアドレス
     """
@@ -198,7 +201,8 @@ def songDataParser(romData, songAddr):
         logger.debug("Track" + str(i) + " Addr:\t" + fmtHex(trackAddr))
     logger.debug("---")
 
-    return {"trackNum":trackNum, "voicesAddr":voicesAddr, "voicesAddrPtr":voicesAddrPtr, "trackList":trackList, "trackPtrList":trackPtrList}
+    return {"trackNum":trackNum, "voicesAddr":voicesAddr, "voicesAddrPtr":voicesAddrPtr, \
+            "trackList":trackList, "trackPtrList":trackPtrList}
 
 
 def trackDataParser(romData, trackAddr):
@@ -210,11 +214,11 @@ def trackDataParser(romData, trackAddr):
     """
 
     readAddr = trackAddr
-    logger.debug( "Track at " + fmtHex(readAddr) )
+    logger.debug("Track at " + fmtHex(readAddr))
     ptrAddrList = []    # トラックデータ内のポインタアドレス
 
     while romData[readAddr] != "\xB1":
-        if romData[readAddr] in ["\xB2","\xB3"]:
+        if romData[readAddr] in ["\xB2", "\xB3"]:
             logger.debug(binascii.hexlify(romData[readAddr]).upper() + ":")
             readAddr += 1
             ptrAddrList.append(readAddr)
@@ -240,7 +244,8 @@ def voiceTableParser(romData, tableAddr, offsAddrList):
     drumsAddr = []  # ドラム音源はボイスセットの構造を内包しているので後で同様の処理を行う
 
     for i in range(128):
-        [device, baseNote, sweepTime, sweepShift, addr, atk, dec, sus, rel] = struct.unpack("BBBBLBBBB", romData[readAddr:readAddr+VOICE_SIZE])
+        [device, baseNote, sweepTime, sweepShift, addr, atk, dec, sus, rel] = \
+            struct.unpack("BBBBLBBBB", romData[readAddr:readAddr+VOICE_SIZE])
         if addr >= MEMORY_OFFSET and addr - MEMORY_OFFSET < len(romData):  # まともなポインタだったら
             addr -= MEMORY_OFFSET
             if readAddr+4 not in offsAddrList:  # まだリストに追加していないなら
@@ -277,13 +282,13 @@ def songTransplanter(romData, songAddr, targetAddr, voicesAddr):
     transplantOffs = targetAddr - songAddr
 
     # ポインタ書き換え
-    data = struct.pack("L", voicesAddr+MEMORY_OFFSET )
+    data = struct.pack("L", voicesAddr+MEMORY_OFFSET)
     logger.debug(binascii.hexlify(data))
     romData = writeDataToRom(romData, songData["voicesAddrPtr"], data)
 
     for addr in songData["trackPtrList"]:
         [baseData] = struct.unpack("L", romData[addr:addr+OFFSET_SIZE])
-        data = struct.pack("L", baseData + transplantOffs )
+        data = struct.pack("L", baseData + transplantOffs)
         logger.debug(binascii.hexlify(data))
         romData = writeDataToRom(romData, addr, data)
 
@@ -292,7 +297,7 @@ def songTransplanter(romData, songAddr, targetAddr, voicesAddr):
         ptrAddrList = trackDataParser(romData, track)
         for addr in ptrAddrList:
             [baseData] = struct.unpack("L", romData[addr:addr+OFFSET_SIZE])
-            data = struct.pack("L", baseData + transplantOffs )
+            data = struct.pack("L", baseData + transplantOffs)
             logger.debug(binascii.hexlify(data))
             romData = writeDataToRom(romData, addr, data)
 
@@ -304,9 +309,9 @@ def songTransplanter(romData, songAddr, targetAddr, voicesAddr):
     logger.debug("Song Data End:\t\t" + fmtHex(songDataEnd))
 
 
-    print( u"出力データを移植先の " + fmtHex(songDataStart + transplantOffs) + u" にペーストしてください")
-    print( u"ソングヘッダのアドレスは" + fmtHex(targetAddr) + u"です" )
-    print( u"移植先のソングテーブルで" + fmtHex(targetAddr) + u"を指定するとアクセスできます")
+    print(u"出力データを移植先の " + fmtHex(songDataStart + transplantOffs) + u" にペーストしてください")
+    print(u"ソングヘッダのアドレスは" + fmtHex(targetAddr) + u"です")
+    print(u"移植先のソングテーブルで" + fmtHex(targetAddr) + u"を指定するとアクセスできます")
 
     return romData[songDataStart:songDataEnd]
 
@@ -326,7 +331,7 @@ def openFile(filePath):
         with open(filePath, 'rb') as romFile:   # 読み取り専用、バイナリファイルとして開く
             romData = romFile.read()   # データのバイナリ文字列（バイナリエディタのASCIIのとこみたいな感じ）
 
-    except:
+    except OSError:
         print(u"ファイルを開けませんでした")
 
     return romData
@@ -339,11 +344,13 @@ def saveFile(data, outName):
     try:
         with open(outName, "wb") as outFile:
             outFile.write(data)
-    except:
+    except OSError:
         print(u"ファイルを正しく出力できませんでした")
 
 
 def fmtHex(num):
+    """ 16進数をいい感じに表示する
+    """
     return "0x" + hex(num)[2:].upper()
 
 
