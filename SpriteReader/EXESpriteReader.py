@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # coding: utf-8
+# pylint: disable=C0103, E1101
 
 u''' EXE Sprite Reader  by ideal.exe
 
@@ -11,14 +12,15 @@ u''' EXE Sprite Reader  by ideal.exe
 
 '''
 
-PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.1  by ideal.exe"
 
+import argparse
 import gettext
-import numpy as np
 import os
-import pandas as pd
 import sys
 import struct
+import numpy as np
+import pandas as pd
+from logging import getLogger, StreamHandler, INFO
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PIL import Image
 from PIL.ImageQt import ImageQt
@@ -31,14 +33,12 @@ import LZ77Util
 import EXESprite
 import UI_EXESpriteReader as designer
 
-from logging import getLogger,StreamHandler,INFO
 logger = getLogger(__name__)
 handler = StreamHandler()
 handler.setLevel(INFO)
 logger.setLevel(INFO)
 logger.addHandler(handler)
 
-import argparse
 parser = argparse.ArgumentParser(description='対応しているROMのスプライトを表示します')
 parser.add_argument("-f", "--file", help="開くROMファイル")
 args = parser.parse_args()
@@ -47,27 +47,28 @@ args = parser.parse_args()
 
     スプライトデータのフォーマットで決められている定数
 """
+PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.2  by ideal.exe"
 HEADER_SIZE = 4 # スプライトヘッダのサイズ
 OFFSET_SIZE = 4
-COLOR_SIZE  = 2 # 1色あたりのサイズ
+COLOR_SIZE = 2 # 1色あたりのサイズ
 FRAME_DATA_SIZE = 20
 OAM_DATA_SIZE = 5
 OAM_DATA_END = [b"\xFF\xFF\xFF\xFF\xFF", b"\xFF\xFF\xFF\xFF\x00"]
 
 # フラグと形状の対応を取る辞書[size+shape]:[x,y]
 OAM_DIMENSION = {
-"0000":[8,8],
-"0001":[16,8],
-"0010":[8,16],
-"0100":[16,16],
-"0101":[32,8],
-"0110":[8,32],
-"1000":[32,32],
-"1001":[32,16],
-"1010":[16,32],
-"1100":[64,64],
-"1101":[64,32],
-"1110":[32,64]
+    "0000":[8, 8],
+    "0001":[16, 8],
+    "0010":[8, 16],
+    "0100":[16, 16],
+    "0101":[32, 8],
+    "0110":[8, 32],
+    "1000":[32, 32],
+    "1001":[32, 16],
+    "1010":[16, 32],
+    "1100":[64, 64],
+    "1101":[64, 32],
+    "1110":[32, 64]
 }
 
 """ 設定用定数
@@ -76,16 +77,19 @@ OAM_DIMENSION = {
 """
 EXPAND_ANIMATION_NUM = 64   # 拡張ダンプのアニメーション数
 EXPAND_FRAME_NUM = 16   # 拡張ダンプのフレーム数
-LIST_FILE_PATH = os.path.join(os.path.dirname(sys.argv[0]), "lists/") # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
+LIST_FILE_PATH = \
+    os.path.join(os.path.dirname(sys.argv[0]), "lists/") # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
 
 
 class SpriteReader(QtWidgets.QMainWindow):
+    """ Sprite Reader
+    """
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = designer.Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle(PROGRAM_NAME)
-        self.ui.graphicsView.scale(2,2) # なぜかQt Designer上で設定できない
+        self.ui.graphicsView.scale(2, 2) # なぜかQt Designer上で設定できない
 
         self.romData = ""   # ファイルを読み込んだ時点でその内容がコピーされる．このデータを読み書きする．
 
@@ -94,13 +98,13 @@ class SpriteReader(QtWidgets.QMainWindow):
         u''' ファイルを開くときの処理
         '''
         logger.debug(filename)
-        if filename == "" or filename == False:
-            filename = QtWidgets.QFileDialog.getOpenFileName( self, _("Open EXE_ROM File"), os.path.expanduser('./') )[0]   # ファイル名とフィルタのタプルが返される
+        if filename == "" or filename is False:
+            filename = QtWidgets.QFileDialog.getOpenFileName(self, _("Open EXE_ROM File"), os.path.expanduser('./'))[0]   # ファイル名とフィルタのタプルが返される
 
         try:
-            with open( filename, 'rb' ) as romFile:
+            with open(filename, 'rb') as romFile:
                 self.romData = romFile.read()
-        except:
+        except OSError:
             logger.info(u"ファイルが選択されませんでした")
             return -1
 
@@ -119,10 +123,9 @@ class SpriteReader(QtWidgets.QMainWindow):
             self.listData = self.loadListFile(self.listName)
         else:
             df = pd.DataFrame({
-            "addr":[],
-            "label":[],
-            },
-            columns=["addr", "label"])    # 並び順を指定
+                "addr":[],
+                "label":[],
+            }, columns=["addr", "label"])    # 並び順を指定
             df.to_csv(LIST_FILE_PATH + self.listName, encoding="utf-8", index=False)
             print(u"リストファイルを作成しました")
             self.listData = self.loadListFile(self.listName)
@@ -153,14 +156,14 @@ class SpriteReader(QtWidgets.QMainWindow):
         """
 
         self.romData = CommonAction.loadData("Open EXE Sprite File")
-        if self.romData == -1:  return -1
+        if self.romData == -1: return -1
 
         self.spriteList = []
         self.ui.spriteList.clear()
-        self.spriteList.append( {"spriteAddr":0, "compFlag":0, "readPos":0} )
+        self.spriteList.append({"spriteAddr":0, "compFlag":0, "readPos":0})
 
         spriteItemStr = "Opened Sprite"  # GUIのリストに表示する文字列
-        spriteItem = QtWidgets.QListWidgetItem( spriteItemStr )  # GUIのスプライトリストに追加するアイテムの生成
+        spriteItem = QtWidgets.QListWidgetItem(spriteItemStr)  # GUIのスプライトリストに追加するアイテムの生成
         self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
         self.ui.spriteList.setCurrentRow(0)  # 1番目のスプライトを自動で選択
 
@@ -174,38 +177,38 @@ class SpriteReader(QtWidgets.QMainWindow):
         global EXE_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒なので）
 
         if romName == "ROCKEXE6_GXX":
-            logger.info( _(u"ロックマンエグゼ6 グレイガ jp としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ6 グレイガ jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE6_GXX
         elif romName == "MEGAMAN6_GXX":
-            logger.info( _(u"ロックマンエグゼ6 グレイガ en としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ6 グレイガ en としてロードしました"))
             EXE_Addr = SpriteDict.MEGAMAN6_GXX
         elif romName == "ROCKEXE6_RXX":
-            logger.info( _(u"ロックマンエグゼ6 ファルザー jp としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ6 ファルザー jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE6_RXX
         elif romName == "MEGAMAN6_FXX":
-            logger.info( _(u"ロックマンエグゼ6 ファルザー en としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ6 ファルザー en としてロードしました"))
             EXE_Addr = SpriteDict.MEGAMAN6_FXX
 
         elif romName == "ROCKEXE5_TOB":
-            logger.info( _(u"ロックマンエグゼ5 チームオブブルース jp としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ5 チームオブブルース jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE5_TOB
         elif romName == "ROCKEXE5_TOC":
-            logger.info( _(u"ロックマンエグゼ5 チームオブカーネル jp としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ5 チームオブカーネル jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE5_TOC
 
         elif romName == "ROCKEXE4.5RO":
-            logger.info( _(u"ロックマンエグゼ4.5 jp としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ4.5 jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE4_5RO
 
         elif romName == "ROCK_EXE4_RS":
-            logger.info( _(u"ロックマンエグゼ4 トーナメントレッドサン jp としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ4 トーナメントレッドサン jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE4_RS
         elif romName == "ROCK_EXE4_BM":
-            logger.info( _(u"ロックマンエグゼ4 トーナメントブルームーン jp としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ4 トーナメントブルームーン jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE4_BM
 
         elif romName == "ROCK_EXE3_BK":
-            logger.info( _(u"ロックマンエグゼ3 Black jp としてロードしました") )
+            logger.info(_(u"ロックマンエグゼ3 Black jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCK_EXE3_BK
         elif romName == "ROCKMAN_EXE3":
             logger.info(_(u"ロックマンエグゼ3 jp としてロードしました"))
@@ -220,7 +223,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             EXE_Addr = SpriteDict.ROCKMAN_EXE
 
         else:
-            logger.info( _(u"対応していないバージョンです" ) )
+            logger.info(_(u"対応していないバージョンです"))
             return -1   # error
 
 
@@ -261,13 +264,13 @@ class SpriteReader(QtWidgets.QMainWindow):
                     readPos += OFFSET_SIZE
                     continue
 
-                self.spriteList.append( {"spriteAddr":spriteAddr, "compFlag":compFlag, "pointerAddr":readPos} )
+                self.spriteList.append({"spriteAddr":spriteAddr, "compFlag":compFlag, "pointerAddr":readPos})
 
-                spriteAddrStr = ( hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6) ).upper() + "\t"  # GUIのリストに表示する文字列
+                spriteAddrStr = (hex(memByte)[2:].zfill(2) + hex(spriteAddr)[2:].zfill(6)).upper() + "\t"  # GUIのリストに表示する文字列
                 if not self.listData.loc[(self.listData.addr == hex(spriteAddr)), "label"].empty:
                     spriteAddrStr += self.listData.loc[(self.listData.addr == hex(spriteAddr)), "label"].values[0]  # ラベルがあれば表示
 
-                spriteItem = QtWidgets.QListWidgetItem( spriteAddrStr )  # GUIのスプライトリストに追加するアイテムの生成
+                spriteItem = QtWidgets.QListWidgetItem(spriteAddrStr)  # GUIのスプライトリストに追加するアイテムの生成
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
 
             readPos += OFFSET_SIZE
@@ -302,7 +305,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         self.ui.animLabel.setText(u"アニメーション：" + str(len(self.animPtrList)))
         for i, animPtr in enumerate(self.animPtrList):
             animPtrStr = str(i).zfill(2) + ":   " + hex(animPtr["value"])[2:].zfill(6).upper() # GUIに表示する文字列
-            animItem = QtWidgets.QListWidgetItem( animPtrStr )    # GUIのアニメーションリストに追加するアイテムの生成
+            animItem = QtWidgets.QListWidgetItem(animPtrStr)    # GUIのアニメーションリストに追加するアイテムの生成
             self.ui.animList.addItem(animItem) # アニメーションリストへ追加
             logger.debug(hex(animPtr["value"]))
 
@@ -328,7 +331,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 frameStr += "Stop"
             elif frame["frameType"] == 192:
                 frameStr += "Loop"
-            frameItem = QtWidgets.QListWidgetItem( frameStr )    # GUIのフレームリストに追加するアイテムの生成
+            frameItem = QtWidgets.QListWidgetItem(frameStr)    # GUIのフレームリストに追加するアイテムの生成
             self.ui.frameList.addItem(frameItem) # フレームリストへ追加
 
         self.ui.frameList.setCurrentRow(0)
@@ -354,15 +357,15 @@ class SpriteReader(QtWidgets.QMainWindow):
         self.ui.oamLabel.setText(u"OAM：" + str(len(currentFrameOam)))
 
         for oam in currentFrameOam:
-            oamAddrStr = ( hex(oam["address"])[2:].zfill(8)).upper()  # GUIのリストに表示する文字列
-            oamItem = QtWidgets.QListWidgetItem( oamAddrStr )   # GUIのOAMリストに追加するアイテムの生成
+            oamAddrStr = (hex(oam["address"])[2:].zfill(8)).upper()  # GUIのリストに表示する文字列
+            oamItem = QtWidgets.QListWidgetItem(oamAddrStr)   # GUIのOAMリストに追加するアイテムの生成
             self.ui.oamList.addItem(oamItem) # GUIスプライトリストへ追加
 
             # OAM画像の生成，描画
             graphicData = currentFrame["graphicData"]
 
             # OAM指定色か，GUIで指定した色で表示
-            if self.ui.useDefaultPalBox.isChecked() == True:
+            if self.ui.useDefaultPalBox.isChecked() is True:
                 palIndex = oam["palIndex"]
                 self.ui.palSelect.setValue(palIndex)
             else:
@@ -401,14 +404,14 @@ class SpriteReader(QtWidgets.QMainWindow):
             color = struct.unpack("<H", color)[0]
 
             if palCount == 0:
-                self.palData.append( {"color":[binR, binG, binB, 0], "addr":readPos } ) # 最初の色は透過色
+                self.palData.append({"color":[binR, binG, binB, 0], "addr":readPos}) # 最初の色は透過色
             else:
-                self.palData.append( {"color":[binR, binG, binB, 255], "addr":readPos } )
+                self.palData.append({"color":[binR, binG, binB, 255], "addr":readPos})
 
             colorStr = hex(color)[2:].zfill(4).upper() + "\t(" + str(binR).rjust(3) + ", " + str(binG).rjust(3) + ", " + str(binB).rjust(3) + ")"  # GUIに表示する文字列
             colorItem = QtWidgets.QListWidgetItem(colorStr)
-            colorItem.setBackground( QtGui.QColor(binR, binG, binB) )  # 背景色をパレットの色に
-            colorItem.setForeground( QtGui.QColor(255-binR, 255-binG, 255-binB) )    # 文字は反転色
+            colorItem.setBackground(QtGui.QColor(binR, binG, binB))  # 背景色をパレットの色に
+            colorItem.setForeground(QtGui.QColor(255-binR, 255-binG, 255-binB))    # 文字は反転色
             self.ui.palList.addItem(colorItem) # フレームリストへ追加
 
             palCount += 1
@@ -416,6 +419,8 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def changePalette(self, n):
+        """ パレット変更処理
+        """
         index = self.ui.frameList.currentRow()
         self.guiFrameItemActivated(index)
 
@@ -448,14 +453,14 @@ class SpriteReader(QtWidgets.QMainWindow):
         if index == -1:
             return -1
 
-        r,g,b,a = self.palData[index]["color"]   # 選択された色の値をセット
+        r, g, b, a = self.palData[index]["color"]   # 選択された色の値をセット
         writePos = self.palData[index]["addr"]  # 色データを書き込む位置
-        color = QtWidgets.QColorDialog.getColor( QtGui.QColor(r, g, b) )    # カラーダイアログを開く
-        if color.isValid() == False: # キャンセルしたとき
+        color = QtWidgets.QColorDialog.getColor(QtGui.QColor(r, g, b))    # カラーダイアログを開く
+        if color.isValid() is False: # キャンセルしたとき
             logger.info(u"色の選択をキャンセルしました")
             return 0
 
-        r,g,b,a = color.getRgb()    # ダイアログでセットされた色に更新
+        r, g, b, a = color.getRgb()    # ダイアログでセットされた色に更新
 
         binR = bin(r//8)[2:].zfill(5)    # 5bitカラーに変換
         binG = bin(g//8)[2:].zfill(5)
@@ -514,7 +519,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             readPos += 1
 
         imgArray = np.array(imgArray)   # ndarrayに変換
-        imgArray = imgArray.reshape( (-1, TILE_WIDTH, 4) )  # 横8ドットのタイルに並べ替える（-1を設定すると自動で縦の値を算出してくれる）
+        imgArray = imgArray.reshape((-1, TILE_WIDTH, 4))  # 横8ドットのタイルに並べ替える（-1を設定すると自動で縦の値を算出してくれる）
         u""" 現在の状態
 
             □
@@ -534,14 +539,14 @@ class SpriteReader(QtWidgets.QMainWindow):
         # タイルの並び替え
         h = []  # 水平方向に結合したタイルを格納するリスト
         for i in range(0, height):
-            h.append( np.zeros_like(tile[0]) )    # タイルを詰めるダミー
+            h.append(np.zeros_like(tile[0]))    # タイルを詰めるダミー
             for j in range(0, width):
-                h[i] = np.hstack( (h[i], tile[i*width + j]) )
+                h[i] = np.hstack((h[i], tile[i*width + j]))
             if i != 0:
                 h[0] = np.vstack((h[0], h[i]))
         img = h[0][:, 8:, :]    # ダミー部分を切り取る（ださい）
 
-        dataImg = Image.fromarray( np.uint8(img) )  # 色情報の行列から画像を生成（PILのImage形式）
+        dataImg = Image.fromarray(np.uint8(img))  # 色情報の行列から画像を生成（PILのImage形式）
         if flipH == 1:
             dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
         if flipV == 1:
@@ -556,7 +561,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         '''
 
         item = QtWidgets.QGraphicsPixmapItem(image)
-        item.setOffset(posX , posY)
+        item.setOffset(posX, posY)
         #imageBounds = item.boundingRect()
         self.graphicsScene.addItem(item)
         #self.graphicsScene.addRect(imageBounds)
@@ -575,10 +580,10 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"スプライトを保存する"), os.path.expanduser('./'), _("dump File (*.bin *.dmp)"))[0]
         try:
-            with open( filename, 'wb') as saveFile:
+            with open(filename, 'wb') as saveFile:
                 saveFile.write(data)
                 logger.info(u"スプライトを保存しました")
-        except:
+        except OSError:
             logger.info(u"スプライトの保存をキャンセルしました")
 
 
@@ -637,10 +642,10 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"スプライトを保存する"), os.path.expanduser('./'), _("dump File (*.bin *.dmp)"))[0]
         try:
-            with open( filename, 'wb') as saveFile:
+            with open(filename, 'wb') as saveFile:
                 saveFile.write(output)
                 logger.info(u"ファイルを保存しました")
-        except:
+        except OSError:
             logger.info(u"ファイルの保存をキャンセルしました")
 
 
@@ -655,10 +660,10 @@ class SpriteReader(QtWidgets.QMainWindow):
         """
         filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"ROMを保存する"), os.path.expanduser('./'), _("Rom File (*.gba *.bin)"))[0]
         try:
-            with open( filename, 'wb') as saveFile:
+            with open(filename, 'wb') as saveFile:
                 saveFile.write(self.romData)
                 logger.info(u"ファイルを保存しました")
-        except:
+        except OSError:
             logger.info(u"ファイルの保存をキャンセルしました")
 
 
@@ -667,7 +672,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         """
         index = self.ui.spriteList.currentRow()
         targetAddr = self.spriteList[index]["pointerAddr"]
-        logger.info( u"書き換えるアドレス：\t" + hex( targetAddr ) )
+        logger.info(u"書き換えるアドレス：\t" + hex(targetAddr))
 
         dialog = QtWidgets.QDialog()
         dialog.ui = repointDialog()
@@ -705,7 +710,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             return -1
 
         targetAddr = targetSprite["spriteAddr"] + HEADER_SIZE + self.animPtrList[index]["addr"]
-        logger.info( u"書き換えるアドレス：\t" + hex( targetAddr ) )
+        logger.info(u"書き換えるアドレス：\t" + hex(targetAddr))
 
         dialog = QtWidgets.QDialog()
         dialog.ui = repointDialog()
@@ -729,10 +734,10 @@ class SpriteReader(QtWidgets.QMainWindow):
             else:   # スプライトをロードした場合はアドレスリストが未定義になるので別途処理
                 self.spriteList = []
                 self.ui.spriteList.clear()
-                self.spriteList.append( {"spriteAddr":0, "compFlag":0, "readPos":0} )
+                self.spriteList.append({"spriteAddr":0, "compFlag":0, "readPos":0})
 
                 spriteItemStr = "Opened Sprite"  # GUIのリストに表示する文字列
-                spriteItem = QtWidgets.QListWidgetItem( spriteItemStr )  # GUIのスプライトリストに追加するアイテムの生成
+                spriteItem = QtWidgets.QListWidgetItem(spriteItemStr)  # GUIのスプライトリストに追加するアイテムの生成
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
             self.ui.spriteList.setCurrentRow(spriteIndex)
         else:
@@ -766,7 +771,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         for oam in self.oamDataList:
             writeAddr = oam["address"] + targetSprite["spriteAddr"] + HEADER_SIZE   # ROM内でのアドレス
-            logger.debug("OAM at " + hex(writeAddr) )
+            logger.debug("OAM at " + hex(writeAddr))
             oamData = oam["oamData"]
             [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
             logger.debug("  Start Tile:\t" + str(startTile))
@@ -821,13 +826,13 @@ class SpriteReader(QtWidgets.QMainWindow):
         u""" 指定したアドレスにファイルから読み込んだスプライトをインポートする
         """
 
-        filename = QtWidgets.QFileDialog.getOpenFileName( self, _("Open EXE_Sprite File"), os.path.expanduser('./') )[0]   # ファイル名がQString型で返される
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, _("Open EXE_Sprite File"), os.path.expanduser('./'))[0]   # ファイル名がQString型で返される
 
         try:
-            with open( filename, 'rb' ) as spriteFile:
+            with open(filename, 'rb') as spriteFile:
                 spriteData = spriteFile.read()
-        except:
-            logger.info( _(u"ファイルの選択をキャンセルしました") )
+        except OSError:
+            logger.info(_(u"ファイルの選択をキャンセルしました"))
             return -1
 
         dialog = QtWidgets.QDialog()
@@ -855,6 +860,8 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def labelSprite(self):
+        """ スプライトのラベルを保存する
+        """
         index = self.ui.spriteList.currentRow()
         logger.debug(index)
         addr = self.spriteList[index]["spriteAddr"]
@@ -911,10 +918,10 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"結合したスプライトを保存する"), os.path.expanduser('./'), _("Sprite File (*.bin *.dmp)"))[0]
         try:
-            with open( filename, 'wb') as saveFile:
+            with open(filename, 'wb') as saveFile:
                 saveFile.write(combSprite)
                 logger.info(u"ファイルを保存しました")
-        except:
+        except OSError:
             logger.info(u"ファイルの保存をキャンセルしました")
 
 
@@ -1005,11 +1012,10 @@ class labelDialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "ラベル"))
         self.label.setText(_translate("Dialog", "スプライトのラベル名を入力してください"))
 
-'''
-main
 
-'''
 def main():
+    """ Main
+    """
     app = QtWidgets.QApplication(sys.argv)
 
     spriteReader = SpriteReader()
