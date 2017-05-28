@@ -45,6 +45,24 @@ OAM_DIMENSION = {
     "1110":[32, 64]
 }
 
+class EXEFrame:
+    """ Frame
+    """
+
+    binFrameData = b""
+    graphSizeAddr = 0
+    palSizeAddr = 0
+    oamPtrAddr = 0
+    frameDelay = 0
+    frameType = 0
+
+    def __init__(self, binFrameData):
+        self.binFrameData = binFrameData
+
+        [self.graphSizeAddr, self.palSizeAddr, junkDataAddr, \
+            self.oamPtrAddr, self.frameDelay, self.frameType] = struct.unpack("<LLLLHH", binFrameData)
+
+
 class EXEOAM:
     """ OAM
     """
@@ -128,38 +146,34 @@ class EXESprite:
             frameCount = 0
             while True: # do while文がないので代わりに無限ループ＋breakを使う
                 frameData = spriteData[readAddr:readAddr+FRAME_DATA_SIZE]
-                [graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType] =\
-                    struct.unpack("<LLLLHH", frameData)   # データ構造に基づいて分解
-                logger.debug("Frame Type:\t" + hex(frameType))
-                if graphSizeAddr in [0x0000, 0x2000]:  # 流星のロックマンのスプライトを表示するための応急処置
+                frame = EXEFrame(frameData)
+
+                logger.debug("Frame Type:\t" + hex(frame.frameType))
+                if frame.graphSizeAddr in [0x0000, 0x2000]:  # 流星のロックマンのスプライトを表示するための応急処置
                     logger.warning(u"不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
                     break
 
-                if graphSizeAddr not in graphAddrList:
-                    graphAddrList.append(graphSizeAddr)
-                logger.debug("Graphics Size Address:\t" + hex(graphSizeAddr))
+                if frame.graphSizeAddr not in graphAddrList:
+                    graphAddrList.append(frame.graphSizeAddr)
+                logger.debug("Graphics Size Address:\t" + hex(frame.graphSizeAddr))
 
                 try:
                     [graphicSize] = \
-                        struct.unpack("L", spriteData[graphSizeAddr:graphSizeAddr+OFFSET_SIZE])
+                        struct.unpack("L", spriteData[frame.graphSizeAddr:frame.graphSizeAddr+OFFSET_SIZE])
                 except struct.error:
                     logger.warning(u"不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
                     break
                 graphicData = \
-                    spriteData[graphSizeAddr+OFFSET_SIZE:graphSizeAddr+OFFSET_SIZE+graphicSize]
+                    spriteData[frame.graphSizeAddr+OFFSET_SIZE:frame.graphSizeAddr+OFFSET_SIZE+graphicSize]
 
                 frameDataList.append({\
                     "animNum":animPtr["animNum"], "frameNum":frameCount, \
-                    "address":readAddr, "frameData":frameData, \
-                    "graphSizeAddr":graphSizeAddr, "graphicData":graphicData, \
-                    "palSizeAddr":palSizeAddr, "junkDataAddr":junkDataAddr, \
-                    "oamPtrAddr":oamPtrAddr, "frameDelay":frameDelay, \
-                    "frameType":frameType})
+                    "address":readAddr, "graphicData":graphicData, "frame":frame})
 
                 readAddr += FRAME_DATA_SIZE
                 frameCount += 1
 
-                if frameType in [0x80, 0xC0]: # 終端フレームならループを終了
+                if frame.frameType in [0x80, 0xC0]: # 終端フレームならループを終了
                     break
         self.frameDataList = frameDataList
 
@@ -170,8 +184,8 @@ class EXESprite:
             logger.debug("Frame at " + hex(frameData["address"]))
             logger.debug("  Animation Number:\t" + str(frameData["animNum"]))
             logger.debug("  Frame Number:\t\t" + str(frameData["frameNum"]))
-            logger.debug("  Address of OAM Pointer:\t" + hex(frameData["oamPtrAddr"]))
-            oamPtrAddr = frameData["oamPtrAddr"]
+            logger.debug("  Address of OAM Pointer:\t" + hex(frameData["frame"].oamPtrAddr))
+            oamPtrAddr = frameData["frame"].oamPtrAddr
             [oamPtr] = struct.unpack("L", spriteData[oamPtrAddr:oamPtrAddr+OFFSET_SIZE])
             readAddr = oamPtrAddr + oamPtr
 

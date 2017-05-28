@@ -326,10 +326,10 @@ class SpriteReader(QtWidgets.QMainWindow):
         currentAnimFrame = [frame for frame in self.frameDataList if frame["animNum"] == index]
         self.ui.frameLabel.setText(u"フレーム：" + str(len(currentAnimFrame)))
         for i, frame in enumerate(currentAnimFrame):
-            frameStr = str(i).zfill(2) + ":   " + hex(frame["address"])[2:].zfill(6).upper() + "\t" + str(frame["frameDelay"]) + "F\t"   # GUIに表示する文字列
-            if frame["frameType"] == 128:
+            frameStr = str(i).zfill(2) + ":   " + hex(frame["address"])[2:].zfill(6).upper() + "\t" + str(frame["frame"].frameDelay) + "F\t"   # GUIに表示する文字列
+            if frame["frame"].frameType == 128:
                 frameStr += "Stop"
-            elif frame["frameType"] == 192:
+            elif frame["frame"].frameType == 192:
                 frameStr += "Loop"
             frameItem = QtWidgets.QListWidgetItem(frameStr)    # GUIのフレームリストに追加するアイテムの生成
             self.ui.frameList.addItem(frameItem) # フレームリストへ追加
@@ -351,7 +351,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         animIndex = self.ui.animList.currentRow()
 
         [currentFrame] = [frame for frame in self.frameDataList if frame["animNum"] == animIndex and frame["frameNum"] == index]
-        logger.debug("Palette Size Address:\t" + hex(currentFrame["palSizeAddr"]))
+        logger.debug("Palette Size Address:\t" + hex(currentFrame["frame"].palSizeAddr))
 
         currentFrameOam = [oam for oam in self.oamDataList if oam["animNum"] == animIndex and oam["frameNum"] == index]
         self.ui.oamLabel.setText(u"OAM：" + str(len(currentFrameOam)))
@@ -370,7 +370,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 self.ui.palSelect.setValue(palIndex)
             else:
                 palIndex = self.ui.palSelect.value()
-            self.parsePaletteData(self.spriteData, currentFrame["palSizeAddr"], palIndex)
+            self.parsePaletteData(self.spriteData, currentFrame["frame"].palSizeAddr, palIndex)
 
 
             image = self.makeOAMImage(graphicData, oam["oam"])
