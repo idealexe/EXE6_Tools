@@ -45,6 +45,14 @@ OAM_DIMENSION = {
     "1110":[32, 64]
 }
 
+class EXEAnimation:
+    """ Animation
+    """
+
+    frameList = []
+
+    def __init__(self, animAddr):
+
 class EXEFrame:
     """ Frame
     """
@@ -55,6 +63,7 @@ class EXEFrame:
     oamPtrAddr = 0
     frameDelay = 0
     frameType = 0
+    oamList = []
 
     def __init__(self, binFrameData):
         self.binFrameData = binFrameData

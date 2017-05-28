@@ -372,7 +372,6 @@ class SpriteReader(QtWidgets.QMainWindow):
                 palIndex = self.ui.palSelect.value()
             self.parsePaletteData(self.spriteData, currentFrame["frame"].palSizeAddr, palIndex)
 
-
             image = self.makeOAMImage(graphicData, oam["oam"])
             self.drawOAM(image, oam["oam"])
 
@@ -434,15 +433,6 @@ class SpriteReader(QtWidgets.QMainWindow):
         items = self.graphicsScene.items()
         for item in items:
             logger.info(item)
-
-        """
-        oam = self.oamList[index]
-        image = oam["image"]
-        item = QtWidgets.QGraphicsPixmapItem(image)
-        item.setOffset(oam["posX"], oam["posY"])
-        imageBounds = item.boundingRect()
-        self.graphicsScene.addRect(imageBounds)
-        """
 
 
     def guiPalItemActivated(self, item):
