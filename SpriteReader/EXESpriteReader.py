@@ -47,7 +47,7 @@ args = parser.parse_args()
 
     スプライトデータのフォーマットで決められている定数
 """
-PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.2  by ideal.exe"
+PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.3  by ideal.exe"
 HEADER_SIZE = 4 # スプライトヘッダのサイズ
 OFFSET_SIZE = 4
 COLOR_SIZE = 2 # 1色あたりのサイズ
@@ -366,15 +366,15 @@ class SpriteReader(QtWidgets.QMainWindow):
 
             # OAM指定色か，GUIで指定した色で表示
             if self.ui.useDefaultPalBox.isChecked() is True:
-                palIndex = oam["palIndex"]
+                palIndex = oam["oam"].palIndex
                 self.ui.palSelect.setValue(palIndex)
             else:
                 palIndex = self.ui.palSelect.value()
             self.parsePaletteData(self.spriteData, currentFrame["palSizeAddr"], palIndex)
 
 
-            image = self.makeOAMImage(graphicData, oam["startTile"], oam["sizeX"], oam["sizeY"], oam["flipV"], oam["flipH"])
-            self.drawOAM(image, oam["sizeX"], oam["sizeY"], oam["posX"], oam["posY"])
+            image = self.makeOAMImage(graphicData, oam["oam"])
+            self.drawOAM(image, oam["oam"])
 
 
     def parsePaletteData(self, spriteData, palSizePtr, palIndex):
@@ -479,7 +479,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         logger.info(u"現在アニメーションの再生には対応していません")
 
 
-    def makeOAMImage(self, imgData, startTile, width, height, flipV, flipH):
+    def makeOAMImage(self, imgData, oam):
         u''' OAM情報から画像を生成する
 
             入力：スプライトのグラフィックデータ，開始タイル，横サイズ，縦サイズ，垂直反転フラグ，水平反転フラグ
@@ -492,12 +492,12 @@ class SpriteReader(QtWidgets.QMainWindow):
         TILE_HEIGHT = 8
         TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT // 2  # python3で整数値の除算結果を得るには//を使う
 
-        logger.debug("Image Width:\t" + str(width))
-        logger.debug("Image Height:\t" + str(height))
-        logger.debug("Flip V:\t" + str(flipV))
-        logger.debug("Flip H:\t" + str(flipH))
+        logger.debug("Image Width:\t" + str(oam.sizeX))
+        logger.debug("Image Height:\t" + str(oam.sizeY))
+        logger.debug("Flip V:\t" + str(oam.flipV))
+        logger.debug("Flip H:\t" + str(oam.flipH))
 
-        startAddr = startTile * TILE_DATA_SIZE  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
+        startAddr = oam.startTile * TILE_DATA_SIZE  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
         imgData = imgData[startAddr:]   # 使う部分を切り出し
         imgData = (imgData.hex()).upper()   # バイナリ値をそのまま文字列にしたデータに変換（0xFF -> "FF"）
         imgData = list(imgData) # 1文字ずつのリストに変換
@@ -505,8 +505,8 @@ class SpriteReader(QtWidgets.QMainWindow):
         for i in range(0, len(imgData))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
             imgData[i], imgData[i+1] = imgData[i+1], imgData[i] # これで値を入れ替えられる
 
-        width = width // TILE_WIDTH # サイズからタイルの枚数に変換
-        height = height // TILE_HEIGHT
+        width = oam.sizeX // TILE_WIDTH # サイズからタイルの枚数に変換
+        height = oam.sizeY // TILE_HEIGHT
 
         totalSize = len(imgData)    # 全ドット数
         imgArray = []
@@ -547,21 +547,21 @@ class SpriteReader(QtWidgets.QMainWindow):
         img = h[0][:, 8:, :]    # ダミー部分を切り取る（ださい）
 
         dataImg = Image.fromarray(np.uint8(img))  # 色情報の行列から画像を生成（PILのImage形式）
-        if flipH == 1:
+        if oam.flipH == 1:
             dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
-        if flipV == 1:
+        if oam.flipV == 1:
             dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
         qImg = ImageQt(dataImg) # QImage形式に変換
         pixmap = QtGui.QPixmap.fromImage(qImg)  # QPixmap形式に変換
         return pixmap
 
 
-    def drawOAM(self, image, sizeX, sizeY, posX, posY):
+    def drawOAM(self, image, oam):
         u''' OAMを描画する
         '''
 
         item = QtWidgets.QGraphicsPixmapItem(image)
-        item.setOffset(posX, posY)
+        item.setOffset(oam.posX, oam.posY)
         #imageBounds = item.boundingRect()
         self.graphicsScene.addItem(item)
         #self.graphicsScene.addRect(imageBounds)

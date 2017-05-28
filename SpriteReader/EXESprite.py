@@ -45,9 +45,47 @@ OAM_DIMENSION = {
     "1110":[32, 64]
 }
 
+class EXEOAM:
+    """ OAM
+    """
+
+    binOamData = b""
+    startTile = 0
+    posX = 0
+    posY = 0
+    sizeX = 0
+    sizeY = 0
+    flipV = 0
+    flipH = 0
+    palIndex = 0
+
+
+    def __init__(self, binOamData):
+        self.binOamData = binOamData
+
+        [self.startTile, self.posX, self.posY, flag1, flag2] = struct.unpack("BbbBB", binOamData)
+
+        flag1 = bin(flag1)[2:].zfill(8)
+        flag2 = bin(flag2)[2:].zfill(8)
+
+        self.flipV = int(flag1[0], 2) # 垂直反転フラグ
+        self.flipH = int(flag1[1], 2) # 水平反転フラグ
+
+        self.palIndex = int(flag2[0:4], 2)
+
+        objSize = flag1[-2:]
+        objShape = flag2[-2:]
+        [self.sizeX, self.sizeY] = OAM_DIMENSION[objSize+objShape]
+
+
 class EXESprite:
     """ ロックマンエグゼシリーズのスプライトデータを扱うクラス
     """
+
+    binAnimPtrTable = b""
+    animPtrList = []
+    binSpriteData = b""
+
     def __init__(self, data, spriteAddr, compFlag):
         """ スプライトデータを読み込んでオブジェクトを初期化する
 
@@ -141,35 +179,12 @@ class EXESprite:
                 oamData = spriteData[readAddr:readAddr+OAM_DATA_SIZE]
                 if oamData in OAM_DATA_END:
                     break
-                logger.debug("OAM at " + hex(readAddr))
-                logger.debug("OAM Data:\t" + str(oamData))
 
-                [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
-                logger.debug("  Start Tile:\t" + str(startTile))
-                logger.debug("  Offset X:\t" + str(posX))
-                logger.debug("  Offset Y:\t" + str(posY))
-
-                flag1 = bin(flag1)[2:].zfill(8)
-                flag2 = bin(flag2)[2:].zfill(8)
-                logger.debug("  Flag1 (VHNNNNSS)\t" + flag1)
-                logger.debug("  Flag2 (PPPPNNSS)\t" + flag2)
-
-                flipV = int(flag1[0], 2) # 垂直反転フラグ
-                flipH = int(flag1[1], 2) # 水平反転フラグ
-
-                palIndex = int(flag2[0:4], 2)
-
-                objSize = flag1[-2:]
-                objShape = flag2[-2:]
-                [sizeX, sizeY] = OAM_DIMENSION[objSize+objShape]
-                logger.debug("  Size X:\t" + str(sizeX))
-                logger.debug("  Size Y:\t" + str(sizeY))
+                oam = EXEOAM(oamData)
 
                 oamDataList.append({\
                     "animNum":frameData["animNum"], "frameNum":frameData["frameNum"], \
-                    "address":readAddr, "oamData":oamData, "startTile":startTile, \
-                    "posX":posX, "posY":posY, "sizeX":sizeX, "sizeY":sizeY, \
-                    "flipV":flipV, "flipH":flipH, "palIndex":palIndex})
+                    "address":readAddr, "oam":oam})
                 readAddr += OAM_DATA_SIZE
         self.oamDataList = oamDataList
 
