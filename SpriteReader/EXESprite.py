@@ -51,7 +51,50 @@ class EXEAnimation:
 
     frameList = []
 
-    def __init__(self, animAddr):
+    def __init__(self, spriteData, animAddr):
+        u""" アニメーションのアドレスから各フレームのデータを取得
+        """
+
+        graphAddrList = []    # グラフィックデータは共有しているフレームも多いので別のリストで保持
+        frameCount = 0
+        frameList = []
+        readAddr = animAddr
+
+        while True: # do while文がないので代わりに無限ループ＋breakを使う
+            binFrameData = spriteData[readAddr:readAddr+FRAME_DATA_SIZE]
+            frame = EXEFrame(spriteData, binFrameData)
+
+            logger.debug("Frame Type:\t" + hex(frame.frameType))
+            if frame.graphSizeAddr in [0x0000, 0x2000]:  # 流星のロックマンのスプライトを表示するための応急処置
+                logger.warning("不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
+                break
+
+            if frame.graphSizeAddr not in graphAddrList:
+                graphAddrList.append(frame.graphSizeAddr)
+            logger.debug("Graphics Size Address:\t" + hex(frame.graphSizeAddr))
+
+            try:
+                [graphicSize] = \
+                    struct.unpack("L", spriteData[frame.graphSizeAddr:frame.graphSizeAddr+OFFSET_SIZE])
+            except struct.error:
+                logger.warning("不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
+                break
+            graphicData = \
+                spriteData[frame.graphSizeAddr+OFFSET_SIZE:frame.graphSizeAddr+OFFSET_SIZE+graphicSize]
+
+            frameList.append({"frameNum":frameCount, "address":readAddr, "graphicData":graphicData, "frame":frame})
+
+            readAddr += FRAME_DATA_SIZE
+            frameCount += 1
+
+            if frame.frameType in [0x80, 0xC0]: # 終端フレームならループを終了
+                break
+        self.frameList = frameList
+
+
+    def getFrameNum(self):
+        return len(self.frameList)
+
 
 class EXEFrame:
     """ Frame
@@ -65,11 +108,24 @@ class EXEFrame:
     frameType = 0
     oamList = []
 
-    def __init__(self, binFrameData):
+    def __init__(self, binSpriteData, binFrameData):
         self.binFrameData = binFrameData
 
         [self.graphSizeAddr, self.palSizeAddr, junkDataAddr, \
             self.oamPtrAddr, self.frameDelay, self.frameType] = struct.unpack("<LLLLHH", binFrameData)
+
+        [oamPtr] = struct.unpack("L", binSpriteData[self.oamPtrAddr:self.oamPtrAddr+OFFSET_SIZE])
+        readAddr = self.oamPtrAddr + oamPtr
+
+        oamList = []
+        while True:
+            binOamData = binSpriteData[readAddr:readAddr+OAM_DATA_SIZE]
+            if binOamData in OAM_DATA_END:
+                break
+            oam = EXEOAM(binOamData)
+            oamList.append({"address":readAddr, "oam":oam})
+            readAddr += OAM_DATA_SIZE
+        self.oamList = oamList
 
 
 class EXEOAM:
@@ -85,7 +141,6 @@ class EXEOAM:
     flipV = 0
     flipH = 0
     palIndex = 0
-
 
     def __init__(self, binOamData):
         self.binOamData = binOamData
@@ -103,15 +158,29 @@ class EXEOAM:
         objSize = flag1[-2:]
         objShape = flag2[-2:]
         [self.sizeX, self.sizeY] = OAM_DIMENSION[objSize+objShape]
+        #self.printData()
+
+    def printData(self):
+        logger.info("Start Tile:\t" + str(self.startTile))
+        logger.info("Pos X:\t" + str(self.posX))
+        logger.info("Pos Y:\t" + str(self.posY))
+        logger.info("Size X:\t" + str(self.sizeX))
+        logger.info("Size Y:\t" + str(self.sizeY))
+        logger.info("Flip V:\t" + str(self.flipV))
+        logger.info("Flip H:\t" + str(self.flipH))
+        logger.info("Palette Index:\t" + str(self.palIndex))
+        logger.info("===\n")
 
 
 class EXESprite:
     """ ロックマンエグゼシリーズのスプライトデータを扱うクラス
     """
 
+    binSpriteData = b""
     binAnimPtrTable = b""
     animPtrList = []
-    binSpriteData = b""
+    animList = []
+    binGraphicsData = b""
 
     def __init__(self, data, spriteAddr, compFlag):
         """ スプライトデータを読み込んでオブジェクトを初期化する
@@ -138,83 +207,25 @@ class EXESprite:
         while readAddr < animDataStart:
             animPtr = int.from_bytes(spriteData[readAddr:readAddr+OFFSET_SIZE], "little")
             logger.debug("Animation Pointer:\t" + hex(animPtr))
-            #animPtr = struct.unpack("<L", animPtr)[0]
             animPtrList.append({"animNum":animCount, "addr":readAddr, "value":animPtr})
             readAddr += OFFSET_SIZE
             animCount += 1
         self.animPtrList = animPtrList
 
-        u""" アニメーションのアドレスから各フレームのデータを取得
+        """ アニメーション取得
         """
-        frameDataList = []
-        graphAddrList = []    # グラフィックデータは共有しているフレームも多いので別のリストで保持
+        animList = []
         for i, animPtr in enumerate(animPtrList):
-            readAddr = animPtr["value"]
-            logger.debug("Animation " + str(i) + " at " + hex(readAddr))
+            animAddr = animPtr["value"]
+            anim = EXEAnimation(spriteData, animAddr)
+            animList.append(anim)
+        self.animList = animList
 
-            frameCount = 0
-            while True: # do while文がないので代わりに無限ループ＋breakを使う
-                frameData = spriteData[readAddr:readAddr+FRAME_DATA_SIZE]
-                frame = EXEFrame(frameData)
-
-                logger.debug("Frame Type:\t" + hex(frame.frameType))
-                if frame.graphSizeAddr in [0x0000, 0x2000]:  # 流星のロックマンのスプライトを表示するための応急処置
-                    logger.warning(u"不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
-                    break
-
-                if frame.graphSizeAddr not in graphAddrList:
-                    graphAddrList.append(frame.graphSizeAddr)
-                logger.debug("Graphics Size Address:\t" + hex(frame.graphSizeAddr))
-
-                try:
-                    [graphicSize] = \
-                        struct.unpack("L", spriteData[frame.graphSizeAddr:frame.graphSizeAddr+OFFSET_SIZE])
-                except struct.error:
-                    logger.warning(u"不正なアドレスをロードしました．終端フレームが指定されていない可能性があります")
-                    break
-                graphicData = \
-                    spriteData[frame.graphSizeAddr+OFFSET_SIZE:frame.graphSizeAddr+OFFSET_SIZE+graphicSize]
-
-                frameDataList.append({\
-                    "animNum":animPtr["animNum"], "frameNum":frameCount, \
-                    "address":readAddr, "graphicData":graphicData, "frame":frame})
-
-                readAddr += FRAME_DATA_SIZE
-                frameCount += 1
-
-                if frame.frameType in [0x80, 0xC0]: # 終端フレームならループを終了
-                    break
-        self.frameDataList = frameDataList
-
-        u""" フレームデータからOAMデータを取得
-        """
-        oamDataList = []
-        for frameData in frameDataList:
-            logger.debug("Frame at " + hex(frameData["address"]))
-            logger.debug("  Animation Number:\t" + str(frameData["animNum"]))
-            logger.debug("  Frame Number:\t\t" + str(frameData["frameNum"]))
-            logger.debug("  Address of OAM Pointer:\t" + hex(frameData["frame"].oamPtrAddr))
-            oamPtrAddr = frameData["frame"].oamPtrAddr
-            [oamPtr] = struct.unpack("L", spriteData[oamPtrAddr:oamPtrAddr+OFFSET_SIZE])
-            readAddr = oamPtrAddr + oamPtr
-
-            while True:
-                oamData = spriteData[readAddr:readAddr+OAM_DATA_SIZE]
-                if oamData in OAM_DATA_END:
-                    break
-
-                oam = EXEOAM(oamData)
-
-                oamDataList.append({\
-                    "animNum":frameData["animNum"], "frameNum":frameData["frameNum"], \
-                    "address":readAddr, "oam":oam})
-                readAddr += OAM_DATA_SIZE
-        self.oamDataList = oamDataList
 
         u""" 無圧縮スプライトの場合は余分なデータを切り離す
         """
         if compFlag == 0:
-            endAddr = oamDataList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END[0])
+            endAddr = animList[-1].frameList[-1]["frame"].oamList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END[0])
             spriteData = spriteData[:endAddr]
 
         self.binSpriteData = spriteData

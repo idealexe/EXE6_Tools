@@ -47,7 +47,7 @@ args = parser.parse_args()
 
     スプライトデータのフォーマットで決められている定数
 """
-PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.3  by ideal.exe"
+PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.4  by ideal.exe"
 HEADER_SIZE = 4 # スプライトヘッダのサイズ
 OFFSET_SIZE = 4
 COLOR_SIZE = 2 # 1色あたりのサイズ
@@ -84,14 +84,16 @@ LIST_FILE_PATH = \
 class SpriteReader(QtWidgets.QMainWindow):
     """ Sprite Reader
     """
+
+    romData = b""
+    currentSprite = ""
+
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = designer.Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle(PROGRAM_NAME)
         self.ui.graphicsView.scale(2, 2) # なぜかQt Designer上で設定できない
-
-        self.romData = ""   # ファイルを読み込んだ時点でその内容がコピーされる．このデータを読み書きする．
 
 
     def openFile(self, filename=""):
@@ -296,14 +298,10 @@ class SpriteReader(QtWidgets.QMainWindow):
         spriteAddr = self.spriteList[index]["spriteAddr"]
         compFlag = self.spriteList[index]["compFlag"]
 
-        self.sprite = EXESprite.EXESprite(self.romData, spriteAddr, compFlag)
-        self.spriteData = self.sprite.binSpriteData
-        self.animPtrList = self.sprite.animPtrList
-        self.frameDataList = self.sprite.frameDataList
-        self.oamDataList = self.sprite.oamDataList
+        self.currentSprite = EXESprite.EXESprite(self.romData, spriteAddr, compFlag)
 
-        self.ui.animLabel.setText(u"アニメーション：" + str(len(self.animPtrList)))
-        for i, animPtr in enumerate(self.animPtrList):
+        self.ui.animLabel.setText("アニメーション：" + str(len(self.currentSprite.animList)))
+        for i, animPtr in enumerate(self.currentSprite.animPtrList):
             animPtrStr = str(i).zfill(2) + ":   " + hex(animPtr["value"])[2:].zfill(6).upper() # GUIに表示する文字列
             animItem = QtWidgets.QListWidgetItem(animPtrStr)    # GUIのアニメーションリストに追加するアイテムの生成
             self.ui.animList.addItem(animItem) # アニメーションリストへ追加
@@ -313,20 +311,21 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def guiAnimItemActivated(self, index):
-        u''' GUIでアニメーションが選択されたときに行う処理
+        """ GUIでアニメーションが選択されたときに行う処理
 
             フレームリストから選択されたアニメーションのフレームを取り出してリスト化
-        '''
+        """
 
         if index == -1: # GUIの選択位置によっては-1が渡されることがある？
             return
 
         self.ui.frameList.clear()
 
-        currentAnimFrame = [frame for frame in self.frameDataList if frame["animNum"] == index]
-        self.ui.frameLabel.setText(u"フレーム：" + str(len(currentAnimFrame)))
-        for i, frame in enumerate(currentAnimFrame):
-            frameStr = str(i).zfill(2) + ":   " + hex(frame["address"])[2:].zfill(6).upper() + "\t" + str(frame["frame"].frameDelay) + "F\t"   # GUIに表示する文字列
+        currentAnim = self.currentSprite.animList[index]
+        self.ui.frameLabel.setText("フレーム：" + str(currentAnim.getFrameNum()))
+        for i, frame in enumerate(currentAnim.frameList):
+            frameStr = str(i).zfill(2) + ":   " + hex(frame["address"])[2:].zfill(6).upper() +\
+                "\t" + str(frame["frame"].frameDelay) + "F\t"   # GUIに表示する文字列
             if frame["frame"].frameType == 128:
                 frameStr += "Stop"
             elif frame["frame"].frameType == 192:
@@ -338,10 +337,10 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def guiFrameItemActivated(self, index):
-        u''' GUIでフレームが選択されたときに行う処理
+        """ GUIでフレームが選択されたときに行う処理
 
             現在のフレームのOAMを取得してリスト化，パレットの取得
-        '''
+        """
 
         if index == -1:
             return
@@ -350,10 +349,10 @@ class SpriteReader(QtWidgets.QMainWindow):
         self.ui.oamList.clear()
         animIndex = self.ui.animList.currentRow()
 
-        [currentFrame] = [frame for frame in self.frameDataList if frame["animNum"] == animIndex and frame["frameNum"] == index]
+        currentFrame = self.currentSprite.animList[animIndex].frameList[index]
         logger.debug("Palette Size Address:\t" + hex(currentFrame["frame"].palSizeAddr))
 
-        currentFrameOam = [oam for oam in self.oamDataList if oam["animNum"] == animIndex and oam["frameNum"] == index]
+        currentFrameOam = currentFrame["frame"].oamList
         self.ui.oamLabel.setText(u"OAM：" + str(len(currentFrameOam)))
 
         for oam in currentFrameOam:
@@ -370,7 +369,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 self.ui.palSelect.setValue(palIndex)
             else:
                 palIndex = self.ui.palSelect.value()
-            self.parsePaletteData(self.spriteData, currentFrame["frame"].palSizeAddr, palIndex)
+            self.parsePaletteData(self.currentSprite.binSpriteData, currentFrame["frame"].palSizeAddr, palIndex)
 
             image = self.makeOAMImage(graphicData, oam["oam"])
             self.drawOAM(image, oam["oam"])
@@ -421,7 +420,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         """ パレット変更処理
         """
         index = self.ui.frameList.currentRow()
-        self.guiFrameItemActivated(index)
+        #self.guiFrameItemActivated(index)
 
 
     def guiOAMItemActivated(self, item):
