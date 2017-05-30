@@ -50,6 +50,7 @@ class EXEAnimation:
     """
 
     frameList = []
+    binAnimData = b""
 
     def __init__(self, spriteData, animAddr):
         u""" アニメーションのアドレスから各フレームのデータを取得
@@ -62,6 +63,7 @@ class EXEAnimation:
 
         while True: # do while文がないので代わりに無限ループ＋breakを使う
             binFrameData = spriteData[readAddr:readAddr+FRAME_DATA_SIZE]
+            self.binAnimData += binFrameData
             frame = EXEFrame(spriteData, binFrameData)
 
             logger.debug("Frame Type:\t" + hex(frame.frameType))
@@ -93,6 +95,8 @@ class EXEAnimation:
 
 
     def getFrameNum(self):
+        """ フレーム枚数を返す
+        """
         return len(self.frameList)
 
 
@@ -111,7 +115,7 @@ class EXEFrame:
     def __init__(self, binSpriteData, binFrameData):
         self.binFrameData = binFrameData
 
-        [self.graphSizeAddr, self.palSizeAddr, junkDataAddr, \
+        [self.graphSizeAddr, self.palSizeAddr, self.junkDataAddr, \
             self.oamPtrAddr, self.frameDelay, self.frameType] = struct.unpack("<LLLLHH", binFrameData)
 
         [oamPtr] = struct.unpack("L", binSpriteData[self.oamPtrAddr:self.oamPtrAddr+OFFSET_SIZE])
@@ -158,9 +162,11 @@ class EXEOAM:
         objSize = flag1[-2:]
         objShape = flag2[-2:]
         [self.sizeX, self.sizeY] = OAM_DIMENSION[objSize+objShape]
-        #self.printData()
+        
 
     def printData(self):
+        """ OAM情報表示
+        """
         logger.info("Start Tile:\t" + str(self.startTile))
         logger.info("Pos X:\t" + str(self.posX))
         logger.info("Pos Y:\t" + str(self.posY))
@@ -215,7 +221,7 @@ class EXESprite:
         """ アニメーション取得
         """
         animList = []
-        for i, animPtr in enumerate(animPtrList):
+        for animPtr in animPtrList:
             animAddr = animPtr["value"]
             anim = EXEAnimation(spriteData, animAddr)
             animList.append(anim)
@@ -271,16 +277,17 @@ class EXESprite:
         """ フレームデータ内のすべてのポインタに指定した数値を足したものを返す
         """
         offsetFrameData = b""
-        for frameData in self.frameDataList:
-            graphSizeAddr = frameData["graphSizeAddr"] + offset
-            palSizeAddr = frameData["palSizeAddr"] + offset
-            junkDataAddr = frameData["junkDataAddr"] + offset
-            oamPtrAddr = frameData["oamPtrAddr"] + offset
-            frameDelay = frameData["frameDelay"]
-            frameType = frameData["frameType"]
-            data = struct.pack("<LLLLHH", \
-                graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
-            offsetFrameData += data
+        for anim in self.animList:
+            for frame in anim.frameList:
+                graphSizeAddr = frame.graphSizeAddr + offset
+                palSizeAddr = frame.palSizeAddr + offset
+                junkDataAddr = frame.junkDataAddr + offset
+                oamPtrAddr = frame.oamPtrAddr + offset
+                frameDelay = frame.frameDelay
+                frameType = frame.frameType
+                data = struct.pack("<LLLLHH", \
+                    graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
+                offsetFrameData += data
         return offsetFrameData
 
 
@@ -289,5 +296,5 @@ class EXESprite:
 
             （つまりスプライトのうちポインタを含まないデータすべて）
         """
-        baseData = self.binSpriteData[self.frameDataList[0]["graphSizeAddr"]:]  # グラフィックデータ先頭からスプライトの終端までコピー
+        baseData = self.binSpriteData[self.animList[0].frameList[0].graphSizeAddr:]  # グラフィックデータ先頭からスプライトの終端までコピー
         return baseData
