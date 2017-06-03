@@ -27,7 +27,7 @@ import pandas as pd
 _ = gettext.gettext # 後の翻訳用
 
 import SpriteDict
-sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../common/"))
 import CommonAction
 import LZ77Util
 import EXESprite
@@ -75,6 +75,8 @@ OAM_DIMENSION = {
 
     そのうちGUI上で設定できるようにするかもしれない定数
 """
+DUMP_WITH_HEADER = True
+LOAD_WITH_HEADER = True
 EXPAND_ANIMATION_NUM = 64   # 拡張ダンプのアニメーション数
 EXPAND_FRAME_NUM = 16   # 拡張ダンプのフレーム数
 LIST_FILE_PATH = \
@@ -386,7 +388,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         palSize = spriteData[palSizePtr:palSizePtr+OFFSET_SIZE]
         palSize = struct.unpack("<L", palSize)[0]
         logger.debug("Palette Size:\t" + hex(palSize))
-        if palSize != 0x20:  # サイズがおかしい場合は無視→と思ったら自作スプライトとかで0x00にしてることもあったので無視
+        if palSize != 0x20:  # サイズがおかしい場合はエラー → と思ったら自作スプライトとかで0x00にしてることもあったので無視
             palSize = 0x20
 
         readPos = palSizePtr + OFFSET_SIZE + palIndex * palSize # パレットサイズ情報の後にパレットデータが続く（インデックス番号によって開始位置をずらす）
@@ -560,14 +562,14 @@ class SpriteReader(QtWidgets.QMainWindow):
         u""" スプライトのダンプ
         """
 
-        targetSprite = self.getCurrentSprite()
-
-        if targetSprite["compFlag"] == 0:
-            data = self.romData[targetSprite["spriteAddr"]:targetSprite["spriteAddr"]+HEADER_SIZE] + self.spriteData
+        targetSprite = self.currentSprite
+        if DUMP_WITH_HEADER:
+            data = targetSprite.binSpriteHeader + targetSprite.binSpriteData
         else:
-            data = LZ77Util.decompLZ77_10(self.romData, targetSprite["spriteAddr"])[4:] # ファイルサイズ情報を取り除く
+            data = targetSprite.binSpriteData
 
-        filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"スプライトを保存する"), os.path.expanduser('./'), _("dump File (*.bin *.dmp)"))[0]
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"スプライトを保存する"), \
+            os.path.expanduser('./'), _("dump File (*.bin *.dmp)"))[0]
         try:
             with open(filename, 'wb') as saveFile:
                 saveFile.write(data)
@@ -601,9 +603,10 @@ class SpriteReader(QtWidgets.QMainWindow):
         """
         output += b"\xFF" * ANIMATION_SIZE * EXPAND_ANIMATION_NUM # アニメーションデータ領域の確保
         writeAddr = ANIMATION_TABLE_SIZE + ANIMATION_SIZE * EXPAND_ANIMATION_NUM
-        copyOffset = writeAddr - self.frameDataList[0]["graphSizeAddr"] # グラフィックデータの元の開始位置との差分（フレームデータの修正に使用する）
+        graphSizeAddr = self.currentSprite.animList[0].frameList[0]["frame"].graphSizeAddr
+        copyOffset = writeAddr - graphSizeAddr  # グラフィックデータの元の開始位置との差分（フレームデータの修正に使用する）
         # 先頭のフレームが先頭のグラフィックデータを使ってないパターンがあったら死ぬ
-        output += self.spriteData[self.frameDataList[0]["graphSizeAddr"]:]  # グラフィックデータ先頭からスプライトの終端までコピー
+        output += self.currentSprite.binSpriteData[graphSizeAddr:]   # グラフィックデータ先頭からスプライトの終端までコピー
 
         u""" アニメーション，フレームデータのコピー
         """
@@ -693,7 +696,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             logger.info(u"一つ目のアニメーションポインタはポインタテーブルのサイズに影響するので変更できません")
             return -1
 
-        targetSprite = self.getCurrentSprite()
+        targetSprite = self.currentSprite
         if targetSprite["compFlag"] == 1:
             logger.info(u"現在圧縮スプライトのアニメーションリポイントは非対応です")
             return -1
@@ -736,7 +739,7 @@ class SpriteReader(QtWidgets.QMainWindow):
     def writePalData(self):
         u""" UI上で編集したパレットのデータをROMに書き込む
         """
-        targetSprite = self.getCurrentSprite()
+        targetSprite = self.currentSprite
         if targetSprite["compFlag"] == 1:
             logger.info(u"圧縮スプライトは現在非対応です")
             return 0
@@ -753,7 +756,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             全てのOAMの水平反転フラグを切り替え，描画オフセットXを-X-sizeXにする
         """
 
-        targetSprite = self.getCurrentSprite()
+        targetSprite = self.currentSprite
         if targetSprite["compFlag"] == 1:
             logger.info(u"圧縮スプライトは非対応です")
             return -1
@@ -786,15 +789,6 @@ class SpriteReader(QtWidgets.QMainWindow):
         logger.info(u"水平反転したスプライトを書き込みました")
         index = self.ui.spriteList.currentRow()
         self.guiSpriteItemActivated(index)
-
-
-    def getCurrentSprite(self):
-        u""" 選択中のスプライトを取得する
-        """
-        index = self.ui.spriteList.currentRow()
-        if index == -1:
-            return -1
-        return self.spriteList[index]
 
 
     def writeDataToRom(self, writeAddr, data):

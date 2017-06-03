@@ -18,7 +18,8 @@ handler.setLevel(INFO)
 logger.setLevel(INFO)
 logger.addHandler(handler)
 
-sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
+# sys.argv[0]だと実行しているスクリプトのディレクトリしかとれないので__file__に変更
+sys.path.append(os.path.join(os.path.dirname(__file__), "../common/"))
 import LZ77Util
 
 
@@ -162,7 +163,7 @@ class EXEOAM:
         objSize = flag1[-2:]
         objShape = flag2[-2:]
         [self.sizeX, self.sizeY] = OAM_DIMENSION[objSize+objShape]
-        
+
 
     def printData(self):
         """ OAM情報表示
@@ -182,6 +183,7 @@ class EXESprite:
     """ ロックマンエグゼシリーズのスプライトデータを扱うクラス
     """
 
+    binSpriteHeader = b""
     binSpriteData = b""
     binAnimPtrTable = b""
     animPtrList = []
@@ -197,9 +199,12 @@ class EXESprite:
         """
 
         if compFlag == 0:
+            self.binSpriteHeader = data[spriteAddr:spriteAddr+HEADER_SIZE]
             spriteData = data[spriteAddr+HEADER_SIZE:]   # スプライトはサイズ情報を持たないので仮の範囲を切り出し
         elif compFlag == 1:
-            spriteData = LZ77Util.decompLZ77_10(data, spriteAddr)[8:]    # ファイルサイズ情報とヘッダー部分を取り除く
+            data = LZ77Util.decompLZ77_10(data, spriteAddr)[4:]    # ファイルサイズ情報とヘッダー部分を取り除く
+            self.binSpriteHeader = data[0:HEADER_SIZE]
+            spriteData = data[HEADER_SIZE:]
 
         readAddr = 0
         animDataStart = int.from_bytes(spriteData[readAddr:readAddr+OFFSET_SIZE], "little")
