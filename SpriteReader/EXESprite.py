@@ -48,6 +48,8 @@ OAM_DIMENSION = {
 
 class EXEAnimation:
     """ Animation
+
+        複数のフレームデータの集まり
     """
 
     frameList = []
@@ -296,6 +298,11 @@ class EXESprite:
         return offsetFrameData
 
 
+    def getAnimNum(self):
+        """ アニメーション数を返す
+        """
+        return len(self.animList)
+
     def getBaseData(self):
         """ グラフィック、OAM、パレットデータを返す
 
@@ -303,3 +310,8 @@ class EXESprite:
         """
         baseData = self.binSpriteData[self.animList[0].frameList[0].graphSizeAddr:]  # グラフィックデータ先頭からスプライトの終端までコピー
         return baseData
+
+    def getAllFrame(self):
+        """ 全てのフレームデータを返す
+        """
+        return [frame for frame in [anim.frameList for anim in self.animList]]

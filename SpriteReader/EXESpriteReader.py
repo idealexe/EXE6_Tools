@@ -579,7 +579,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def exDumpSprite(self):
-        u""" スプライトを拡張してダンプ
+        """ スプライトを拡張してダンプ
 
             スプライトを指定したアニメーション，フレーム数のスペースを確保したスプライトに変換して保存する
             拡張した部分には停止フレームをコピーする
@@ -591,13 +591,13 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         output = b"" # 出力用のスプライトデータ
 
-        u""" アニメーションオフセットテーブル作成
+        """ アニメーションオフセットテーブル作成
         """
         animDataStart = EXPAND_ANIMATION_NUM * OFFSET_SIZE
         for i in range(EXPAND_ANIMATION_NUM):
             output += struct.pack("L", animDataStart + i * ANIMATION_SIZE)
 
-        u""" グラフィック，OAMなどのコピー
+        """ グラフィック，OAMなどのコピー
 
             フレームデータ内で各アドレスを参照するので先にコピーする
         """
@@ -608,24 +608,43 @@ class SpriteReader(QtWidgets.QMainWindow):
         # 先頭のフレームが先頭のグラフィックデータを使ってないパターンがあったら死ぬ
         output += self.currentSprite.binSpriteData[graphSizeAddr:]   # グラフィックデータ先頭からスプライトの終端までコピー
 
-        u""" アニメーション，フレームデータのコピー
+        """ アニメーション，フレームデータのコピー
         """
-        for frameData in self.frameDataList:
+
+        for i, anim in enumerate(self.currentSprite.animList):
+            for j, frame in enumerate(anim.frameList):
+                frameData = frame["frame"]
+                writeAddr = animDataStart + ANIMATION_SIZE * i + FRAME_DATA_SIZE * j
+                graphSizeAddr = frameData.graphSizeAddr + copyOffset
+                palSizeAddr = frameData.palSizeAddr + copyOffset
+                junkDataAddr = frameData.junkDataAddr + copyOffset
+                oamPtrAddr = frameData.oamPtrAddr + copyOffset
+                frameDelay = frameData.frameDelay
+                frameType = frameData.frameType
+                data = struct.pack("<LLLLHH", graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
+                if frameType == 128:
+                    # ループしないフレームを拡張部分のダミーとして使う
+                    dummy = data
+                output = output[:writeAddr] + data + output[writeAddr+len(data):]
+
+        """
+        for frame in self.currentSprite.getAllFrame():
             writeAddr = animDataStart + ANIMATION_SIZE * frameData["animNum"] + FRAME_DATA_SIZE * frameData["frameNum"]
-            graphSizeAddr = frameData["graphSizeAddr"] + copyOffset
-            palSizeAddr = frameData["palSizeAddr"] + copyOffset
-            junkDataAddr = frameData["junkDataAddr"] + copyOffset
-            oamPtrAddr = frameData["oamPtrAddr"] + copyOffset
-            frameDelay = frameData["frameDelay"]
-            frameType = frameData["frameType"]
+            graphSizeAddr = frame.graphSizeAddr + copyOffset
+            palSizeAddr = frame.palSizeAddr + copyOffset
+            junkDataAddr = frame.junkDataAddr + copyOffset
+            oamPtrAddr = frame.oamPtrAddr + copyOffset
+            frameDelay = frame.frameDelay
+            frameType = frame.frameType
             data = struct.pack("<LLLLHH", graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
             if frameType == 128:
                 # ループしないフレームを拡張部分のダミーとして使う
                 dummy = data
             output = output[:writeAddr] + data + output[writeAddr+len(data):]
+        """
 
-        for i in range(len(self.animPtrList), EXPAND_ANIMATION_NUM):    # 拡張した部分のアニメーション
-            u""" プラグイン時などはアニメーションが再生し終わらないと移動できないのでループアニメーションだと操作不能になってしまう
+        for i in range(self.currentSprite.getAnimNum(), EXPAND_ANIMATION_NUM):    # 拡張した部分のアニメーション
+            """ プラグイン時などはアニメーションが再生し終わらないと移動できないのでループアニメーションだと操作不能になってしまう
             """
             writeAddr = animDataStart + ANIMATION_SIZE * i
             output = output[:writeAddr] + dummy + output[writeAddr+len(dummy):]
