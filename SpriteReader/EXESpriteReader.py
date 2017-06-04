@@ -426,14 +426,17 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def guiOAMItemActivated(self, item):
-        u''' GUIでOAMが選択されたときに行う処理
-        '''
+        """ GUIでOAMが選択されたときに行う処理
+        """
 
         index = self.ui.oamList.currentRow()  # 渡されるのはアイテムなのでインデックス番号は現在の行から取得する
         logger.info("Serected OAM:\t" + str(index))
         items = self.graphicsScene.items()
-        for item in items:
-            logger.info(item)
+        targetItem = items[index]
+        if targetItem.isVisible():
+            targetItem.setVisible(False)
+        else:
+            targetItem.setVisible(True)
 
 
     def guiPalItemActivated(self, item):
