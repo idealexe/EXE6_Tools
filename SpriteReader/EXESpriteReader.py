@@ -440,8 +440,8 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def guiPalItemActivated(self, item):
-        u''' GUIで色が選択されたときに行う処理
-        '''
+        """ GUIで色が選択されたときに行う処理
+        """
 
         index = self.ui.palList.currentRow()
         if index == -1:
@@ -451,7 +451,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         writePos = self.palData[index]["addr"]  # 色データを書き込む位置
         color = QtWidgets.QColorDialog.getColor(QtGui.QColor(r, g, b))    # カラーダイアログを開く
         if color.isValid() is False: # キャンセルしたとき
-            logger.info(u"色の選択をキャンセルしました")
+            logger.info("色の選択をキャンセルしました")
             return 0
 
         r, g, b, a = color.getRgb()    # ダイアログでセットされた色に更新
@@ -461,7 +461,9 @@ class SpriteReader(QtWidgets.QMainWindow):
         binB = bin(b//8)[2:].zfill(5)
         gbaColor = int(binB + binG + binR, 2)  # GBAのカラーコードに変換
         colorStr = struct.pack("H", gbaColor)
-        self.spriteData = self.spriteData[:writePos] + colorStr + self.spriteData[writePos+COLOR_SIZE:]  # ロード中のスプライトデータの色を書き換える
+        spriteData = self.currentSprite.binSpriteData
+        spriteData = spriteData[:writePos] + colorStr + spriteData[writePos+COLOR_SIZE:]  # ロード中のスプライトデータの色を書き換える
+        self.currentSprite.binSpriteData = spriteData
 
         frameIndex = self.ui.frameList.currentRow()
         self.guiFrameItemActivated(frameIndex)
