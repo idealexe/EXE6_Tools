@@ -667,7 +667,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         """
         index = self.ui.spriteList.currentRow()
         targetAddr = self.spriteList[index]["pointerAddr"]
-        logger.info(u"書き換えるアドレス：\t" + hex(targetAddr))
+        logger.info("書き換えるアドレス：\t" + hex(targetAddr))
 
         dialog = QtWidgets.QDialog()
         dialog.ui = repointDialog()
@@ -681,14 +681,14 @@ class SpriteReader(QtWidgets.QMainWindow):
                 addr = int(str(addrText), 16)   # QStringから戻さないとダメ
                 data = struct.pack("L", addr + 0x08000000)
                 self.romData = self.romData[:targetAddr] + data + self.romData[targetAddr+len(data):]
-                logger.info(u"スプライトポインタを書き換えました")
+                logger.info("スプライトポインタを書き換えました")
             except:
-                logger.info(u"不正な値です")
+                logger.info("不正な値です")
             # リロード
             self.extractSpriteAddr(self.romData)
             self.ui.spriteList.setCurrentRow(index)
         else:
-            logger.info(u"リポイントをキャンセルしました")
+            logger.info("リポイントをキャンセルしました")
 
 
     def repointAnimation(self, item):
@@ -754,32 +754,33 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def flipSprite(self):
-        u""" 選択中のスプライトを水平反転する
+        """ 選択中のスプライトを水平反転する
 
             全てのOAMの水平反転フラグを切り替え，描画オフセットXを-X-sizeXにする
         """
 
-        targetSprite = self.currentSprite
+        index = self.ui.spriteList.currentRow()
+        targetSprite = self.spriteList[index]
         if targetSprite["compFlag"] == 1:
-            logger.info(u"圧縮スプライトは非対応です")
+            logger.info("圧縮スプライトは非対応です")
             return -1
 
-        for oam in self.oamDataList:
+        for oam in self.currentSprite.getAllOam():
             writeAddr = oam["address"] + targetSprite["spriteAddr"] + HEADER_SIZE   # ROM内でのアドレス
             logger.debug("OAM at " + hex(writeAddr))
-            oamData = oam["oamData"]
+            oamData = oam["oam"].binOamData
             [startTile, posX, posY, flag1, flag2] = struct.unpack("BbbBB", oamData)
-            logger.debug("  Start Tile:\t" + str(startTile))
-            logger.debug("  Offset X:\t" + str(posX))
-            logger.debug("  Offset Y:\t" + str(posY))
-            logger.debug("  Flag1 (VHNNNNSS)\t" + bin(flag1)[2:].zfill(8))
-            logger.debug("  Flag2 (PPPPNNSS)\t" + bin(flag2)[2:].zfill(8))
+            logger.debug("Start Tile:\t" + str(startTile))
+            logger.debug("Offset X:\t" + str(posX))
+            logger.debug("Offset Y:\t" + str(posY))
+            logger.debug("Flag1 (VHNNNNSS)\t" + bin(flag1)[2:].zfill(8))
+            logger.debug("Flag2 (PPPPNNSS)\t" + bin(flag2)[2:].zfill(8))
 
             objSize = bin(flag1)[2:].zfill(8)[-2:]
             objShape = bin(flag2)[2:].zfill(8)[-2:]
             [sizeX, sizeY] = OAM_DIMENSION[objSize+objShape]
-            logger.debug("  Size X:\t" + str(sizeX))
-            logger.debug("  Size Y:\t" + str(sizeY))
+            logger.debug("Size X:\t" + str(sizeX))
+            logger.debug("Size Y:\t" + str(sizeY))
 
             posX = posX * -1 -sizeX # 水平方向の描画座標を反転
             flag1 ^= 0b01000000 # 水平反転フラグをビット反転
@@ -789,7 +790,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             print(".", end="", flush=True)  # 必ず処理ごとに出力するようflush=Trueにする
         logger.info("done")
 
-        logger.info(u"水平反転したスプライトを書き込みました")
+        logger.info("水平反転したスプライトを書き込みました")
         index = self.ui.spriteList.currentRow()
         self.guiSpriteItemActivated(index)
 

@@ -303,6 +303,7 @@ class EXESprite:
         """
         return len(self.animList)
 
+
     def getBaseData(self):
         """ グラフィック、OAM、パレットデータを返す
 
@@ -311,7 +312,20 @@ class EXESprite:
         baseData = self.binSpriteData[self.animList[0].frameList[0].graphSizeAddr:]  # グラフィックデータ先頭からスプライトの終端までコピー
         return baseData
 
+
     def getAllFrame(self):
-        """ 全てのフレームデータを返す
+        """ 全てのFrameオブジェクトを返す
         """
-        return [frame for frame in [anim.frameList for anim in self.animList]]
+        allFrameList = []
+        for anim in self.animList:
+            allFrameList += [frame["frame"] for frame in anim.frameList]
+        return allFrameList
+
+
+    def getAllOam(self):
+        """ 全てのOAMオブジェクトを返す
+        """
+        allOamList = []
+        for frame in self.getAllFrame():
+            allOamList += [oam for oam in frame.oamList]
+        return allOamList
