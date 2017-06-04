@@ -887,9 +887,11 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         index = self.ui.spriteList.currentRow()
         currentSprite = self.spriteList[index]
-        baseSprite = EXESprite.EXESprite(self.romData, currentSprite["spriteAddr"], currentSprite["compFlag"])
+        baseSprite = self.currentSprite
 
         binAddingSprite = CommonAction.loadData("結合するスプライトを選択") # 追加するスプライトのバイナリを読み込む
+        if binAddingSprite == -1:
+            return -1
         addingSprite = EXESprite.EXESprite(binAddingSprite, 0, 0)   # スプライトオブジェクトを作成
 
         addingTableSize = addingSprite.getAnimPtrTableSize()
@@ -903,7 +905,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         combSprite += addingSprite.getOffsetFrameData(baseSpriteSize)
         combSprite += addingSprite.getBaseData()
 
-        filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"結合したスプライトを保存する"), os.path.expanduser('./'), _("Sprite File (*.bin *.dmp)"))[0]
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, _("結合したスプライトを保存する"), os.path.expanduser('./'), _("Sprite File (*.bin *.dmp)"))[0]
         try:
             with open(filename, 'wb') as saveFile:
                 saveFile.write(combSprite)

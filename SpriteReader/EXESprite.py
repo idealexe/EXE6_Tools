@@ -286,12 +286,13 @@ class EXESprite:
         offsetFrameData = b""
         for anim in self.animList:
             for frame in anim.frameList:
-                graphSizeAddr = frame.graphSizeAddr + offset
-                palSizeAddr = frame.palSizeAddr + offset
-                junkDataAddr = frame.junkDataAddr + offset
-                oamPtrAddr = frame.oamPtrAddr + offset
-                frameDelay = frame.frameDelay
-                frameType = frame.frameType
+                frameData = frame["frame"]
+                graphSizeAddr = frameData.graphSizeAddr + offset
+                palSizeAddr = frameData.palSizeAddr + offset
+                junkDataAddr = frameData.junkDataAddr + offset
+                oamPtrAddr = frameData.oamPtrAddr + offset
+                frameDelay = frameData.frameDelay
+                frameType = frameData.frameType
                 data = struct.pack("<LLLLHH", \
                     graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
                 offsetFrameData += data
@@ -309,7 +310,7 @@ class EXESprite:
 
             （つまりスプライトのうちポインタを含まないデータすべて）
         """
-        baseData = self.binSpriteData[self.animList[0].frameList[0].graphSizeAddr:]  # グラフィックデータ先頭からスプライトの終端までコピー
+        baseData = self.binSpriteData[self.animList[0].frameList[0]["frame"].graphSizeAddr:]  # グラフィックデータ先頭からスプライトの終端までコピー
         return baseData
 
 
