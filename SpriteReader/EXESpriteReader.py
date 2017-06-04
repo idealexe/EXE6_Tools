@@ -627,22 +627,6 @@ class SpriteReader(QtWidgets.QMainWindow):
                     dummy = data
                 output = output[:writeAddr] + data + output[writeAddr+len(data):]
 
-        """
-        for frame in self.currentSprite.getAllFrame():
-            writeAddr = animDataStart + ANIMATION_SIZE * frameData["animNum"] + FRAME_DATA_SIZE * frameData["frameNum"]
-            graphSizeAddr = frame.graphSizeAddr + copyOffset
-            palSizeAddr = frame.palSizeAddr + copyOffset
-            junkDataAddr = frame.junkDataAddr + copyOffset
-            oamPtrAddr = frame.oamPtrAddr + copyOffset
-            frameDelay = frame.frameDelay
-            frameType = frame.frameType
-            data = struct.pack("<LLLLHH", graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
-            if frameType == 128:
-                # ループしないフレームを拡張部分のダミーとして使う
-                dummy = data
-            output = output[:writeAddr] + data + output[writeAddr+len(data):]
-        """
-
         for i in range(self.currentSprite.getAnimNum(), EXPAND_ANIMATION_NUM):    # 拡張した部分のアニメーション
             """ プラグイン時などはアニメーションが再生し終わらないと移動できないのでループアニメーションだと操作不能になってしまう
             """
@@ -651,13 +635,13 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         output = b"\xFF\xFF\xFF\xFF" + output    # ヘッダの追加
 
-        filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"スプライトを保存する"), os.path.expanduser('./'), _("dump File (*.bin *.dmp)"))[0]
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, _("スプライトを保存する"), os.path.expanduser('./'), _("dump File (*.bin *.dmp)"))[0]
         try:
             with open(filename, 'wb') as saveFile:
                 saveFile.write(output)
                 logger.info(u"ファイルを保存しました")
         except OSError:
-            logger.info(u"ファイルの保存をキャンセルしました")
+            logger.info("ファイルの保存をキャンセルしました")
 
 
     def saveFrameImage(self):
@@ -834,7 +818,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             with open(filename, 'rb') as spriteFile:
                 spriteData = spriteFile.read()
         except OSError:
-            logger.info(_(u"ファイルの選択をキャンセルしました"))
+            logger.info(_("ファイルの選択をキャンセルしました"))
             return -1
 
         dialog = QtWidgets.QDialog()
@@ -848,17 +832,17 @@ class SpriteReader(QtWidgets.QMainWindow):
             try:
                 addr = int(str(addrText), 16)   # QStringから戻さないとダメ
                 if len(self.romData) < addr:
-                    self.romData += "\xFF" * (addr - len(self.romData)) # 指定したアドレスまで0xFFで埋める
+                    self.romData += b"\xFF" * (addr - len(self.romData)) # 指定したアドレスまで0xFFで埋める
                 self.writeDataToRom(addr, spriteData)
-                logger.info(u"インポートに成功しました")
+                logger.info("インポートに成功しました")
             except:
-                logger.info(u"不正な値です")
+                logger.info("不正な値です")
             # リロード
             index = self.ui.spriteList.currentRow()
             self.extractSpriteAddr(self.romData)
             self.ui.spriteList.setCurrentRow(index)
         else:
-            logger.info(u"インポートをキャンセルしました")
+            logger.info("インポートをキャンセルしました")
 
 
     def labelSprite(self):
