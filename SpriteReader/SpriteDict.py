@@ -62,7 +62,7 @@ ROCKEXE4_RS = {
 "startAddr":0x02787C,
 "endAddr":0x028218,
 "classHeadAddr":[],
-"ignoreAddr":[]
+"ignoreAddr":[0x4B5478, 0x4E6684]
 }
 
 ROCKEXE4_BM = {
@@ -90,7 +90,7 @@ ROCKMAN_EXE2 = {
 "startAddr":0x1E9D4,
 "endAddr":0x1F1A8,
 "classHeadAddr":[],
-"ignoreAddr":[]
+"ignoreAddr":[0x3E9DE0, 0x6C03E4]
 }
 
 ROCKMAN_EXE = {
