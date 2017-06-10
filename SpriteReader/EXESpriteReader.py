@@ -18,6 +18,7 @@ import gettext
 import os
 import sys
 import struct
+import yaml
 from logging import getLogger, StreamHandler, INFO
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PIL import Image
@@ -48,7 +49,7 @@ args = parser.parse_args()
 
     スプライトデータのフォーマットで決められている定数
 """
-PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.5  by ideal.exe"
+PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.6  by ideal.exe"
 HEADER_SIZE = 4 # スプライトヘッダのサイズ
 OFFSET_SIZE = 4
 COLOR_SIZE = 2 # 1色あたりのサイズ
@@ -174,12 +175,20 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def setSpriteDict(self, romData):
-        u""" バージョンを判定し使用する辞書をセットする
+        """ バージョンを判定し使用する辞書をセットする
         """
 
         global romName
         romName = romData[0xA0:0xAC].decode("utf-8").replace("\x00", "")
         global EXE_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒なので）
+
+        if args.configFile != None:
+            """ 設定ファイルのロード
+            """
+            with open(args.configFile, "r", encoding="utf-8") as f:
+                configData = yaml.load(f)
+            EXE_Addr = configData[0]
+            return
 
         if romName == "ROCKEXE6_GXX":
             logger.info(_(u"ロックマンエグゼ6 グレイガ jp としてロードしました"))
@@ -243,7 +252,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         self.ui.spriteList.clear() # UIのスプライトリストの初期化
 
         readPos = EXE_Addr["startAddr"]
-        while readPos <= EXE_Addr["endAddr"] - OFFSET_SIZE:
+        while readPos < EXE_Addr["endAddr"] - OFFSET_SIZE:
             u""" スプライトテーブルの読み込み
 
             テーブルの最後のアドレスはスプライトデータではなくデータの終端と思われる

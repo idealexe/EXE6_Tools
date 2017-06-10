@@ -11,7 +11,7 @@
 
 ROCKEXE6_GXX = {
 "startAddr":0x032CA8,
-"endAddr":0x033967,
+"endAddr":0x033968,
 "classHeadAddr":[0x032CE0, 0x032D60, 0x032DBC, 0x032F60, 0x0330D0, 0x033150, 0x0332D0, 0x033554, 0x0336D8],
 "ignoreAddr":[0x4EA2E4, 0x4EA9DC, 0x506328]
 }
@@ -39,7 +39,7 @@ MEGAMAN6_FXX = {
 
 ROCKEXE5_TOB = {
 "startAddr":0x0326E8,
-"endAddr":0x033147,
+"endAddr":0x033148,
 "classHeadAddr":[],
 "ignoreAddr":[]
 }
@@ -53,7 +53,7 @@ ROCKEXE5_TOC = {
 
 ROCKEXE4_5RO = {
 "startAddr":0x02B39C,
-"endAddr":0x02BC73,
+"endAddr":0x02BC74,
 "classHeadAddr":[],
 "ignoreAddr":[0x50B268]
 }
