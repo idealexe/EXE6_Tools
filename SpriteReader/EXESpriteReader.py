@@ -2,7 +2,7 @@
 # coding: utf-8
 # pylint: disable=C0103, E1101
 
-u''' EXE Sprite Reader  by ideal.exe
+""" EXE Sprite Reader  by ideal.exe
 
 
     データ構造仕様
@@ -10,7 +10,7 @@ u''' EXE Sprite Reader  by ideal.exe
     palData: パレットデータ辞書のリスト．OAMの生成（彩色）に使用する．
     palData[i] := { "color":[赤, 緑, 青, α], "addr":スプライト内のアドレス }
 
-'''
+"""
 
 
 import argparse
@@ -41,6 +41,7 @@ logger.addHandler(handler)
 
 parser = argparse.ArgumentParser(description='対応しているROMのスプライトを表示します')
 parser.add_argument("-f", "--file", help="開くROMファイル")
+parser.add_argument("-c", "--configFile", help="設定ファイル")
 args = parser.parse_args()
 
 """ 定数
@@ -80,7 +81,7 @@ LOAD_WITH_HEADER = True
 EXPAND_ANIMATION_NUM = 64   # 拡張ダンプのアニメーション数
 EXPAND_FRAME_NUM = 16   # 拡張ダンプのフレーム数
 LIST_FILE_PATH = \
-    os.path.join(os.path.dirname(sys.argv[0]), "lists/") # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
+    os.path.join(os.path.dirname(__file__), "lists/") # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
 
 
 class SpriteReader(QtWidgets.QMainWindow):
@@ -99,8 +100,8 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def openFile(self, filename=""):
-        u''' ファイルを開くときの処理
-        '''
+        """ ファイルを開くときの処理
+        """
         logger.debug(filename)
         if filename == "" or filename is False:
             filename = QtWidgets.QFileDialog.getOpenFileName(self, _("Open EXE_ROM File"), os.path.expanduser('./'))[0]   # ファイル名とフィルタのタプルが返される
@@ -109,20 +110,20 @@ class SpriteReader(QtWidgets.QMainWindow):
             with open(filename, 'rb') as romFile:
                 self.romData = romFile.read()
         except OSError:
-            logger.info(u"ファイルが選択されませんでした")
+            logger.info("ファイルが選択されませんでした")
             return -1
 
         if self.setSpriteDict(self.romData) == -1:
-            u""" 非対応ROMの場合も中断
+            """ 非対応ROMの場合も中断
             """
             return -1
 
-        title = self.romData[0xA0:0xAC].decode("utf-8")
+        title = self.romData[0xA0:0xAC].decode("utf-8").replace("\x00", "") # null文字が含まれていたら取り除く
         code = self.romData[0xAC:0xB0].decode("utf-8")
         self.listName = code + "_" + title + ".csv"
 
         if os.path.exists(LIST_FILE_PATH + self.listName):
-            u""" リストファイルの存在判定
+            """ リストファイルの存在判定
             """
             self.listData = self.loadListFile(self.listName)
         else:
@@ -131,7 +132,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 "label":[],
             }, columns=["addr", "label"])    # 並び順を指定
             df.to_csv(LIST_FILE_PATH + self.listName, encoding="utf-8", index=False)
-            print(u"リストファイルを作成しました")
+            print("リストファイルを作成しました")
             self.listData = self.loadListFile(self.listName)
 
         self.extractSpriteAddr(self.romData)
@@ -139,7 +140,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def loadListFile(self, listName):
-        u""" リストファイルの読み込み
+        """ リストファイルの読み込み
 
             pandas形式のリストを返す
         """
@@ -149,7 +150,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             logger.debug(data)
             logger.debug(data["label"])
 
-        print(u"リストファイルを読み込みました")
+        print("リストファイルを読み込みました")
         return listData
 
 
