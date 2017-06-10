@@ -39,7 +39,7 @@ handler.setLevel(INFO)
 logger.setLevel(INFO)
 logger.addHandler(handler)
 
-parser = argparse.ArgumentParser(description='対応しているROMのスプライトを表示します')
+parser = argparse.ArgumentParser(description="対応しているROMのスプライトを表示します")
 parser.add_argument("-f", "--file", help="開くROMファイル")
 parser.add_argument("-c", "--configFile", help="設定ファイル")
 args = parser.parse_args()
@@ -48,7 +48,7 @@ args = parser.parse_args()
 
     スプライトデータのフォーマットで決められている定数
 """
-PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.4  by ideal.exe"
+PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.5  by ideal.exe"
 HEADER_SIZE = 4 # スプライトヘッダのサイズ
 OFFSET_SIZE = 4
 COLOR_SIZE = 2 # 1色あたりのサイズ
@@ -155,7 +155,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def openSprite(self):
-        u""" スプライトファイルを開くときの処理
+        """ スプライトファイルを開くときの処理
 
             ROMの先頭に非圧縮のスプライトデータが一つある状態として処理する
         """
@@ -178,7 +178,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         """
 
         global romName
-        romName = romData[0xA0:0xAC].decode("utf-8")
+        romName = romData[0xA0:0xAC].decode("utf-8").replace("\x00", "")
         global EXE_Addr    # アドレスリストはグローバル変数にする（書き換えないし毎回self.をつけるのが面倒なので）
 
         if romName == "ROCKEXE6_GXX":
@@ -223,7 +223,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             logger.info(_(u"ロックマンエグゼ2 jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKMAN_EXE2
 
-        elif romName == "ROCKMAN_EXE\x00":
+        elif romName == "ROCKMAN_EXE":
             logger.info(_(u"ロックマンエグゼ jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKMAN_EXE
 
