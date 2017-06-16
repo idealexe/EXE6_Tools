@@ -213,7 +213,7 @@ class EXESprite:
         logger.debug("Animation Data Start:\t" + hex(animDataStart))
         self.binAnimPtrTable = spriteData[readAddr:readAddr+animDataStart]
 
-        u""" アニメーションオフセットのテーブルからアニメーションのアドレスを取得
+        """ アニメーションオフセットのテーブルからアニメーションのアドレスを取得
         """
         animPtrList = []
         animCount = 0

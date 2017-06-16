@@ -297,7 +297,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         '''
 
         if index == -1:
-            u""" 何らかの原因で無選択状態になったら中断
+            """ 何らかの原因で無選択状態になったら中断
             """
             return -1
 
@@ -707,20 +707,21 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def repointAnimation(self, item):
-        u""" アニメーションポインタの書き換え
+        """ アニメーションポインタの書き換え
         """
         index = self.ui.animList.currentRow()
         if index == 0:
-            logger.info(u"一つ目のアニメーションポインタはポインタテーブルのサイズに影響するので変更できません")
+            logger.info("一つ目のアニメーションポインタはポインタテーブルのサイズに影響するので変更できません")
             return -1
 
-        targetSprite = self.currentSprite
+        spriteIndex = self.ui.spriteList.currentRow()
+        targetSprite = self.spriteList[spriteIndex]
         if targetSprite["compFlag"] == 1:
-            logger.info(u"現在圧縮スプライトのアニメーションリポイントは非対応です")
+            logger.info("現在圧縮スプライトのアニメーションリポイントは非対応です")
             return -1
 
-        targetAddr = targetSprite["spriteAddr"] + HEADER_SIZE + self.animPtrList[index]["addr"]
-        logger.info(u"書き換えるアドレス：\t" + hex(targetAddr))
+        targetAddr = targetSprite["spriteAddr"] + HEADER_SIZE + self.currentSprite.animPtrList[index]["addr"]
+        logger.info("書き換えるアドレス：\t" + hex(targetAddr))
 
         dialog = QtWidgets.QDialog()
         dialog.ui = repointDialog()
@@ -734,9 +735,9 @@ class SpriteReader(QtWidgets.QMainWindow):
                 addr = int(str(addrText), 16)   # QStringから戻さないとダメ
                 data = struct.pack("L", addr)
                 self.romData = self.romData[:targetAddr] + data + self.romData[targetAddr+len(data):]
-                logger.info(u"アニメーションポインタを書き換えました")
+                logger.info("アニメーションポインタを書き換えました")
             except:
-                logger.info(u"不正な値です")
+                logger.info("不正な値です")
             # リロード
             spriteIndex = self.ui.spriteList.currentRow()
             if "EXE_Addr" in globals():
@@ -751,7 +752,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
             self.ui.spriteList.setCurrentRow(spriteIndex)
         else:
-            logger.info(u"リポイントをキャンセルしました")
+            logger.info("リポイントをキャンセルしました")
 
 
     def writePalData(self):
