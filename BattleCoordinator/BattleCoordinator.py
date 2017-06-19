@@ -174,7 +174,7 @@ def main():
             readAddr += BATTLE_DATA_SIZE
         with open("output.yaml", "w") as outFile:
             yaml.dump(output, outFile, encoding="utf-8", allow_unicode=True)
-            print("戦闘データをダンプしました")
+            logger.info("バトルデータをダンプしました")
 
     elif args.importFile != None:
         # インポートモード
@@ -183,6 +183,7 @@ def main():
             data = yaml.load(f)
 
         battleCoordinator.importBattleData(data)
+        logger.info("バトルデータをインポートしました")
 
 if __name__ == '__main__':
     main()
