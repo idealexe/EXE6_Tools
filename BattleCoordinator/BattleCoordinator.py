@@ -26,8 +26,8 @@ import struct
 import sys
 import yaml
 
-parser = argparse.ArgumentParser(description="バトル設定を出力します")
-parser.add_argument("file", help="開くROMファイル")
+parser = argparse.ArgumentParser(description="バトル設定をダンプ・インポートするツール")
+parser.add_argument("EXE6_ROM", help="開くROMファイル")
 parser.add_argument("-d", "--dump", help="ダンプモード", action="store_true")
 parser.add_argument("-i", "--importFile", help="インポートモード")
 args = parser.parse_args()
@@ -39,8 +39,8 @@ logger.setLevel(INFO)
 logger.addHandler(handler)
 
 
-sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), "../common/"))
-name, ext = os.path.splitext(args.file) # ファイル名と拡張子を取得
+sys.path.append(os.path.join(os.path.dirname(__file__), "../common/"))
+name, ext = os.path.splitext(args.EXE6_ROM) # ファイル名と拡張子を取得
 import EXE6Dict
 
 # 定数
@@ -55,10 +55,11 @@ OBJECT_SEPARATOR = 0xF0
 DUMP_START = 0xB2C00
 DUMP_END = 0xB3CD0
 
+
 class BattleCoordinator():
     """ BattleCoordinator
     """
-    romData = ""
+    romData = b""
 
     def openFile(self, filePath):
         """ ファイルを開く
@@ -161,10 +162,11 @@ def main():
     """ main
     """
     battleCoordinator = BattleCoordinator()
-    battleCoordinator.openFile(args.file)
+    battleCoordinator.openFile(args.EXE6_ROM)
 
     if args.dump is True:
         # ダンプモード
+        logger.info("ダンプモード")
         output = []
         readAddr = DUMP_START
         while readAddr < DUMP_END:
@@ -172,10 +174,12 @@ def main():
             readAddr += BATTLE_DATA_SIZE
         with open("output.yaml", "w") as outFile:
             yaml.dump(output, outFile, encoding="utf-8", allow_unicode=True)
+            print("戦闘データをダンプしました")
 
     elif args.importFile != None:
         # インポートモード
-        with open(args.importFile, "r", encoding="utf-8") as f:
+        logger.info("インポートモード")
+        with open(args.importFile, "r", encoding="ShiftJIS") as f: # なんか書き出しでutf-8指定してもShiftJISになるのでShiftJISとしてロードする
             data = yaml.load(f)
 
         battleCoordinator.importBattleData(data)
