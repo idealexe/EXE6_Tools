@@ -3,7 +3,7 @@
 
 """ Sappy Transplant Assistant  by ideal.exe
 
-    曲とかボイスセットの移植をサポートするツール
+    ボイスセットの移植をサポートするツール
     対話形式になりました．そのうち引数形式にも対応するかもしれません
 
     ソングテーブルとかのアドレスは他のツールで調べてください
@@ -30,7 +30,7 @@ logger.addHandler(fhandler)
 
 """ 定数
 """
-PROGRAM_NAME = "Sappy Transplant Assistant ver 1.4.1  by ideal.exe"
+PROGRAM_NAME = "Sappy Transplant Assistant ver 1.4.2  by ideal.exe"
 OFFSET_SIZE = 4 # オフセットサイズは4バイト
 MEMORY_OFFSET = 0x08000000   # ROMがマッピングされるメモリ上のアドレス
 SONG_HEADER_SIZE = 4
@@ -62,9 +62,9 @@ def main():
     name, ext = os.path.splitext(filePath) # ファイル名と拡張子を取得
     romData = openFile(filePath)
 
-    sys.stdout.write(u"ソングテーブルのアドレス（0xXXXXXX）： ")
+    sys.stdout.write("ソングテーブルのアドレス（0xXXXXXX）： ")
     songTableAddr = int(input(), 16)
-    sys.stdout.write(u"移植オフセット（0xXXXXXX）： ")
+    sys.stdout.write("移植オフセット（0xXXXXXX）： ")
     transplantOffs = int(input(), 16)
     print("")
     data = voiceTransplanter(romData, songTableAddr, transplantOffs)
@@ -72,7 +72,7 @@ def main():
     outName = name + "_Voices_" + hex(transplantOffs) + ext  # 出力ファイル名
     saveFile(data, outName)
     executionTime = time.time() - startTime    # 実行時間計測終了
-    logger.info("\nExecution Time:\t" + str(executionTime) + " sec")
+    #logger.info("\nExecution Time:\t" + str(executionTime) + " sec")
 
 
 def voiceTransplanter(romData, songTableAddr, transplantOffs):
@@ -116,10 +116,10 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
         print(".", end="", flush=True)
     print("done\n")
 
-    print(fmtHex(voiceDataStart) + u"から" + fmtHex(voiceDataEnd) + u"まで切り出しました")
-    print(u"出力データを移植先の " + fmtHex(voiceDataStart + transplantOffs) + u" にペーストしてください")
-    print(u"各ボイスセットには元のアドレス＋" + fmtHex(transplantOffs) + u"でアクセス出来ます")
-    print(u"例）" + fmtHex(voicesAddrList[0]) + u" → " + \
+    print(fmtHex(voiceDataStart) + "から" + fmtHex(voiceDataEnd) + "までを音源データとして切り出しました")
+    print("出力データを移植先ROMの " + fmtHex(voiceDataStart + transplantOffs) + " にペーストしてください")
+    print("各ボイスセットには元のアドレス＋" + fmtHex(transplantOffs) + "でアクセス出来ます")
+    print("例）" + fmtHex(voicesAddrList[0]) + " → " + \
         fmtHex(voicesAddrList[0]+transplantOffs) +"\n")
 
     return romData[voiceDataStart:voiceDataEnd]
@@ -305,9 +305,9 @@ def songTransplanter(romData, songAddr, targetAddr, voicesAddr):
     logger.debug("Song Data End:\t\t" + fmtHex(songDataEnd))
 
 
-    print(u"出力データを移植先の " + fmtHex(songDataStart + transplantOffs) + u" にペーストしてください")
-    print(u"ソングヘッダのアドレスは" + fmtHex(targetAddr) + u"です")
-    print(u"移植先のソングテーブルで" + fmtHex(targetAddr) + u"を指定するとアクセスできます")
+    print("出力データを移植先の " + fmtHex(songDataStart + transplantOffs) + " にペーストしてください")
+    print("ソングヘッダのアドレスは" + fmtHex(targetAddr) + "です")
+    print("移植先のソングテーブルで" + fmtHex(targetAddr) + "を指定するとアクセスできます")
 
     return romData[songDataStart:songDataEnd]
 
@@ -328,7 +328,7 @@ def openFile(filePath):
             romData = romFile.read()   # データのバイナリ文字列（バイナリエディタのASCIIのとこみたいな感じ）
 
     except OSError:
-        print(u"ファイルを開けませんでした")
+        print("ファイルを開けませんでした")
 
     return romData
 
@@ -341,7 +341,7 @@ def saveFile(data, outName):
         with open(outName, "wb") as outFile:
             outFile.write(data)
     except OSError:
-        print(u"ファイルを正しく出力できませんでした")
+        print("ファイルを正しく出力できませんでした")
 
 
 def fmtHex(num):
