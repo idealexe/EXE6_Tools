@@ -188,6 +188,9 @@ class MapModder(QtWidgets.QMainWindow):
     def guiDataItemActivated(self):
         """ 登録データが選択されたときの処理
         """
+        if self.getCrrentItemData() is False:
+            return
+            
         [self.label, self.addr, self.palAddr, self.tileX, self.tileY] = self.getCrrentItemData()
 
         self.ui.labelEdit.setText(self.label)
@@ -203,6 +206,9 @@ class MapModder(QtWidgets.QMainWindow):
         """ 現在の行のアイテム情報を返す
         """
         index = self.ui.dataList.currentRow()
+        if index == -1:
+            return False
+
         logger.debug("index:\t" + str(index))
         logger.debug(self.listData)
 
@@ -278,7 +284,7 @@ class MapModder(QtWidgets.QMainWindow):
 
         r, g, b, a = self.palData[index]["color"]   # 選択された色の値をセット
         writePos = self.palData[index]["addr"]  # 色データを書き込む位置
-        color = QtWidgets.QColorDialog.getColor(QtWidgets.QColor(r, g, b))    # カラーダイアログを開く
+        color = QtWidgets.QColorDialog.getColor(QtGui.QColor(r, g, b))    # カラーダイアログを開く
         if color.isValid() is False: # キャンセルしたとき
             logger.info("色の選択をキャンセルしました")
             return 0
