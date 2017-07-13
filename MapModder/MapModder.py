@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # coding: utf-8
-# pylint: disable=C0103
+# pylint: disable=C0103, E1101
 
 """ Map Modder by ideal.exe
 """
@@ -53,6 +53,8 @@ class MapModder(QtWidgets.QMainWindow):
         self.graphicsScene.setSceneRect(-120, -80, 240, 160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         self.ui.graphicsView.setScene(self.graphicsScene)
 
+        self.romData = b""
+        self.label = ""
         self.addr = 0
         self.palAddr = 0
         self.tileX = self.ui.xTileBox.value()
@@ -78,7 +80,7 @@ class MapModder(QtWidgets.QMainWindow):
         try:
             with open(filename, 'rb') as romFile:
                 self.romData = romFile.read()
-        except:
+        except OSError:
             logger.info(_("ファイルの選択をキャンセルしました"))
             return -1    # 中断
 
@@ -113,9 +115,8 @@ class MapModder(QtWidgets.QMainWindow):
         listData = pd.read_csv(LIST_FILE_PATH + listName, encoding="utf-8", index_col=None)
         logger.debug(listData)
 
-        for data in listData:
-            logger.debug(data["label"])
-            dataStr = data["label"]    # GUIのリストに表示する文字列
+        for i, data in listData.iterrows():
+            dataStr = str(i) + ". " + data["label"]    # GUIのリストに表示する文字列
             item = QtWidgets.QListWidgetItem(dataStr)  # リストに追加するアイテムの生成
             self.ui.dataList.addItem(item) # リストへ追加
 
@@ -124,6 +125,8 @@ class MapModder(QtWidgets.QMainWindow):
 
 
     def getRomHeader(self, romData):
+        """ ヘッダ情報の取得
+        """
         title = romData[0xA0:0xAC].decode("utf-8")
         code = romData[0xAC:0xB0].decode("utf-8")
         print("Title:\t" + title)
@@ -132,8 +135,8 @@ class MapModder(QtWidgets.QMainWindow):
 
 
     def drawMap(self, image):
-        u''' マップ画像を描画する
-        '''
+        """ マップ画像を描画する
+        """
         self.graphicsScene.clear()
         item = QtWidgets.QGraphicsPixmapItem(image)
         item.setOffset(image.width()/2*-1, image.height()/2*-1)
@@ -292,10 +295,14 @@ class MapModder(QtWidgets.QMainWindow):
 
 
     def guiTileXChanged(self, n):
+        """ GUIでタイルXが変更されたとき
+        """
         self.tileX = n
         self.updateImage()
 
     def guiTileYChanged(self, n):
+        """ GUIでタイルYが変更されたとき
+        """
         self.tileY = n
         self.updateImage()
 
@@ -330,7 +337,7 @@ class MapModder(QtWidgets.QMainWindow):
             with open(filename, 'wb') as saveFile:
                 saveFile.write(self.romData)
                 logger.info("ファイルを保存しました")
-        except:
+        except OSError:
             logger.info("ファイルの保存をキャンセルしました")
 
     def changeViewScale(self, value):
