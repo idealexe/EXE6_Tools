@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-u""" Common Action  by ideal.exe
+""" Common Action  by ideal.exe
 
     共用できるアクションをまとめたモジュール
 """
@@ -22,7 +22,7 @@ import os
 
 
 def saveSceneImage(graphicsScene):
-    u""" QGraphicsSceneを画像として保存する
+    """ QGraphicsSceneを画像として保存する
     """
 
     sourceBounds = graphicsScene.itemsBoundingRect()    # シーン内の全てのアイテムから領域を算出
@@ -33,13 +33,13 @@ def saveSceneImage(graphicsScene):
     graphicsScene.render(painter, targetBounds, sourceBounds)
     painter.end()
 
-    filename = QtWidgets.QFileDialog.getSaveFileName(None, _(u"シーンを画像として保存"), os.path.expanduser('./'), _("image File (*.png)"))[0]
+    filename = QtWidgets.QFileDialog.getSaveFileName(None, _("シーンを画像として保存"), os.path.expanduser('./'), _("image File (*.png)"))[0]
     try:
         with open( filename, 'wb') as saveFile:
             image.save(filename, "PNG")
-            logger.info(u"ファイルを保存しました")
+            logger.info("ファイルを保存しました")
     except:
-        logger.info(u"ファイルの保存をキャンセルしました")
+        logger.info("ファイルの保存をキャンセルしました")
 
 
 def gba2rgb(gbaColor):
@@ -53,6 +53,18 @@ def gba2rgb(gbaColor):
     r = int( binColor[11:16], 2 ) * 8
 
     return [r, g, b]
+    
+
+def rgb2gba(r, g, b):
+    """ RBGからGBAの16bitカラー情報に変換する
+    """
+
+    binR = bin(r//8)[2:].zfill(5)    # 5bitカラーに変換
+    binG = bin(g//8)[2:].zfill(5)
+    binB = bin(b//8)[2:].zfill(5)
+    gbaColor = int(binB + binG + binR, 2).to_bytes(2, "little") # GBAのカラーコードに変換
+
+    return gbaColor
 
 
 def loadData(message):
@@ -65,7 +77,7 @@ def loadData(message):
             data = openFile.read()
         return data
     except:
-        logger.info( _(u"ファイルの選択をキャンセルしました") )
+        logger.info( _("ファイルの選択をキャンセルしました") )
         return -1
 
 
@@ -77,3 +89,7 @@ def printBinary(binary):
         print(c, end="", flush=True)
         if i % 2 == 1: print(" ", end="")
         if i % 32 == 31: print("")
+
+
+if __name__ == '__main__':
+    rgb2gba(255,255,255)
