@@ -98,6 +98,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle(PROGRAM_NAME)
         self.ui.graphicsView.scale(2, 2) # なぜかQt Designer上で設定できない
+        self.setWindowIcon(QtGui.QIcon(os.path.join(os.path.dirname(__file__), "../resources/bug.png")))
 
 
     def openFile(self, filename=""):
