@@ -9,7 +9,6 @@ import argparse
 import binascii
 import os
 import re
-import struct
 import sys
 import gettext
 from logging import getLogger, StreamHandler, INFO
@@ -33,7 +32,7 @@ parser = argparse.ArgumentParser(description="入力ファイルに対して指�
 parser.add_argument("-f", "--file", help="処理対象のファイル")
 args = parser.parse_args()
 
-PROGRAM_NAME = "Map Modder  ver 0.4  by ideal.exe"
+PROGRAM_NAME = "Map Modder  ver 0.5  by ideal.exe"
 LIST_FILE_PATH = \
     os.path.join(os.path.dirname(__file__), "lists/") # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
 _ = gettext.gettext # 後の翻訳用
@@ -42,7 +41,6 @@ _ = gettext.gettext # 後の翻訳用
 class MapModder(QtWidgets.QMainWindow):
     """ Map Modder
     """
-
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.ui = designer.Ui_MainWindow()
@@ -52,6 +50,7 @@ class MapModder(QtWidgets.QMainWindow):
         self.graphicsScene = QtWidgets.QGraphicsScene(self)
         self.graphicsScene.setSceneRect(-120, -80, 240, 160)    # gbaの画面を模したシーン（ ビューの中心が(0,0)になる ）
         self.ui.graphicsView.setScene(self.graphicsScene)
+        self.setWindowIcon(QtGui.QIcon(os.path.join(os.path.dirname(__file__), "../resources/bug.png")))
 
         self.romData = b""
         self.label = ""
@@ -60,12 +59,14 @@ class MapModder(QtWidgets.QMainWindow):
         self.tileX = self.ui.xTileBox.value()
         self.tileY = self.ui.yTileBox.value()
 
+
     def updateImage(self):
         """ 画像を更新する
         """
         self.palData = self.parsePaletteData(self.romData, self.palAddr)
         image = self.makeMapImage(self.romData, self.addr, self.tileX, self.tileY)
         self.drawMap(image)
+
 
     def openFile(self, filename=""):
         """ ファイルを開くときの処理
@@ -75,7 +76,6 @@ class MapModder(QtWidgets.QMainWindow):
             filename = QtWidgets.QFileDialog.getOpenFileName(self, _("Open File"), \
                             os.path.expanduser('./'))[0]   # ファイル名がQString型で返される
         self.openedFileName = filename  # 保存時にパスを利用したいので
-
 
         try:
             with open(filename, 'rb') as romFile:
@@ -190,7 +190,7 @@ class MapModder(QtWidgets.QMainWindow):
         """
         if self.getCrrentItemData() is False:
             return
-            
+
         [self.label, self.addr, self.palAddr, self.tileX, self.tileY] = self.getCrrentItemData()
 
         self.ui.labelEdit.setText(self.label)
@@ -291,12 +291,8 @@ class MapModder(QtWidgets.QMainWindow):
 
         r, g, b, a = color.getRgb()    # ダイアログでセットされた色に更新
 
-        binR = bin(r/8)[2:].zfill(5)    # 5bitカラーに変換
-        binG = bin(g/8)[2:].zfill(5)
-        binB = bin(b/8)[2:].zfill(5)
-        gbaColor = int(binB + binG + binR, 2)  # GBAのカラーコードに変換
-        colorStr = struct.pack("H", gbaColor)
-        self.romData = self.romData[:writePos] + colorStr + self.romData[writePos+COLOR_SIZE:]
+        gbaColor = commonAction.rgb2gba(r, g, b)
+        self.romData = self.romData[:writePos] + gbaColor + self.romData[writePos+COLOR_SIZE:]
         self.updateImage()
 
 
@@ -306,11 +302,13 @@ class MapModder(QtWidgets.QMainWindow):
         self.tileX = n
         self.updateImage()
 
+
     def guiTileYChanged(self, n):
         """ GUIでタイルYが変更されたとき
         """
         self.tileY = n
         self.updateImage()
+
 
     def guiRegButtonPressed(self):
         """ 登録ボタンが押されたときの処理
@@ -333,12 +331,13 @@ class MapModder(QtWidgets.QMainWindow):
         logger.info("リストに登録しました")
         self.loadListFile(listName)
 
+
     def saveFile(self):
         """ ファイルの保存
         """
 
         filename = QtWidgets.QFileDialog.getSaveFileName(self, _("ROMを保存する"), \
-            os.path.expanduser(os.path.dirname(self.openedFileName)), _("Rom File (*.gba *.bin)"))
+            os.path.expanduser(os.path.dirname(self.openedFileName)), _("Rom File (*.gba *.bin)"))[0]
         try:
             with open(filename, 'wb') as saveFile:
                 saveFile.write(self.romData)
@@ -346,12 +345,14 @@ class MapModder(QtWidgets.QMainWindow):
         except OSError:
             logger.info("ファイルの保存をキャンセルしました")
 
+
     def changeViewScale(self, value):
         """ ビューを拡大縮小する
         """
         self.ui.graphicsView.resetTransform()   # 一度オリジナルサイズに戻す
         scale = pow(2, value/10.0)   # 指数で拡大したほうが自然にスケールしてる感じがする
         self.ui.graphicsView.scale(scale, scale)
+
 
     def searchBinary(self):
         """ データを検索する
@@ -381,10 +382,12 @@ class MapModder(QtWidgets.QMainWindow):
                 logger.info("マッチ結果が多すぎます．100件以降は省略しました")
                 return -1
 
+
     def saveImageFile(self):
         """ 画像を保存する
         """
         commonAction.saveSceneImage(self.graphicsScene)
+
 
     def makeMapImage(self, romData, startAddr, tileX, tileY, flipV=0, flipH=0):
         """ QPixmap形式の画像を生成する
@@ -459,6 +462,7 @@ def main():
         mapModder.openFile(args.file)
 
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()

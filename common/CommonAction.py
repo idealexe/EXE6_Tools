@@ -53,7 +53,7 @@ def gba2rgb(gbaColor):
     r = int( binColor[11:16], 2 ) * 8
 
     return [r, g, b]
-    
+
 
 def rgb2gba(r, g, b):
     """ RBGからGBAの16bitカラー情報に変換する
