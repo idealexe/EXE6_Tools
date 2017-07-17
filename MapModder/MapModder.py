@@ -64,7 +64,8 @@ class MapModder(QtWidgets.QMainWindow):
         """ 画像を更新する
         """
         self.palData = self.parsePaletteData(self.romData, self.palAddr)
-        image = self.makeMapImage(self.romData, self.addr, self.tileX, self.tileY)
+        self.colorTable = commonAction.parsePaletteData(self.romData, self.palAddr)
+        image = self.makeMapImage(self.romData, self.addr, self.tileX, self.tileY, self.colorTable)
         self.drawMap(image)
 
 
@@ -389,7 +390,7 @@ class MapModder(QtWidgets.QMainWindow):
         commonAction.saveSceneImage(self.graphicsScene)
 
 
-    def makeMapImage(self, romData, startAddr, tileX, tileY, flipV=0, flipH=0):
+    def makeMapImage(self, romData, startAddr, tileX, tileY, colorTable, flipV=0, flipH=0):
         """ QPixmap形式の画像を生成する
         """
         TILE_WIDTH = 8  # px
@@ -402,50 +403,17 @@ class MapModder(QtWidgets.QMainWindow):
         imgDataSize = TILE_DATA_SIZE * tileX * tileY
 
         imgData = romData[startAddr:startAddr+imgDataSize]   # 使う部分を切り出し
-        imgData = (imgData.hex()).upper()   # バイナリ値をそのまま文字列にしたデータに変換（0xFF -> "FF"）
-        imgData = list(imgData) # 1文字ずつのリストに変換
-
-        # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
-        for i in range(0, len(imgData))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
-            imgData[i], imgData[i+1] = imgData[i+1], imgData[i] # これで値を入れ替えられる
-
-        totalSize = len(imgData)    # 全ドット数
-        imgArray = []
-
-        # 色情報に変換する
-        readPos = 0
-        while readPos < totalSize:
-            currentPixel = int(imgData[readPos], 16)    # 1ドット分読み込み
-            imgArray.append(self.palData[currentPixel]["color"])    # 対応する色に変換
-            readPos += 1
-
-        imgArray = np.array(imgArray)   # ndarrayに変換
-        imgArray = imgArray.reshape((-1, TILE_WIDTH, 4))  # 横8ドットのタイルに並べ替える（-1を設定すると自動で縦の値を算出してくれる）
-
-        tileNum = tileX * tileY  # 合計タイル数
-
-        # タイルの切り出し
-        tile = []  # pythonのリストとして先に宣言する（ndarrayとごっちゃになりやすい）
-        for i in range(0, tileNum):
-            tile.append(imgArray[TILE_HEIGHT*i:TILE_HEIGHT*(i+1), 0:TILE_WIDTH, :])    # 8x8のタイルを切り出していく
-
-        # タイルの並び替え
-        h = []  # 水平方向に結合したタイルを格納するリスト
-        for i in range(0, tileY):
-            h.append(np.zeros_like(tile[0]))    # タイルを詰めるダミー
-            for j in range(0, tileX):
-                h[i] = np.hstack((h[i], tile[i*tileX + j]))
-            if i != 0:
-                h[0] = np.vstack((h[0], h[i]))
-        img = h[0][:, 8:, :]    # ダミー部分を切り取る（ださい）
-
+        gbaMap = commonAction.GbaMap(imgData, tileX, tileY)
+        """
         dataImg = Image.fromarray(np.uint8(img))  # 色情報の行列から画像を生成（PILのImage形式）
         if flipH == 1:
             dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
         if flipV == 1:
             dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
-        qImg = ImageQt(dataImg) # QImage形式に変換
-        pixmap = QtGui.QPixmap.fromImage(qImg)  # QPixmap形式に変換
+        """
+        qimage = gbaMap.getImage()
+        qimage.setColorTable(colorTable)
+        pixmap = QtGui.QPixmap.fromImage(qimage)  # QPixmap形式に変換
         return pixmap
 
 
