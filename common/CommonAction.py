@@ -10,6 +10,7 @@
 import gettext
 import os
 import sys
+from PIL import Image
 from logging import getLogger, StreamHandler, INFO
 from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
@@ -78,6 +79,7 @@ class GbaMap():
         for i in range(tileY):
             h.append(np.hstack([tile.imgArray for tile in tileList[tileX*i:tileX*i+tileX]]))
         self.mapArray = np.vstack(h)
+        self.pilImage = Image.fromarray(self.mapArray)  # 色情報の行列から画像を生成（PILのImage形式）
         self.mapImg = QtGui.QImage(self.mapArray, self.TILE_WIDTH*tileX, self.TILE_HEIGHT*tileY, QtGui.QImage.Format_Indexed8)
 
 
@@ -85,6 +87,12 @@ class GbaMap():
         """ QImage形式のマップ画像を返す
         """
         return self.mapImg
+
+
+    def getPilImage(self):
+        """ PIL形式のマップ画像を返す
+        """
+        return self.pilImage
 
 
 def saveSceneImage(graphicsScene):
