@@ -2,7 +2,7 @@
 # coding: utf-8
 # pylint: disable=C0103, E1101
 
-""" Common Action  by ideal.exe
+""" Common Action  ver 1.0  by ideal.exe
 
     共用できる機能をまとめたモジュール
 """
@@ -24,13 +24,16 @@ logger.addHandler(handler)
 
 _ = gettext.gettext
 
+TILE_WIDTH = 8  # px
+TILE_HEIGHT = 8
+TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT // 2  # 1タイルあたりのデータサイズ（１バイトで２ドット）
+
+
 class GbaTile():
     """ GBAのタイル
-    """
-    TILE_WIDTH = 8  # px
-    TILE_HEIGHT = 8
-    TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT // 2  # 1タイルあたりのデータサイズ（１バイトで２ドット）
 
+        20バイトのバイナリデータから8x8(px)、16色のビットマップを作成する
+    """
 
     def __init__(self, binTileData):
         self.binTileData = binTileData
@@ -41,9 +44,9 @@ class GbaTile():
         for i in range(0, len(dotList))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
             dotList[i], dotList[i+1] = dotList[i+1], dotList[i] # これで値を入れ替えられる
 
-        imgArray = np.array(dotList, dtype=np.uint8).reshape((self.TILE_WIDTH, self.TILE_HEIGHT))
+        imgArray = np.array(dotList, dtype=np.uint8).reshape((TILE_WIDTH, TILE_HEIGHT))
         self.imgArray = imgArray
-        self.image = QtGui.QImage(imgArray, self.TILE_WIDTH, self.TILE_HEIGHT, QtGui.QImage.Format_Indexed8)
+        self.image = QtGui.QImage(imgArray, TILE_WIDTH, TILE_HEIGHT, QtGui.QImage.Format_Indexed8)
 
 
     def getBinTileData(self):
@@ -56,15 +59,17 @@ class GbaTile():
         """ np.array形式のタイルデータを返す
         """
         return self.imgArray
+        
+
+    def getQImage(self):
+        """ QImage形式のタイル画像を返す
+        """
+        return self.image
 
 
 class GbaMap():
     """ GBAのマップ
     """
-    TILE_WIDTH = 8  # px
-    TILE_HEIGHT = 8
-    TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT // 2
-
 
     def __init__(self, binMapData, tileX, tileY):
         self.binMapData = binMapData
@@ -72,15 +77,15 @@ class GbaMap():
         tileList = []
         readAddr = 0
         while readAddr < len(binMapData):
-            tileList.append(GbaTile(binMapData[readAddr:readAddr+self.TILE_DATA_SIZE]))
-            readAddr += self.TILE_DATA_SIZE
+            tileList.append(GbaTile(binMapData[readAddr:readAddr+TILE_DATA_SIZE]))
+            readAddr += TILE_DATA_SIZE
 
         h = []  # 水平方向に結合したタイルを格納するリスト
         for i in range(tileY):
             h.append(np.hstack([tile.imgArray for tile in tileList[tileX*i:tileX*i+tileX]]))
         self.mapArray = np.vstack(h)
         self.pilImage = Image.fromarray(self.mapArray)  # 色情報の行列から画像を生成（PILのImage形式）
-        self.mapImg = QtGui.QImage(self.mapArray, self.TILE_WIDTH*tileX, self.TILE_HEIGHT*tileY, QtGui.QImage.Format_Indexed8)
+        self.mapImg = QtGui.QImage(self.mapArray, TILE_WIDTH*tileX, TILE_HEIGHT*tileY, QtGui.QImage.Format_Indexed8)
 
 
     def getImage(self):
