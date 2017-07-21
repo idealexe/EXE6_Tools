@@ -2,10 +2,9 @@
 # coding: utf-8
 # pylint: disable=C0103, E1101
 
-""" LZ77 decompressor by ideal.exe
+""" LZ77 Utility  ver 1.0  by ideal.exe
 
     LZ77圧縮されたデータを検索したり解凍するモジュールです．
-    ファイル名と圧縮されたデータの開始アドレスを渡して実行すると解凍します．
 """
 
 
@@ -16,14 +15,14 @@ import sys
 import time
 
 
-def detectLZ77(romData, minSize=0x100, maxSize=0x10000, searchStep=0x4):
+def detectLZ77(romData, minSize=0x100, maxSize=0x10000, searchStep=0x4, checkRef=True):
     """ LZ77(0x10)圧縮されてそうなデータの検索
 
         LZ77圧縮データの先頭はだいたい 10 XX YY ZZ 00 00 XX YY ZZ になる
             10 = LZ77圧縮を示す
             XX YY ZZ = 展開後のファイルサイズ
-            00 = 展開後データ、非圧縮を示す
-            00 = １つめのフラグバイト
+            00 = 展開後データの先頭、非圧縮を示す
+            00 = １つめのフラグバイト（先頭なので必然的に全ビット0となる）
     """
 
     matchList = []
@@ -33,6 +32,13 @@ def detectLZ77(romData, minSize=0x100, maxSize=0x10000, searchStep=0x4):
         uncompSize = struct.unpack('l', romData[matchAddr+1:matchAddr+4] + b"\x00")[0] # 次3バイトが展開後のサイズ（4バイトに合わせないとunpack出来ないので"\x00"をつけている）
         # キリが良い位置にあってサイズが妥当なものを抽出
         if matchAddr % searchStep == 0 and minSize <= uncompSize <= maxSize:
+            if checkRef is True:
+                # ROM内に圧縮データへのポインタがあるかダブルチェック
+                pointer = matchAddr.to_bytes(3, "little") + b"\x88"
+                pattern = re.compile(re.escape(pointer))
+                if re.search(pattern, romData) is None:
+                    # ポインタがなかったら無視
+                    continue
             matchList.append({"startAddr":matchAddr, "uncompSize":uncompSize})
 
     for i, item in enumerate(matchList):
