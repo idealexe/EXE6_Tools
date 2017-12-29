@@ -22,7 +22,7 @@ logger.addHandler(handler)
 sys.path.append(os.path.join(os.path.dirname(__file__), "../common/"))
 import LZ77Util
 
-
+PROGRAM_NAME = "EXE Sprite  ver 1.0  by ideal.exe"
 HEADER_SIZE = 4
 OFFSET_SIZE = 4
 COLOR_SIZE = 2 # 1色あたりのサイズ（byte）
@@ -213,7 +213,7 @@ class EXESprite:
         logger.debug("Animation Data Start:\t" + hex(animDataStart))
         self.binAnimPtrTable = spriteData[readAddr:readAddr+animDataStart]
 
-        u""" アニメーションオフセットのテーブルからアニメーションのアドレスを取得
+        """ アニメーションオフセットのテーブルからアニメーションのアドレスを取得
         """
         animPtrList = []
         animCount = 0
@@ -235,7 +235,7 @@ class EXESprite:
         self.animList = animList
 
 
-        u""" 無圧縮スプライトの場合は余分なデータを切り離す
+        """ 無圧縮スプライトの場合は余分なデータを切り離す
         """
         if compFlag == 0:
             endAddr = animList[-1].frameList[-1]["frame"].oamList[-1]["address"] + OAM_DATA_SIZE + len(OAM_DATA_END[0])

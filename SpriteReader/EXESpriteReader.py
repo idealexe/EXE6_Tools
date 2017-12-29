@@ -49,7 +49,7 @@ args = parser.parse_args()
 
     スプライトデータのフォーマットで決められている定数
 """
-PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.6  by ideal.exe"
+PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.7  by ideal.exe"
 HEADER_SIZE = 4 # スプライトヘッダのサイズ
 OFFSET_SIZE = 4
 COLOR_SIZE = 2 # 1色あたりのサイズ
@@ -98,6 +98,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle(PROGRAM_NAME)
         self.ui.graphicsView.scale(2, 2) # なぜかQt Designer上で設定できない
+        self.setWindowIcon(QtGui.QIcon(os.path.join(os.path.dirname(__file__), "../resources/bug.png")))
 
 
     def openFile(self, filename=""):
@@ -191,53 +192,53 @@ class SpriteReader(QtWidgets.QMainWindow):
             return
 
         if romName == "ROCKEXE6_GXX":
-            logger.info(_(u"ロックマンエグゼ6 グレイガ jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ6 グレイガ jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE6_GXX
         elif romName == "MEGAMAN6_GXX":
-            logger.info(_(u"ロックマンエグゼ6 グレイガ en としてロードしました"))
+            logger.info(_("ロックマンエグゼ6 グレイガ en としてロードしました"))
             EXE_Addr = SpriteDict.MEGAMAN6_GXX
         elif romName == "ROCKEXE6_RXX":
-            logger.info(_(u"ロックマンエグゼ6 ファルザー jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ6 ファルザー jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE6_RXX
         elif romName == "MEGAMAN6_FXX":
-            logger.info(_(u"ロックマンエグゼ6 ファルザー en としてロードしました"))
+            logger.info(_("ロックマンエグゼ6 ファルザー en としてロードしました"))
             EXE_Addr = SpriteDict.MEGAMAN6_FXX
 
         elif romName == "ROCKEXE5_TOB":
-            logger.info(_(u"ロックマンエグゼ5 チームオブブルース jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ5 チームオブブルース jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE5_TOB
         elif romName == "ROCKEXE5_TOC":
-            logger.info(_(u"ロックマンエグゼ5 チームオブカーネル jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ5 チームオブカーネル jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE5_TOC
 
         elif romName == "ROCKEXE4.5RO":
-            logger.info(_(u"ロックマンエグゼ4.5 jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ4.5 jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE4_5RO
 
         elif romName == "ROCK_EXE4_RS":
-            logger.info(_(u"ロックマンエグゼ4 トーナメントレッドサン jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ4 トーナメントレッドサン jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE4_RS
         elif romName == "ROCK_EXE4_BM":
-            logger.info(_(u"ロックマンエグゼ4 トーナメントブルームーン jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ4 トーナメントブルームーン jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKEXE4_BM
 
         elif romName == "ROCK_EXE3_BK":
-            logger.info(_(u"ロックマンエグゼ3 Black jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ3 Black jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCK_EXE3_BK
         elif romName == "ROCKMAN_EXE3":
-            logger.info(_(u"ロックマンエグゼ3 jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ3 jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKMAN_EXE3
 
         elif romName == "ROCKMAN_EXE2":
-            logger.info(_(u"ロックマンエグゼ2 jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ2 jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKMAN_EXE2
 
         elif romName == "ROCKMAN_EXE":
-            logger.info(_(u"ロックマンエグゼ jp としてロードしました"))
+            logger.info(_("ロックマンエグゼ jp としてロードしました"))
             EXE_Addr = SpriteDict.ROCKMAN_EXE
 
         else:
-            logger.info(_(u"対応していないバージョンです"))
+            logger.info(_("対応していないバージョンです"))
             return -1   # error
 
 
@@ -253,7 +254,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         readPos = EXE_Addr["startAddr"]
         while readPos < EXE_Addr["endAddr"] - OFFSET_SIZE:
-            u""" スプライトテーブルの読み込み
+            """ スプライトテーブルの読み込み
 
             テーブルの最後のアドレスはスプライトデータではなくデータの終端と思われる
             """
@@ -262,7 +263,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             memByte = spriteAddr[3]
 
             if memByte in [0x08, 0x88]:
-                u""" ポインタの最下位バイトはメモリ上の位置を表す0x08
+                """ ポインタの最下位バイトはメモリ上の位置を表す0x08
 
                     0x88の場合は圧縮データとして扱われる模様
                 """
@@ -297,7 +298,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         '''
 
         if index == -1:
-            u""" 何らかの原因で無選択状態になったら中断
+            """ 何らかの原因で無選択状態になったら中断
             """
             return -1
 
@@ -365,7 +366,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         logger.debug("Palette Size Address:\t" + hex(currentFrame["frame"].palSizeAddr))
 
         currentFrameOam = currentFrame["frame"].oamList
-        self.ui.oamLabel.setText(u"OAM：" + str(len(currentFrameOam)))
+        self.ui.oamLabel.setText("OAM：" + str(len(currentFrameOam)))
 
         for oam in currentFrameOam:
             oamAddrStr = (hex(oam["address"])[2:].zfill(8)).upper()  # GUIのリストに表示する文字列
@@ -383,7 +384,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 palIndex = self.ui.palSelect.value()
             self.parsePaletteData(self.currentSprite.binSpriteData, currentFrame["frame"].palSizeAddr, palIndex)
 
-            image = self.makeOAMImage(graphicData, oam["oam"])
+            image = self.makeOAMImage(graphicData, oam["oam"], self.colorTable)
             self.drawOAM(image, oam["oam"])
 
 
@@ -405,6 +406,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         endAddr = readPos + palSize
 
         self.palData = []    # パレットデータを格納するリスト
+        self.colorTable = CommonAction.parsePaletteData(spriteData, readPos)
         self.ui.palList.clear()
         palCount = 0
         while readPos < endAddr:
@@ -482,13 +484,13 @@ class SpriteReader(QtWidgets.QMainWindow):
     def playAnimData(self):
         u''' アニメーションの再生
         '''
-        logger.info(u"現在アニメーションの再生には対応していません")
+        logger.info("現在アニメーションの再生には対応していません")
 
 
-    def makeOAMImage(self, imgData, oam):
+    def makeOAMImage(self, imgData, oam, colorTable):
         u''' OAM情報から画像を生成する
 
-            入力：スプライトのグラフィックデータ，開始タイル，横サイズ，縦サイズ，垂直反転フラグ，水平反転フラグ
+            入力：スプライトのグラフィックデータ，OAMデータ，カラーテーブル
             出力：画像データ（QPixmap形式）
 
             グラフィックデータは4bitで1pxを表現する．アクセス可能な最小単位は8*8pxのタイルでサイズは32byteとなる
@@ -505,59 +507,18 @@ class SpriteReader(QtWidgets.QMainWindow):
 
         startAddr = oam.startTile * TILE_DATA_SIZE  # 開始タイルから開始アドレスを算出（1タイル8*8px = 32バイト）
         imgData = imgData[startAddr:]   # 使う部分を切り出し
-        imgData = (imgData.hex()).upper()   # バイナリ値をそのまま文字列にしたデータに変換（0xFF -> "FF"）
-        imgData = list(imgData) # 1文字ずつのリストに変換
-        # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
-        for i in range(0, len(imgData))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
-            imgData[i], imgData[i+1] = imgData[i+1], imgData[i] # これで値を入れ替えられる
+        tileX = oam.sizeX // TILE_WIDTH # サイズからタイルの枚数に変換
+        tileY = oam.sizeY // TILE_HEIGHT
 
-        width = oam.sizeX // TILE_WIDTH # サイズからタイルの枚数に変換
-        height = oam.sizeY // TILE_HEIGHT
+        gbaMap = CommonAction.GbaMap(imgData, tileX, tileY)
 
-        totalSize = len(imgData)    # 全ドット数
-        imgArray = []
-
-        # 色情報に変換する
-        readPos = 0
-        while readPos < totalSize:
-            currentPixel = int(imgData[readPos], 16)    # 1ドット分読み込み
-            imgArray.append(self.palData[currentPixel]["color"])    # 対応する色に変換
-            readPos += 1
-
-        imgArray = np.array(imgArray)   # ndarrayに変換
-        imgArray = imgArray.reshape((-1, TILE_WIDTH, 4))  # 横8ドットのタイルに並べ替える（-1を設定すると自動で縦の値を算出してくれる）
-        u""" 現在の状態
-
-            □
-            □
-            ︙
-            □
-            □
-        """
-
-        tileNum = width * height  # 合計タイル数
-
-        # タイルの切り出し
-        tile = []  # pythonのリストとして先に宣言する（ndarrayとごっちゃになりやすい）
-        for i in range(0, tileNum):
-            tile.append(imgArray[TILE_HEIGHT*i:TILE_HEIGHT*(i+1), 0:TILE_WIDTH, :])    # 8x8のタイルを切り出していく
-
-        # タイルの並び替え
-        h = []  # 水平方向に結合したタイルを格納するリスト
-        for i in range(0, height):
-            h.append(np.zeros_like(tile[0]))    # タイルを詰めるダミー
-            for j in range(0, width):
-                h[i] = np.hstack((h[i], tile[i*width + j]))
-            if i != 0:
-                h[0] = np.vstack((h[0], h[i]))
-        img = h[0][:, 8:, :]    # ダミー部分を切り取る（ださい）
-
-        dataImg = Image.fromarray(np.uint8(img))  # 色情報の行列から画像を生成（PILのImage形式）
+        dataImg = gbaMap.getPilImage()
         if oam.flipH == 1:
             dataImg = dataImg.transpose(Image.FLIP_LEFT_RIGHT)  # PILの機能で水平反転
         if oam.flipV == 1:
             dataImg = dataImg.transpose(Image.FLIP_TOP_BOTTOM)
         qImg = ImageQt(dataImg) # QImage形式に変換
+        qImg.setColorTable(colorTable)
         pixmap = QtGui.QPixmap.fromImage(qImg)  # QPixmap形式に変換
         return pixmap
 
@@ -574,7 +535,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def dumpSprite(self):
-        u""" スプライトのダンプ
+        """ スプライトのダンプ
         """
 
         targetSprite = self.currentSprite
@@ -583,14 +544,14 @@ class SpriteReader(QtWidgets.QMainWindow):
         else:
             data = targetSprite.binSpriteData
 
-        filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"スプライトを保存する"), \
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, _("スプライトを保存する"), \
             os.path.expanduser('./'), _("dump File (*.bin *.dmp)"))[0]
         try:
             with open(filename, 'wb') as saveFile:
                 saveFile.write(data)
-                logger.info(u"スプライトを保存しました")
+                logger.info("スプライトを保存しました")
         except OSError:
-            logger.info(u"スプライトの保存をキャンセルしました")
+            logger.info("スプライトの保存をキャンセルしました")
 
 
     def exDumpSprite(self):
@@ -654,31 +615,31 @@ class SpriteReader(QtWidgets.QMainWindow):
         try:
             with open(filename, 'wb') as saveFile:
                 saveFile.write(output)
-                logger.info(u"ファイルを保存しました")
+                logger.info("ファイルを保存しました")
         except OSError:
             logger.info("ファイルの保存をキャンセルしました")
 
 
     def saveFrameImage(self):
-        u""" フレーム画像の保存
+        """ フレーム画像の保存
         """
         CommonAction.saveSceneImage(self.graphicsScene)
 
 
     def saveRomFile(self):
-        u""" ファイルの保存
+        """ ファイルの保存
         """
-        filename = QtWidgets.QFileDialog.getSaveFileName(self, _(u"ROMを保存する"), os.path.expanduser('./'), _("Rom File (*.gba *.bin)"))[0]
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, _("ROMを保存する"), os.path.expanduser('./'), _("Rom File (*.gba *.bin)"))[0]
         try:
             with open(filename, 'wb') as saveFile:
                 saveFile.write(self.romData)
-                logger.info(u"ファイルを保存しました")
+                logger.info("ファイルを保存しました")
         except OSError:
-            logger.info(u"ファイルの保存をキャンセルしました")
+            logger.info("ファイルの保存をキャンセルしました")
 
 
     def repoint(self):
-        u""" ポインタの書き換え
+        """ ポインタの書き換え
         """
         index = self.ui.spriteList.currentRow()
         targetAddr = self.spriteList[index]["pointerAddr"]
@@ -707,20 +668,21 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def repointAnimation(self, item):
-        u""" アニメーションポインタの書き換え
+        """ アニメーションポインタの書き換え
         """
         index = self.ui.animList.currentRow()
         if index == 0:
-            logger.info(u"一つ目のアニメーションポインタはポインタテーブルのサイズに影響するので変更できません")
+            logger.info("一つ目のアニメーションポインタはポインタテーブルのサイズに影響するので変更できません")
             return -1
 
-        targetSprite = self.currentSprite
+        spriteIndex = self.ui.spriteList.currentRow()
+        targetSprite = self.spriteList[spriteIndex]
         if targetSprite["compFlag"] == 1:
-            logger.info(u"現在圧縮スプライトのアニメーションリポイントは非対応です")
+            logger.info("現在圧縮スプライトのアニメーションリポイントは非対応です")
             return -1
 
-        targetAddr = targetSprite["spriteAddr"] + HEADER_SIZE + self.animPtrList[index]["addr"]
-        logger.info(u"書き換えるアドレス：\t" + hex(targetAddr))
+        targetAddr = targetSprite["spriteAddr"] + HEADER_SIZE + self.currentSprite.animPtrList[index]["addr"]
+        logger.info("書き換えるアドレス：\t" + hex(targetAddr))
 
         dialog = QtWidgets.QDialog()
         dialog.ui = repointDialog()
@@ -734,9 +696,9 @@ class SpriteReader(QtWidgets.QMainWindow):
                 addr = int(str(addrText), 16)   # QStringから戻さないとダメ
                 data = struct.pack("L", addr)
                 self.romData = self.romData[:targetAddr] + data + self.romData[targetAddr+len(data):]
-                logger.info(u"アニメーションポインタを書き換えました")
+                logger.info("アニメーションポインタを書き換えました")
             except:
-                logger.info(u"不正な値です")
+                logger.info("不正な値です")
             # リロード
             spriteIndex = self.ui.spriteList.currentRow()
             if "EXE_Addr" in globals():
@@ -751,20 +713,20 @@ class SpriteReader(QtWidgets.QMainWindow):
                 self.ui.spriteList.addItem(spriteItem) # GUIスプライトリストへ追加
             self.ui.spriteList.setCurrentRow(spriteIndex)
         else:
-            logger.info(u"リポイントをキャンセルしました")
+            logger.info("リポイントをキャンセルしました")
 
 
     def writePalData(self):
-        u""" UI上で編集したパレットのデータをROMに書き込む
+        """ UI上で編集したパレットのデータをROMに書き込む
         """
         targetSprite = self.currentSprite
         if targetSprite["compFlag"] == 1:
-            logger.info(u"圧縮スプライトは現在非対応です")
+            logger.info("圧縮スプライトは現在非対応です")
             return 0
         else:
             writeAddr = targetSprite["spriteAddr"] + HEADER_SIZE  # ヘッダのぶん4バイト
             self.romData = self.romData[:writeAddr] + self.spriteData + self.romData[writeAddr+len(self.spriteData):]
-            logger.info(u"編集したパレットをメモリ上のROMに書き込みました")
+            logger.info("編集したパレットをメモリ上のROMに書き込みました")
             return 0
 
 
@@ -811,13 +773,13 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def writeDataToRom(self, writeAddr, data):
-        u""" 指定したアドレスから指定したデータを上書きする
+        """ 指定したアドレスから指定したデータを上書きする
         """
         self.romData = self.romData[:writeAddr] + data + self.romData[writeAddr+len(data):]
 
 
     def changeViewScale(self, value):
-        u""" ビューを拡大縮小する
+        """ ビューを拡大縮小する
         """
         self.ui.graphicsView.resetTransform()   # 一度オリジナルサイズに戻す
         scale = pow(2, value/10.0)   # 指数で拡大したほうが自然にスケールしてる感じがする
@@ -825,7 +787,7 @@ class SpriteReader(QtWidgets.QMainWindow):
 
 
     def importSprite(self):
-        u""" 指定したアドレスにファイルから読み込んだスプライトをインポートする
+        """ 指定したアドレスにファイルから読み込んだスプライトをインポートする
         """
 
         filename = QtWidgets.QFileDialog.getOpenFileName(self, _("Open EXE_Sprite File"), os.path.expanduser('./'))[0]   # ファイル名がQString型で返される
@@ -883,7 +845,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             self.listData = self.listData.append(se, ignore_index=True).sort_values(by=["addr"], ascending=True).reset_index(drop=True)   # 追加してソート
             logger.debug(self.listData)
             self.listData.to_csv(LIST_FILE_PATH + self.listName, encoding="utf-8", index=False)
-            logger.info(u"リストに登録しました")
+            logger.info("リストに登録しました")
 
             # リロード
             self.loadListFile(self.listName)
@@ -891,7 +853,7 @@ class SpriteReader(QtWidgets.QMainWindow):
             self.extractSpriteAddr(self.romData)
             self.ui.spriteList.setCurrentRow(index)
         else:
-            logger.info(u"ラベルの入力をキャンセルしました")
+            logger.info("ラベルの入力をキャンセルしました")
 
 
     def combineSprite(self):
@@ -924,9 +886,9 @@ class SpriteReader(QtWidgets.QMainWindow):
         try:
             with open(filename, 'wb') as saveFile:
                 saveFile.write(combSprite)
-                logger.info(u"ファイルを保存しました")
+                logger.info("ファイルを保存しました")
         except OSError:
-            logger.info(u"ファイルの保存をキャンセルしました")
+            logger.info("ファイルの保存をキャンセルしました")
 
 
 class repointDialog(object):

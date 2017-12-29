@@ -1,6 +1,6 @@
-# リンクナビSP戦にファルザー版のナビも追加する
-- _comments: [ヒートマンSP] # 出力時にコメントを含められないので編集元の敵の名前をここに出してます
-  address: '0xb2ca0' # バトルデータがインポートされるアドレスです（このアドレスにインポートすると本来ヒートマンSPと戦う場面，つまりヒノケンとの会話で呼び出されます）
+# �����N�i�rSP��Ƀt�@���U�[�ł̃i�r���ǉ�����
+- _comments: [�q�[�g�}��SP] # �o�͎��ɃR�����g���܂߂��Ȃ��̂ŕҏW���̓G�̖��O�������ɏo���Ă܂�
+  address: '0xb2ca0' # �o�g���f�[�^���C���|�[�g�����A�h���X�ł��i���̃A�h���X�ɃC���|�[�g����Ɩ{���q�[�g�}��SP�Ɛ키��ʁC�܂�q�m�P���Ƃ̉�b�ŌĂяo����܂��j
   area: '110000'
   bg: '0xff'
   bgm: '0x16'
@@ -8,14 +8,14 @@
   effect: '0x4188d7'
   field: '0x0'
   mode: '0x0'
-  objAddr: '0x7ffe00' # オブジェクトデータがインポートされるアドレスです（任意のアドレスを設定可．オブジェクトを元の数より増やす場合，他の戦闘に影響が出るので拡張領域を推奨）
+  objAddr: '0x7ffe00' # �I�u�W�F�N�g�f�[�^���C���|�[�g�����A�h���X�ł��i�C�ӂ̃A�h���X��ݒ�D�I�u�W�F�N�g�����̐���葝�₷�ꍇ�C���̐퓬�ɉe�����o��̂Ŋg���̈�𐄏��j
   objects:
-  - {objType: '0x0', position: '0x22', value: '0x00'} # 自機ロックマン
-  - {objType: '0x11', position: '0x15', value: '0x103'} # ヒートマンSP
-  - {objType: '0x11', position: '0x35', value: '0x121'} # アクアマンSPを追加
+  - {objType: '0x0', position: '0x22', value: '0x00'} # ���@���b�N�}��
+  - {objType: '0x11', position: '0x15', value: '0x103'} # �q�[�g�}��SP
+  - {objType: '0x11', position: '0x35', value: '0x121'} # �A�N�A�}��SP��ǉ�
   x1: 100
   x2: 0
-- _comments: [キラーマンSP]
+- _comments: [�L���[�}��SP]
   address: '0xb2cd0'
   area: '110000'
   bg: '0xff'
@@ -27,11 +27,11 @@
   objAddr: '0x7ffe10'
   objects:
   - {objType: '0x0', position: '0x22', value: '0x0'}
-  - {objType: '0x11', position: '0x15', value: '0x115'} # キラーマンSP
-  - {objType: '0x11', position: '0x35', value: '0x133'} # グランドマンSP
+  - {objType: '0x11', position: '0x15', value: '0x115'} # �L���[�}��SP
+  - {objType: '0x11', position: '0x35', value: '0x133'} # �O�����h�}��SP
   x1: 100
   x2: 0
-- _comments: [スラッシュマンSP]
+- _comments: [�X���b�V���}��SP]
   address: '0xb2d00'
   area: '110000'
   bg: '0xff'
@@ -43,11 +43,11 @@
   objAddr: '0x7ffe20'
   objects:
   - {objType: '0x0', position: '0x22', value: '0x0'}
-  - {objType: '0x11', position: '0x15', value: '0x10f'} # スラッシュマンSP
-  - {objType: '0x11', position: '0x35', value: '0x12d'} # テングマンSP
+  - {objType: '0x11', position: '0x15', value: '0x10f'} # �X���b�V���}��SP
+  - {objType: '0x11', position: '0x35', value: '0x12d'} # �e���O�}��SP
   x1: 100
   x2: 0
-- _comments: [エレキマンSP]
+- _comments: [�G���L�}��SP]
   address: '0xb2d30'
   area: '110000'
   bg: '0xff'
@@ -59,11 +59,11 @@
   objAddr: '0x7ffe30'
   objects:
   - {objType: '0x0', position: '0x22', value: '0x0'}
-  - {objType: '0x11', position: '0x15', value: '0x109'} # エレキマンSP
-  - {objType: '0x11', position: '0x35', value: '0x127'} # トマホークマンSP
+  - {objType: '0x11', position: '0x15', value: '0x109'} # �G���L�}��SP
+  - {objType: '0x11', position: '0x35', value: '0x127'} # �g�}�z�[�N�}��SP
   x1: 100
   x2: 0
-- _comments: [チャージマンSP]
+- _comments: [�`���[�W�}��SP]
   address: '0xb2d60'
   area: '110000'
   bg: '0xff'
@@ -75,7 +75,7 @@
   objAddr: '0x7ffe40'
   objects:
   - {objType: '0x0', position: '0x22', value: '0x0'}
-  - {objType: '0x11', position: '0x15', value: '0x11b'} # チャージマンSP
-  - {objType: '0x11', position: '0x35', value: '0x139'} # ダストマンSP
+  - {objType: '0x11', position: '0x15', value: '0x11b'} # �`���[�W�}��SP
+  - {objType: '0x11', position: '0x35', value: '0x139'} # �_�X�g�}��SP
   x1: 100
   x2: 0
