@@ -31,31 +31,31 @@ logger.addHandler(fhandler)
 """ 定数
 """
 PROGRAM_NAME = "Sappy Transplant Assistant ver 1.4.2  by ideal.exe"
-OFFSET_SIZE = 4 # オフセットサイズは4バイト
-MEMORY_OFFSET = 0x08000000   # ROMがマッピングされるメモリ上のアドレス
+OFFSET_SIZE = 4  # オフセットサイズは4バイト
+MEMORY_OFFSET = 0x08000000  # ROMがマッピングされるメモリ上のアドレス
 SONG_HEADER_SIZE = 4
-VOICE_SIZE = 0xC # 音源定義データのサイズ
-devices = {
-    "0x0":"Direct Sound",
-    "0x1":"Square Wave 1",
-    "0x2":"Square Wave 2",
-    "0x3":"Wave Memory",
-    "0x4":"Noise",
-    "0x8":"Direct Sound",
-    "0x40":"Multi Sample",
-    "0x80":"Drum Part"
+VOICE_SIZE = 0xC  # 音源定義データのサイズ
+DEVICES = {
+    "0x0": "Direct Sound",
+    "0x1": "Square Wave 1",
+    "0x2": "Square Wave 2",
+    "0x3": "Wave Memory",
+    "0x4": "Noise",
+    "0x8": "Direct Sound",
+    "0x40": "Multi Sample",
+    "0x80": "Drum Part"
 }
 
 
 def main():
     """ Main
     """
-    startTime = time.time() # 実行時間計測開始
-    print(PROGRAM_NAME +"\n")
+    start_time = time.time()  # 実行時間計測開始
+    print(PROGRAM_NAME + "\n")
 
-    parser = argparse.ArgumentParser()  # コマンドラインオプション解析
+    parser = argparse.ArgumentParser()   # コマンドラインオプション解析
     parser.add_argument("romFile", help="移植元のファイル")
-    #parser.add_argument("-t", "--target", help="移植先のファイル")
+    # parser.add_argument("-t", "--target", help="移植先のファイル")
     args = parser.parse_args()
 
     filePath = args.romFile
@@ -69,10 +69,10 @@ def main():
     print("")
     data = voiceTransplanter(romData, songTableAddr, transplantOffs)
 
-    outName = name + "_Voices_" + hex(transplantOffs) + ext  # 出力ファイル名
+    outName = name + "_Voices_" + hex(transplantOffs) + ext   # 出力ファイル名
     saveFile(data, outName)
-    executionTime = time.time() - startTime    # 実行時間計測終了
-    #logger.info("\nExecution Time:\t" + str(executionTime) + " sec")
+    executionTime = time.time() - start_time     # 実行時間計測終了
+    logger.info("\nExecution Time:\t" + str(executionTime) + " sec")
 
 
 def voiceTransplanter(romData, songTableAddr, transplantOffs):
@@ -98,7 +98,7 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
         [offsAddrList, start, end, drumsAddr] = voiceTableParser(romData, voices, offsAddrList)
         if len(drumsAddr) > 0:  # ドラムパートを使用していれば
             [offsAddrList, start2, end2, drumsAddr] = \
-                voiceTableParser(romData, drumsAddr[0], offsAddrList) # ドラムパートは1個だけ分析する
+                voiceTableParser(romData, drumsAddr[0], offsAddrList)  # ドラムパートは1個だけ分析する
         else:
             start2 = start
             end2 = end
@@ -113,7 +113,7 @@ def voiceTransplanter(romData, songTableAddr, transplantOffs):
         [baseData] = struct.unpack("L", romData[addr:addr+OFFSET_SIZE])   # もともとのポインタ
         data = struct.pack("L", baseData + transplantOffs)
         romData = writeDataToRom(romData, addr, data)
-        print(".", end="", flush=True)
+        print(".", end='', flush=True)
     print("done\n")
 
     print(fmtHex(voiceDataStart) + "から" + fmtHex(voiceDataEnd) + "までを音源データとして切り出しました")
@@ -197,8 +197,8 @@ def songDataParser(romData, songAddr):
         logger.debug("Track" + str(i) + " Addr:\t" + fmtHex(trackAddr))
     logger.debug("---")
 
-    return {"trackNum":trackNum, "voicesAddr":voicesAddr, "voicesAddrPtr":voicesAddrPtr, \
-            "trackList":trackList, "trackPtrList":trackPtrList}
+    return {"trackNum": trackNum, "voicesAddr": voicesAddr, "voicesAddrPtr": voicesAddrPtr,
+            "trackList": trackList, "trackPtrList": trackPtrList}
 
 
 def trackDataParser(romData, trackAddr):
@@ -245,7 +245,7 @@ def voiceTableParser(romData, tableAddr, offsAddrList):
         if addr >= MEMORY_OFFSET and addr - MEMORY_OFFSET < len(romData):  # まともなポインタだったら
             addr -= MEMORY_OFFSET
             if readAddr+4 not in offsAddrList:  # まだリストに追加していないなら
-                offsAddrList.append(readAddr+4) # addrの値を保持しているアドレスを記録
+                offsAddrList.append(readAddr+4)  # addrの値を保持しているアドレスを記録
 
             if addr < voiceDataStart:
                 voiceDataStart = addr   # ボイステーブルより前に楽器データがあったらそこからコピーしなければいけない
