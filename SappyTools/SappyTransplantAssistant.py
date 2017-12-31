@@ -21,16 +21,16 @@ from logging import getLogger, FileHandler, StreamHandler, DEBUG, INFO
 logger = getLogger(__name__)
 handler = StreamHandler()
 handler.setLevel(INFO)
-fhandler = FileHandler(os.path.join(os.path.dirname(__file__), "SappyTransplantAssistant.log"), "w")
-fhandler.setLevel(DEBUG)
+file_handler = FileHandler(os.path.join(os.path.dirname(__file__), "SappyTransplantAssistant.log"), "w")
+file_handler.setLevel(DEBUG)
 logger.setLevel(DEBUG)
 logger.addHandler(handler)
-logger.addHandler(fhandler)
+logger.addHandler(file_handler)
 
 
 """ 定数
 """
-PROGRAM_NAME = "Sappy Transplant Assistant ver 1.4.2  by ideal.exe"
+PROGRAM_NAME = "Sappy Transplant Assistant ver 1.5  by ideal.exe"
 OFFSET_SIZE = 4  # オフセットサイズは4バイト
 MEMORY_OFFSET = 0x08000000  # ROMがマッピングされるメモリ上のアドレス
 SONG_HEADER_SIZE = 4
@@ -233,7 +233,7 @@ def voiceTableParser(romData, tableAddr, offsAddrList):
 
         ボイスセット内のポインタのアドレス，ボイスセットの開始，終了アドレス，使用しているドラムセットのアドレスを返す
     """
-    voiceDataStart = tableAddr # コピーすべきボイスセットの開始地点
+    voiceDataStart = tableAddr  # コピーすべきボイスセットの開始地点
     voiceDataEnd = tableAddr   # コピーすべきボイスセットの終了地点
 
     readAddr = tableAddr
@@ -262,6 +262,12 @@ def voiceTableParser(romData, tableAddr, offsAddrList):
                 sampleEnd = addr + 0x10 + sampleSize
                 if voiceDataEnd < sampleEnd:
                     voiceDataEnd = sampleEnd
+
+            elif device in [0x40]:
+                """ Multi Sampleは複数ポインタを持ってるのでそっちもリストに入れる
+                """
+                if readAddr + 8 not in offsAddrList:  # まだリストに追加していないなら
+                    offsAddrList.append(readAddr + 8)  # addrの値を保持しているアドレスを記録
 
         readAddr += VOICE_SIZE
         if voiceDataEnd < readAddr:
@@ -322,6 +328,7 @@ def writeDataToRom(romData, writeAddr, data):
 def openFile(filePath):
     """ ファイルを開く
     """
+    romData = b''
 
     try:
         with open(filePath, 'rb') as romFile:   # 読み取り専用、バイナリファイルとして開く
