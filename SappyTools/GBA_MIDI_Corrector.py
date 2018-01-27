@@ -39,6 +39,7 @@ else:
     OUTPUT_NAME = name + "_corr" + ext  # 標準の出力ファイル名
 
 # ファイルを開く
+data = b''
 try:
     with open(f, 'rb') as midFile:   # 読み取り専用、バイナリファイルとして開く
         data = midFile.read()
@@ -60,10 +61,10 @@ readPos += HEADER_CHUNK_SIZE
 # 各トラックの読み取り
 tracks = [] * trackNum
 for i in range(trackNum):
-    trackChunk = struct.unpack(">4sL", data[readPos : readPos + TRACK_CHUNK_SIZE])
+    trackChunk = struct.unpack(">4sL", data[readPos: readPos + TRACK_CHUNK_SIZE])
     dataSize = trackChunk[1]
     readPos += TRACK_CHUNK_SIZE
-    tracks.append(data[readPos : readPos + dataSize])
+    tracks.append(data[readPos: readPos + dataSize])
     readPos += dataSize
 
 # 各イベントをコントロールチェンジに書き換える

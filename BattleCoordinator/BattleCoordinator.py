@@ -40,7 +40,7 @@ logger.addHandler(handler)
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../common/"))
-name, ext = os.path.splitext(args.EXE6_ROM) # ファイル名と拡張子を取得
+name, ext = os.path.splitext(args.EXE6_ROM)  # ファイル名と拡張子を取得
 import EXE6Dict
 
 # 定数
@@ -102,24 +102,24 @@ class BattleCoordinator():
                 logger.debug("\t\t'enemy':" + hex(enemy) + "\t# " + EXE6Dict.ENEMY_LIST[enemy])
                 comments.append(EXE6Dict.ENEMY_LIST[enemy])
             logger.debug("\t\t}")
-            objects.append({"objType":hex(objType), "position":hex(position), "value":hex(enemy)})
+            objects.append({"objType": hex(objType), "position": hex(position), "value": hex(enemy)})
             readAddr += OBJECT_DATA_SIZE
         logger.debug("}\n")
 
         output = {
-            "_comments":comments,
-            "address":hex(addr),
-            "field":hex(field),
-            "x1":x1,
-            "bgm":hex(bgm),
-            "mode":hex(mode),
-            "bg":hex(background),
-            "count":count,
-            "area":bin(area)[2:],
-            "x2":x2,
-            "effect":hex(effect),
-            "objAddr":hex(objAddr),
-            "objects":objects
+            "_comments": comments,
+            "address": hex(addr),
+            "field": hex(field),
+            "x1": x1,
+            "bgm": hex(bgm),
+            "mode": hex(mode),
+            "bg": hex(background),
+            "count": count,
+            "area": bin(area)[2:],
+            "x2": x2,
+            "effect": hex(effect),
+            "objAddr": hex(objAddr),
+            "objects": objects
         }
         return output
 
@@ -150,8 +150,7 @@ class BattleCoordinator():
                 objData += struct.pack("BBH", objType, position, value)
             objData += b"\xF0"
 
-            self.romData = self.romData[:address] + battleData + \
-                            self.romData[address+BATTLE_DATA_SIZE:]
+            self.romData = self.romData[:address] + battleData + self.romData[address+BATTLE_DATA_SIZE:]
             self.romData = self.romData[:objAddr] + objData + self.romData[objAddr+len(objData):]
 
         with open(name + "_mod" + ext, "wb") as outFile:
@@ -179,11 +178,12 @@ def main():
     elif args.importFile != None:
         # インポートモード
         logger.info("インポートモード")
-        with open(args.importFile, "r", encoding="ShiftJIS") as f: # なんか書き出しでutf-8指定してもShiftJISになるのでShiftJISとしてロードする
+        with open(args.importFile, "r", encoding="ShiftJIS") as f:  # なんか書き出しでutf-8指定してもShiftJISになるのでShiftJISとしてロードする
             data = yaml.load(f)
 
         battleCoordinator.importBattleData(data)
         logger.info("バトルデータをインポートしました")
+
 
 if __name__ == '__main__':
     main()

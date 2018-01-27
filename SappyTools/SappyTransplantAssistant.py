@@ -135,6 +135,7 @@ def songTableParser(romData, startAddr):
     count = 0
     while True:
         [addr, data] = struct.unpack("LL", romData[readAddr:readAddr+dataSize])
+        # dataの詳細は不明だけどエグゼの音源は1F 00 1F 00にしないと音が抜ける（Sappyだと曲グループとして表示されている。1F 00 1F 00 -> 31, 31）
 
         if addr == 0:
             # addr = 0x00000000が終端らしい
