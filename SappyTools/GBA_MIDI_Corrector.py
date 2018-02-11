@@ -26,8 +26,8 @@ logger.setLevel(INFO)
 logger.addHandler(handler)
 
 
-HEADER_CHUNK_SIZE = 14  # ヘッダーチャンクは１４バイト
-TRACK_CHUNK_SIZE = 8  # トラックチャンクは８バイト
+HEADER_CHUNK_SIZE = 14  # ヘッダーチャンクは14バイト
+TRACK_CHUNK_SIZE = 8  # トラックチャンクは8バイト
 
 startTime = time.time()  # 実行時間計測開始
 f = args.file  # 1つめの引数をファイルパスとして格納
@@ -75,8 +75,8 @@ for i in range(trackNum):
         if m is None:   # マッチするパターンがなくなったらおわり
             break
 
-        eventStart = m.start() - 3  # マッチした位置の３バイト前がテキストイベントの開始位置
-        n = tracks[i][m.start()-1]  # マッチした位置の１バイト前がデータ長
+        eventStart = m.start() - 3  # マッチした位置の3バイト前がテキストイベントの開始位置
+        n = tracks[i][m.start()-1]  # マッチした位置の1バイト前がデータ長
         eventSize = n + 3  # イベント全体のサイズ
 
         code = struct.pack("B", 0xB0 + i)
@@ -88,16 +88,17 @@ for i in range(trackNum):
         else:
             value = int(value).to_bytes(1, "little")    # b"28" -> (int)28 -> b"0x1C"
 
+        cc = b""
         if m.group() == b"LFOS":
-            cc = code + b"\x15" + value   # LFOSのコントロールチェンジは BX 15 VV （Xはチャンネル）
+            cc += code + b"\x15" + value   # LFOSのコントロールチェンジは BX 15 VV （Xはチャンネル）
         elif m.group() == b"LFODL":
-            cc = code + b"\x1A" + value
+            cc += code + b"\x1A" + value
         elif m.group() == b"MODT":
-            cc = code + b"\x16" + value
+            cc += code + b"\x16" + value
         elif m.group() == b"XCMD xIECV":
-            cc = code + b"\x1E\x08\x00" + code + b"\x1F" + value
+            cc += code + b"\x1E\x08\x00" + code + b"\x1F" + value
         elif m.group() == b"XCMD xIECL":
-            cc = code + b"\x1E\x09\x00" + code + b"\x1F" + value
+            cc += code + b"\x1E\x09\x00" + code + b"\x1F" + value
 
         tracks[i] = tracks[i][0:eventStart] + cc + \
             tracks[i][eventStart+eventSize:]  # ここで長さが変わってしまうため以前のマッチ位置が使えなくなる->whileで回す方式にした
