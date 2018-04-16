@@ -22,29 +22,30 @@ logger.addHandler(handler)
 sys.path.append(os.path.join(os.path.dirname(__file__), "../common/"))
 import LZ77Util
 
-PROGRAM_NAME = "EXE Sprite  ver 1.0  by ideal.exe"
+PROGRAM_NAME = "EXE Sprite  ver 1.1  by ideal.exe"
 HEADER_SIZE = 4
 OFFSET_SIZE = 4
-COLOR_SIZE = 2 # 1色あたりのサイズ（byte）
+COLOR_SIZE = 2  # 1色あたりのサイズ（byte）
 FRAME_DATA_SIZE = 20
 OAM_DATA_SIZE = 5
 OAM_DATA_END = [b"\xFF\xFF\xFF\xFF\xFF", b"\xFF\xFF\xFF\xFF\x00"]
 
 # フラグと形状の対応を取る辞書[size+shape]:[x,y]
 OAM_DIMENSION = {
-    "0000":[8, 8],
-    "0001":[16, 8],
-    "0010":[8, 16],
-    "0100":[16, 16],
-    "0101":[32, 8],
-    "0110":[8, 32],
-    "1000":[32, 32],
-    "1001":[32, 16],
-    "1010":[16, 32],
-    "1100":[64, 64],
-    "1101":[64, 32],
-    "1110":[32, 64]
+    "0000": [8, 8],
+    "0001": [16, 8],
+    "0010": [8, 16],
+    "0100": [16, 16],
+    "0101": [32, 8],
+    "0110": [8, 32],
+    "1000": [32, 32],
+    "1001": [32, 16],
+    "1010": [16, 32],
+    "1100": [64, 64],
+    "1101": [64, 32],
+    "1110": [32, 64]
 }
+
 
 class EXEAnimation:
     """ Animation
@@ -96,7 +97,6 @@ class EXEAnimation:
                 break
         self.frameList = frameList
 
-
     def getFrameNum(self):
         """ フレーム枚数を返す
         """
@@ -118,7 +118,7 @@ class EXEFrame:
     def __init__(self, binSpriteData, binFrameData):
         self.binFrameData = binFrameData
 
-        [self.graphSizeAddr, self.palSizeAddr, self.junkDataAddr, \
+        [self.graphSizeAddr, self.palSizeAddr, self.junkDataAddr,
             self.oamPtrAddr, self.frameDelay, self.frameType] = struct.unpack("<LLLLHH", binFrameData)
 
         [oamPtr] = struct.unpack("L", binSpriteData[self.oamPtrAddr:self.oamPtrAddr+OFFSET_SIZE])
@@ -165,7 +165,6 @@ class EXEOAM:
         objSize = flag1[-2:]
         objShape = flag2[-2:]
         [self.sizeX, self.sizeY] = OAM_DIMENSION[objSize+objShape]
-
 
     def printData(self):
         """ OAM情報表示
@@ -234,7 +233,6 @@ class EXESprite:
             animList.append(anim)
         self.animList = animList
 
-
         """ 無圧縮スプライトの場合は余分なデータを切り離す
         """
         if compFlag == 0:
@@ -243,18 +241,15 @@ class EXESprite:
 
         self.binSpriteData = spriteData
 
-
     def getBinSpriteData(self):
         """ スプライトのバイナリデータを返す
         """
         return self.binSpriteData
 
-
     def getSpriteDataSize(self):
         """ スプライトデータのサイズを返す
         """
         return len(self.binSpriteData)
-
 
     def getBinAnimPtrTable(self):
         """ スプライトのアニメーションテーブルを返す
@@ -263,13 +258,11 @@ class EXESprite:
         binAnimPtrTable = self.binSpriteData[0:animDataStart]
         return binAnimPtrTable
 
-
     def getAnimPtrTableSize(self):
         """ アニメーションテーブルのサイズを返す
         """
         animDataStart = int.from_bytes(self.binSpriteData[0:OFFSET_SIZE], "little")
         return animDataStart
-
 
     def getOffsetAnimPtrTable(self, offset):
         """ アニメーションテーブル内のポインタに指定した数値を足したものを返す
@@ -278,7 +271,6 @@ class EXESprite:
         for animPtr in self.animPtrList:
             offsetAnimPtrTable += (animPtr["value"] + offset).to_bytes(OFFSET_SIZE, "little")
         return offsetAnimPtrTable
-
 
     def getOffsetFrameData(self, offset):
         """ フレームデータ内のすべてのポインタに指定した数値を足したものを返す
@@ -293,17 +285,15 @@ class EXESprite:
                 oamPtrAddr = frameData.oamPtrAddr + offset
                 frameDelay = frameData.frameDelay
                 frameType = frameData.frameType
-                data = struct.pack("<LLLLHH", \
+                data = struct.pack("<LLLLHH",
                     graphSizeAddr, palSizeAddr, junkDataAddr, oamPtrAddr, frameDelay, frameType)
                 offsetFrameData += data
         return offsetFrameData
-
 
     def getAnimNum(self):
         """ アニメーション数を返す
         """
         return len(self.animList)
-
 
     def getBaseData(self):
         """ グラフィック、OAM、パレットデータを返す
@@ -313,7 +303,6 @@ class EXESprite:
         baseData = self.binSpriteData[self.animList[0].frameList[0]["frame"].graphSizeAddr:]  # グラフィックデータ先頭からスプライトの終端までコピー
         return baseData
 
-
     def getAllFrame(self):
         """ 全てのFrameオブジェクトを返す
         """
@@ -321,7 +310,6 @@ class EXESprite:
         for anim in self.animList:
             allFrameList += [frame["frame"] for frame in anim.frameList]
         return allFrameList
-
 
     def getAllOam(self):
         """ 全てのOAMオブジェクトを返す
