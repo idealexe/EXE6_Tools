@@ -198,6 +198,7 @@ class EXESprite:
             compFlag=1の場合圧縮スプライトとして扱います。
             スプライトデータのみのファイルを読み込む場合はspriteAddr=0, compFlag=0とすることで同様に扱えます。
         """
+        spriteData = b""
 
         if compFlag == 0:
             self.binSpriteHeader = data[spriteAddr:spriteAddr+HEADER_SIZE]

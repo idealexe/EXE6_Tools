@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'EXESpriteReader.ui'
+# Form implementation generated from reading ui file 'C:\Users\ideal\Dropbox\Program\EXE6_Tools\SpriteReader\EXESpriteReader.ui'
 #
 # Created by: PyQt5 UI code generator 5.6
 #
@@ -31,7 +31,7 @@ class Ui_MainWindow(object):
         self.spriteLayout.addWidget(self.spriteLabel)
         self.spriteList = QtWidgets.QListWidget(self.centralwidget)
         self.spriteList.setMinimumSize(QtCore.QSize(300, 0))
-        self.spriteList.setMaximumSize(QtCore.QSize(400, 16777215))
+        self.spriteList.setMaximumSize(QtCore.QSize(300, 16777215))
         self.spriteList.setAlternatingRowColors(True)
         self.spriteList.setObjectName("spriteList")
         self.spriteLayout.addWidget(self.spriteList)
