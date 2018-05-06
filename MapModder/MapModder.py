@@ -34,8 +34,8 @@ args = parser.parse_args()
 
 PROGRAM_NAME = "Map Modder  ver 0.5  by ideal.exe"
 LIST_FILE_PATH = \
-    os.path.join(os.path.dirname(__file__), "lists/") # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
-_ = gettext.gettext # 後の翻訳用
+    os.path.join(os.path.dirname(__file__), "lists/")  # プログラムと同ディレクトリにあるlistsフォルダ下にリストを保存する
+_ = gettext.gettext  # 後の翻訳用
 
 
 class MapModder(QtWidgets.QMainWindow):
@@ -167,9 +167,9 @@ class MapModder(QtWidgets.QMainWindow):
             [r, g, b] = commonAction.gba2rgb(color)
 
             if palCount == 0:
-                palData.append({"color":[r, g, b, 0], "addr":readAddr}) # 最初の色は透過色
+                palData.append({"color": [r, g, b, 0], "addr": readAddr})  # 最初の色は透過色
             else:
-                palData.append({"color":[r, g, b, 255], "addr":readAddr})
+                palData.append({"color": [r, g, b, 255], "addr": readAddr})
 
             colorStr = hex(int.from_bytes(color, "little"))[2:].zfill(4).upper() + \
                             "\t(" + str(r).rjust(3) + \
@@ -426,7 +426,7 @@ def main():
     mapModder.show()
 
     logger.debug(args.file)
-    if args.file != None:
+    if args.file is not None:
         mapModder.openFile(args.file)
 
     sys.exit(app.exec_())
