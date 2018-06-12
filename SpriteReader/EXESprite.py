@@ -57,7 +57,7 @@ class EXEAnimation:
     binAnimData = b""
 
     def __init__(self, spriteData, animAddr):
-        u""" アニメーションのアドレスから各フレームのデータを取得
+        """ アニメーションのアドレスから各フレームのデータを取得
         """
 
         graphAddrList = []    # グラフィックデータは共有しているフレームも多いので別のリストで保持
@@ -65,7 +65,7 @@ class EXEAnimation:
         frameList = []
         readAddr = animAddr
 
-        while True: # do while文がないので代わりに無限ループ＋breakを使う
+        while True:  # do while文がないので代わりに無限ループ＋breakを使う
             binFrameData = spriteData[readAddr:readAddr+FRAME_DATA_SIZE]
             self.binAnimData += binFrameData
             frame = EXEFrame(spriteData, binFrameData)
@@ -88,12 +88,12 @@ class EXEAnimation:
             graphicData = \
                 spriteData[frame.graphSizeAddr+OFFSET_SIZE:frame.graphSizeAddr+OFFSET_SIZE+graphicSize]
 
-            frameList.append({"frameNum":frameCount, "address":readAddr, "graphicData":graphicData, "frame":frame})
+            frameList.append({"frameNum": frameCount, "address": readAddr, "graphicData": graphicData, "frame": frame})
 
             readAddr += FRAME_DATA_SIZE
             frameCount += 1
 
-            if frame.frameType in [0x80, 0xC0]: # 終端フレームならループを終了
+            if frame.frameType in [0x80, 0xC0]:  # 終端フレームならループを終了
                 break
         self.frameList = frameList
 

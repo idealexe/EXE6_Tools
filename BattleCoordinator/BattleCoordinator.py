@@ -29,7 +29,7 @@ import yaml
 parser = argparse.ArgumentParser(description="バトル設定をダンプ・インポートするツール")
 parser.add_argument("EXE6_ROM", help="開くROMファイル")
 parser.add_argument("-d", "--dump", help="ダンプモード", action="store_true")
-parser.add_argument("-i", "--importFile", help="インポートモード")
+parser.add_argument("-i", "--import_file", help="インポートモード")
 args = parser.parse_args()
 
 logger = getLogger(__name__)
@@ -44,7 +44,7 @@ name, ext = os.path.splitext(args.EXE6_ROM)  # ファイル名と拡張子を取
 import EXE6Dict
 
 # 定数
-PROGRAM_NAME = "EXE6 Battle Coordinator  ver 0.2  by ideal.exe"
+PROGRAM_NAME = "EXE6 Battle Coordinator  ver 0.3  by ideal.exe"
 BATTLE_DATA_SIZE = 0x10
 MEMORY_OFFSET = 0x08000000
 OBJECT_DATA_SIZE = 4
@@ -171,14 +171,14 @@ def main():
         while readAddr < DUMP_END:
             output.append(battleCoordinator.dumpBattleData(readAddr))
             readAddr += BATTLE_DATA_SIZE
-        with open("output.yaml", "w") as outFile:
+        with open("dump.yaml", "w") as outFile:
             yaml.dump(output, outFile, encoding="utf-8", allow_unicode=True)
             logger.info("バトルデータをダンプしました")
 
-    elif args.importFile != None:
+    elif args.import_file is not None:
         # インポートモード
         logger.info("インポートモード")
-        with open(args.importFile, "r", encoding="ShiftJIS") as f:  # なんか書き出しでutf-8指定してもShiftJISになるのでShiftJISとしてロードする
+        with open(args.import_file, "r", encoding="ShiftJIS") as f:  # なんか書き出しでutf-8指定してもShiftJISになるのでShiftJISとしてロードする
             data = yaml.load(f)
 
         battleCoordinator.importBattleData(data)

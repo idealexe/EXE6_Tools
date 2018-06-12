@@ -23,12 +23,13 @@ from PIL import Image
 from PIL.ImageQt import ImageQt
 import pandas as pd
 
+import EXESprite
+import UI_EXESpriteReader as designer
 import SpriteDict
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "../common/"))
 import CommonAction
 import LZ77Util
-import EXESprite
-import UI_EXESpriteReader as designer
 
 logger = getLogger(__name__)
 handler = StreamHandler()
@@ -47,29 +48,12 @@ _ = gettext.gettext  # 後の翻訳用
 
     スプライトデータのフォーマットで決められている定数
 """
-PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.8  by ideal.exe"
-HEADER_SIZE = 4  # スプライトヘッダのサイズ
-OFFSET_SIZE = 4
-COLOR_SIZE = 2  # 1色あたりのサイズ
-FRAME_DATA_SIZE = 20
-OAM_DATA_SIZE = 5
-OAM_DATA_END = [b"\xFF\xFF\xFF\xFF\xFF", b"\xFF\xFF\xFF\xFF\x00"]
-
-# フラグと形状の対応を取る辞書[size+shape]:[x,y]
-OAM_DIMENSION = {
-    "0000": [8, 8],
-    "0001": [16, 8],
-    "0010": [8, 16],
-    "0100": [16, 16],
-    "0101": [32, 8],
-    "0110": [8, 32],
-    "1000": [32, 32],
-    "1001": [32, 16],
-    "1010": [16, 32],
-    "1100": [64, 64],
-    "1101": [64, 32],
-    "1110": [32, 64]
-}
+PROGRAM_NAME = "EXE Sprite Reader  ver 1.8.9  by ideal.exe"
+OFFSET_SIZE = EXESprite.OFFSET_SIZE
+COLOR_SIZE = EXESprite.COLOR_SIZE
+FRAME_DATA_SIZE = EXESprite.FRAME_DATA_SIZE
+HEADER_SIZE = EXESprite.HEADER_SIZE
+OAM_DIMENSION = EXESprite.OAM_DIMENSION
 
 """ 設定用定数
 
@@ -254,7 +238,7 @@ class SpriteReader(QtWidgets.QMainWindow):
                 テーブルの最後のアドレスはスプライトデータではなくデータの終端と思われる
             """
 
-            spriteAddr = rom_data[readPos:readPos+OFFSET_SIZE]
+            spriteAddr = rom_data[readPos:readPos + OFFSET_SIZE]
             memByte = spriteAddr[3]
 
             if memByte in [0x08, 0x88]:
@@ -387,7 +371,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         """
 
         # パレットサイズの読み取り
-        palSize = spriteData[palSizePtr:palSizePtr+OFFSET_SIZE]
+        palSize = spriteData[palSizePtr:palSizePtr + OFFSET_SIZE]
         palSize = struct.unpack("<L", palSize)[0]
         logger.debug("Palette Size:\t" + hex(palSize))
         if palSize != 0x20:  # サイズがおかしい場合はエラー → と思ったら自作スプライトとかで0x00にしてることもあったので無視
@@ -401,7 +385,7 @@ class SpriteReader(QtWidgets.QMainWindow):
         self.ui.palList.clear()
         palCount = 0
         while readPos < endAddr:
-            color = spriteData[readPos:readPos+COLOR_SIZE]
+            color = spriteData[readPos:readPos + COLOR_SIZE]
 
             [binR, binG, binB] = CommonAction.gba2rgb(color)
             color = struct.unpack("<H", color)[0]
