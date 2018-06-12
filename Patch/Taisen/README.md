@@ -13,3 +13,6 @@
 
 ## 使い方
 * グレイガ版は`Taisen_GXX.bps`、ファルザー版は`Taisen_RXX.bps`をbpsパッチを使用可能な[Floating IPS](https://www.romhacking.net/utilities/1040/)などで適用します。
+
+## 注意
+* セーブデータがおっぱげたりしても知らないです。
