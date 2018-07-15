@@ -8,19 +8,11 @@ import CommonAction as common
 import LZ77Util
 
 
-PROGRAM_NAME = "EXE MAP  ver 0.2"
-TILESET = 0x60a834
-TILEMAP = 0x60e054
-PALETTE = 0x60dea8
-MAP_SIZE = 168
-""" タイルセットのアドレスはメモリに展開されたタイルセットデータをLZ77圧縮し、その一部をROM内を検索して特定
-    特定したタイルセットアドレスを使ってタイルセットを読み込む処理を特定（r0 = 0x5E0724）
-        タイルセットアドレスはr0: 0x18 + r6: 0x85E070Cで作られている
-    タイルセットのLZ77展開は0x0815A2D8（ブレーク位置からF7で特定）
-    タイルセットを展開した後タイルコントロールも展開するだろうと見てLZ77展開をブレークポイントに設定、
-    ブレーク時のr0を確認してタイルセットのアドレスに近いものをタイルコントロールのアドレスとして設定してみていくつか試行して特定成功
-    →現時点での特定方法：0x0815A2D8をブレークポイントに設定、エリアを移動して4回目のブレーク時のr0がタイルセットのアドレス、6回目のブレーク時のr0がタイルコントロール
-"""
+PROGRAM_NAME = "EXE MAP  ver 0.3"
+MEMORY_OFFSET = 0x8000000
+MAP_SIZE = 144
+MAP_ENTRY_START = 0x33E38
+MAP_ENTRY_END = 0x33F28
 
 
 class ExeMap(QtWidgets.QMainWindow):
@@ -38,7 +30,37 @@ class ExeMap(QtWidgets.QMainWindow):
         with open('ROCKEXE6_GXX.gba', 'rb') as bin_file:
             self.bin_data = bin_file.read()
 
-        bin_palette_background = self.bin_data[PALETTE:PALETTE+0x200]
+        self.map_entry_list = self.init_map_entry_list()
+
+    def init_map_entry_list(self):
+        map_entries = split_by_size(self.bin_data[MAP_ENTRY_START:MAP_ENTRY_END], 0xC)
+        map_entry_list = []
+        for map_entry in map_entries:
+            tileset, palette, tilemap = [int.from_bytes(offset, 'little') for offset in split_by_size(map_entry, 4)]
+            map_entry_list.append({
+                "tileset": tileset - MEMORY_OFFSET,
+                "tilemap": tilemap - MEMORY_OFFSET,
+                "palette": palette - MEMORY_OFFSET
+            })
+            item = QtWidgets.QListWidgetItem(hex(tilemap - MEMORY_OFFSET))
+            self.ui.mapList.addItem(item)
+
+        return map_entry_list
+
+    def map_entry_selected(self):
+        """ マップリストのアイテムがダブルクリックされたときの処理
+        """
+        index = self.ui.mapList.currentRow()
+        self.draw(self.map_entry_list[index])
+
+    def draw(self, map_entry):
+        self.graphicsScene.clear()
+        map_width = self.bin_data[map_entry["tilemap"]]
+        map_height = self.bin_data[map_entry["tilemap"] + 1]
+        palette_offset = map_entry["palette"] + 0x4
+        tileset_offset = map_entry["tileset"] + 0x18
+        tilemap_offset = map_entry["tilemap"] + 0xC
+        bin_palette_background = self.bin_data[palette_offset:palette_offset+0x200]
         palette_background = []
         for bin_palette in split_by_size(bin_palette_background, 0x20):
             palette_background.append(common.GbaPalette(bin_palette))
@@ -51,7 +73,7 @@ class ExeMap(QtWidgets.QMainWindow):
                 item.setBackground(brush)
                 self.ui.backgroundPaletteTable.setItem(row, col % 16, item)
 
-        bin_char_base = LZ77Util.decompLZ77_10(self.bin_data, TILESET)
+        bin_char_base = LZ77Util.decompLZ77_10(self.bin_data, tileset_offset)
         char_base = []
         for bin_char in split_by_size(bin_char_base, 0x20):
             char_base.append(common.GbaTile(bin_char))
@@ -63,7 +85,7 @@ class ExeMap(QtWidgets.QMainWindow):
             item.setIcon(QtGui.QIcon(tile_image))
             self.ui.tilesetTable.setItem(i // 16, i % 16, item)
 
-        bin_map_bg1 = LZ77Util.decompLZ77_10(self.bin_data, TILEMAP)
+        bin_map_bg1 = LZ77Util.decompLZ77_10(self.bin_data, tilemap_offset)
         for i, map_entry in enumerate(split_by_size(bin_map_bg1, 2)):
             attribute = bin(int.from_bytes(map_entry, 'little'))[2:].zfill(16)
             palette_num = int(attribute[:4], 2)
@@ -80,7 +102,7 @@ class ExeMap(QtWidgets.QMainWindow):
             if flip_v == 1:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(1, -1))
             item = QtWidgets.QGraphicsPixmapItem(tile_image)
-            item.setOffset(i % MAP_SIZE * 8, i // MAP_SIZE * 8)
+            item.setOffset(i % map_width * 8, i // map_width % map_height * 8)
             self.graphicsScene.addItem(item)
 
 

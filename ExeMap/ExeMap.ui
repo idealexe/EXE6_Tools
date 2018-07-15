@@ -75,13 +75,7 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <widget class="QTreeWidget" name="mapTreeWidget">
-           <column>
-            <property name="text">
-             <string notr="true">1</string>
-            </property>
-           </column>
-          </widget>
+          <widget class="QListWidget" name="mapList"/>
          </item>
         </layout>
        </widget>
@@ -392,5 +386,24 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>mapList</sender>
+   <signal>itemDoubleClicked(QListWidgetItem*)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>map_entry_selected()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>109</x>
+     <y>172</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>map_entry_selected()</slot>
+ </slots>
 </ui>

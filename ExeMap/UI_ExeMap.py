@@ -41,10 +41,9 @@ class Ui_MainWindow(object):
         self.mapListGroupBox.setObjectName("mapListGroupBox")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.mapListGroupBox)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.mapTreeWidget = QtWidgets.QTreeWidget(self.mapListGroupBox)
-        self.mapTreeWidget.setObjectName("mapTreeWidget")
-        self.mapTreeWidget.headerItem().setText(0, "1")
-        self.verticalLayout.addWidget(self.mapTreeWidget)
+        self.mapList = QtWidgets.QListWidget(self.mapListGroupBox)
+        self.mapList.setObjectName("mapList")
+        self.verticalLayout.addWidget(self.mapList)
         self.horizontalLayout.addWidget(self.mapListGroupBox)
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName("tabWidget")
@@ -132,6 +131,7 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
         self.actionQuit.triggered.connect(MainWindow.close)
+        self.mapList.itemDoubleClicked['QListWidgetItem*'].connect(MainWindow.map_entry_selected)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
