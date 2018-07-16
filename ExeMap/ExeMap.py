@@ -8,7 +8,7 @@ import CommonAction as common
 import LZ77Util
 
 
-PROGRAM_NAME = "EXE MAP  ver 0.3"
+PROGRAM_NAME = "EXE MAP  ver 0.4"
 MEMORY_OFFSET = 0x8000000
 MAP_SIZE = 144
 MAP_ENTRY_START = 0x33E38
