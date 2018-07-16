@@ -31,8 +31,11 @@ class ExeMap(QtWidgets.QMainWindow):
             self.bin_data = bin_file.read()
 
         self.map_entry_list = self.init_map_entry_list()
+        self.draw(self.map_entry_list[4])
 
     def init_map_entry_list(self):
+        """ マップリストの初期化
+        """
         map_entries = split_by_size(self.bin_data[MAP_ENTRY_START:MAP_ENTRY_END], 0xC)
         map_entry_list = []
         for map_entry in map_entries:
@@ -54,12 +57,17 @@ class ExeMap(QtWidgets.QMainWindow):
         self.draw(self.map_entry_list[index])
 
     def draw(self, map_entry):
+        """ マップの描画
+        """
         self.graphicsScene.clear()
         map_width = self.bin_data[map_entry["tilemap"]]
         map_height = self.bin_data[map_entry["tilemap"] + 1]
         palette_offset = map_entry["palette"] + 0x4
-        tileset_offset = map_entry["tileset"] + 0x18
+        tileset_offset_1 = map_entry["tileset"] + 0x18
+        tileset_offset_2 = map_entry["tileset"] + int.from_bytes(
+            self.bin_data[map_entry["tileset"] + 0x10:map_entry["tileset"] + 0x14], 'little')
         tilemap_offset = map_entry["tilemap"] + 0xC
+
         bin_palette_background = self.bin_data[palette_offset:palette_offset+0x200]
         palette_background = []
         for bin_palette in split_by_size(bin_palette_background, 0x20):
@@ -73,10 +81,13 @@ class ExeMap(QtWidgets.QMainWindow):
                 item.setBackground(brush)
                 self.ui.backgroundPaletteTable.setItem(row, col % 16, item)
 
-        bin_char_base = LZ77Util.decompLZ77_10(self.bin_data, tileset_offset)
+        bin_tileset_1 = LZ77Util.decompLZ77_10(self.bin_data, tileset_offset_1)
+        bin_tileset_2 = LZ77Util.decompLZ77_10(self.bin_data, tileset_offset_2)
+        bin_tileset = bin_tileset_1 + bin_tileset_2
         char_base = []
-        for bin_char in split_by_size(bin_char_base, 0x20):
+        for bin_char in split_by_size(bin_tileset, 0x20):
             char_base.append(common.GbaTile(bin_char))
+        print("tile num: " + str(len(char_base)))
 
         for i, char in enumerate(char_base):
             item = QtWidgets.QTableWidgetItem()
@@ -92,9 +103,7 @@ class ExeMap(QtWidgets.QMainWindow):
             flip_v = int(attribute[4], 2)
             flip_h = int(attribute[5], 2)
             tile_num = int(attribute[6:], 2)
-            if tile_num >= len(char_base):
-                # TODO: 存在しないタイル番号を指定しているマップデータの調査
-                tile_num = 0
+
             char_base[tile_num].image.setColorTable(palette_background[palette_num].get_qcolors())
             tile_image = QtGui.QPixmap.fromImage(char_base[tile_num].image)
             if flip_h == 1:
