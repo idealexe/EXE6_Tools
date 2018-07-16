@@ -11,7 +11,7 @@ import gettext
 import os
 import sys
 from PIL import Image
-from logging import getLogger, StreamHandler, INFO
+from logging import getLogger, StreamHandler, INFO, DEBUG
 from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
 
@@ -27,26 +27,82 @@ _ = gettext.gettext
 TILE_WIDTH = 8  # px
 TILE_HEIGHT = 8
 TILE_DATA_SIZE = TILE_WIDTH * TILE_HEIGHT // 2  # 1タイルあたりのデータサイズ（1バイトで2ドット）
+PALETTE_DATA_SIZE = 20
+
+
+class GbaColor:
+    """ GBAの色情報
+
+        2バイトのバイナリデータから色情報を作成する
+    """
+
+    def __init__(self, bin_color_data):
+        self.bin_color_data = bin_color_data
+        bin_color = bin(int.from_bytes(bin_color_data, "little"))[2:].zfill(16)  # GBAのオブジェクトは15bitカラー（0BBBBBGGGGGRRRRR）
+        self.b = int(bin_color[1:6], 2) * 8  # 文字列化されているので数値に直す（255階調での近似色にするため8倍する）
+        self.g = int(bin_color[6:11], 2) * 8
+        self.r = int(bin_color[11:16], 2) * 8
+
+    def get_qcolor(self):
+        """ QColor形式の色を取得する
+
+        :return:
+        """
+        return QtGui.QColor(self.r, self.g, self.b)
+
+
+class GbaPalette:
+    """ GBAのパレット
+
+        32バイトのバイナリデータから16色のパレットを作成する
+    """
+
+    def __init__(self, bin_palette_data, mode=16):
+        self.bin_palette_data = bin_palette_data
+        self.color = []
+        for bin_color_data in [bin_palette_data[i:i+2] for i in [i for i in range(0, mode*2, 2)]]:
+            self.color.append(GbaColor(bin_color_data))
+
+    def get_qcolors(self):
+        """ QVector<QRgb>形式のパレットを取得する
+        """
+        colors = []
+
+        for color in self.color:
+            if len(colors) == 0:
+                colors.append(QtGui.qRgba(color.r, color.g, color.b, 0))  # 最初の色は透過色
+            else:
+                colors.append(QtGui.qRgba(color.r, color.g, color.b, 255))
+
+        return colors
 
 
 class GbaTile:
     """ GBAのタイル
 
-        20バイトのバイナリデータから8x8(px)、16色のビットマップを作成する
+        32バイトのバイナリデータから8x8(px)、16色のビットマップを作成する
     """
 
-    def __init__(self, bin_tile_data):
+    def __init__(self, bin_tile_data, mode=16):
         self.bin_tile_data = bin_tile_data
 
-        dot_list = list(bin_tile_data.hex().upper())
-        dot_list = [int(i, 16) for i in dot_list]
-        # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
-        for i in range(0, len(dot_list))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
-            dot_list[i], dot_list[i+1] = dot_list[i+1], dot_list[i]  # これで値を入れ替えられる
+        dot_list = []
+        if mode == 16:
+            """ 16色（4bit）モード
+            """
+            dot_list = list(bin_tile_data.hex().upper())
+            dot_list = [int(i, 16) for i in dot_list]
+            # ドットの描画順（0x01 0x23 0x45 0x67 -> 10325476）に合わせて入れ替え
+            for i in range(0, len(dot_list))[0::2]:  # 偶数だけ取り出す（0から+2ずつ）
+                dot_list[i], dot_list[i+1] = dot_list[i+1], dot_list[i]  # これで値を入れ替えられる
+
+        elif mode == 256:
+            dot_list = list(bin_tile_data)
 
         img_array = np.array(dot_list, dtype=np.uint8).reshape((TILE_WIDTH, TILE_HEIGHT))
         self.img_array = img_array
         self.image = QtGui.QImage(img_array, TILE_WIDTH, TILE_HEIGHT, QtGui.QImage.Format_Indexed8)
+        self.pixmap = QtGui.QPixmap.fromImage(self.image)
 
     def get_bin_tile_data(self):
         """ タイルのバイナリデータを返す
@@ -62,6 +118,11 @@ class GbaTile:
         """ QImage形式のタイル画像を返す
         """
         return self.image
+
+    def get_qpixmap(self):
+        """ QPixmap形式のタイル画像を返す
+        """
+        return self.pixmap
 
 
 class GbaMap:
@@ -260,8 +321,5 @@ def parsePaletteData(romData, palAddr):
 
 
 if __name__ == '__main__':
-    file_path = sys.argv[1]
-    with open(file_path, "rb") as data:
-        memory = data.read()
-
-    GbaOam(b'\x06\x00\x12\x40\x9c\xc7')
+    # gba_color = GbaColor(b"\xFE\x0D")
+    gba_palette = GbaPalette(b"\x00\x00\xE2\x7D\x83\x7D\x23\x71\x84\x6C\x04\x60\x01\x4C\x33\x69\x8F\x58\x0B\x44\xE0\x28\xE0\x03\xE0\x03\x21\x24\x41\x28\x00\x28")

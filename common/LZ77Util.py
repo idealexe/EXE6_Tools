@@ -13,7 +13,7 @@ import sys
 import time
 
 
-def detectLZ77(romData, minSize=0x100, maxSize=0x100000, searchStep=0x4, checkRef=False):
+def detectLZ77(romData, minSize=0x1000, maxSize=0x100000, searchStep=0x4, checkRef=False):
     """ LZ77(0x10)圧縮されてそうなデータの検索
 
         LZ77圧縮データの先頭はだいたい 10 XX YY ZZ 00 00 XX YY ZZ になる

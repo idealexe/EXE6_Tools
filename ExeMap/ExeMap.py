@@ -8,10 +8,10 @@ import CommonAction as common
 import LZ77Util
 
 
-PROGRAM_NAME = "EXE MAP  ver 0.4"
+PROGRAM_NAME = "EXE MAP  ver 0.5"
 MEMORY_OFFSET = 0x8000000
 MAP_SIZE = 144
-MAP_ENTRY_START = 0x33E38
+MAP_ENTRY_START = 0x339dc  # 0x33BA4
 MAP_ENTRY_END = 0x33F28
 
 
@@ -31,7 +31,7 @@ class ExeMap(QtWidgets.QMainWindow):
             self.bin_data = bin_file.read()
 
         self.map_entry_list = self.init_map_entry_list()
-        self.draw(self.map_entry_list[4])
+        self.draw(self.map_entry_list[0])
 
     def init_map_entry_list(self):
         """ マップリストの初期化
@@ -40,6 +40,8 @@ class ExeMap(QtWidgets.QMainWindow):
         map_entry_list = []
         for map_entry in map_entries:
             tileset, palette, tilemap = [int.from_bytes(offset, 'little') for offset in split_by_size(map_entry, 4)]
+            if tileset == 0:  # テーブル内に電脳とインターネットの区切りがあるので除去
+                continue
             map_entry_list.append({
                 "tileset": tileset - MEMORY_OFFSET,
                 "tilemap": tilemap - MEMORY_OFFSET,
@@ -60,19 +62,25 @@ class ExeMap(QtWidgets.QMainWindow):
         """ マップの描画
         """
         self.graphicsScene.clear()
+
         map_width = self.bin_data[map_entry["tilemap"]]
         map_height = self.bin_data[map_entry["tilemap"] + 1]
         palette_offset = map_entry["palette"] + 0x4
         tileset_offset_1 = map_entry["tileset"] + 0x18
         tileset_offset_2 = map_entry["tileset"] + int.from_bytes(
             self.bin_data[map_entry["tileset"] + 0x10:map_entry["tileset"] + 0x14], 'little')
+        color_mode = self.bin_data[map_entry["tilemap"] + 2]  # おそらく（0: 16色、1: 256色）
         tilemap_offset = map_entry["tilemap"] + 0xC
 
-        bin_palette_background = self.bin_data[palette_offset:palette_offset+0x200]
+        bin_palette = self.bin_data[palette_offset:palette_offset+0x200]
         palette_background = []
-        for bin_palette in split_by_size(bin_palette_background, 0x20):
-            palette_background.append(common.GbaPalette(bin_palette))
+        if color_mode == 0:
+            for bin_palette in split_by_size(bin_palette, 0x20):
+                palette_background.append(common.GbaPalette(bin_palette))
+        elif color_mode == 1:
+            palette_background.append(common.GbaPalette(bin_palette, 256))
 
+        self.ui.backgroundPaletteTable.clear()
         for row, palette in enumerate(palette_background):
             for col, color in enumerate(palette.color):
                 item = QtWidgets.QTableWidgetItem()
@@ -85,26 +93,37 @@ class ExeMap(QtWidgets.QMainWindow):
         bin_tileset_2 = LZ77Util.decompLZ77_10(self.bin_data, tileset_offset_2)
         bin_tileset = bin_tileset_1 + bin_tileset_2
         char_base = []
-        for bin_char in split_by_size(bin_tileset, 0x20):
-            char_base.append(common.GbaTile(bin_char))
-        print("tile num: " + str(len(char_base)))
+
+        if color_mode == 0:
+            for bin_char in split_by_size(bin_tileset, 0x20):
+                char_base.append(common.GbaTile(bin_char))
+        elif color_mode == 1:
+            for bin_char in split_by_size(bin_tileset, 0x40):
+                char_base.append(common.GbaTile(bin_char, 256))
 
         for i, char in enumerate(char_base):
+            """ タイルセットリストの表示
+            """
             item = QtWidgets.QTableWidgetItem()
-            char.image.setColorTable(palette_background[1].get_qcolors())
+            char.image.setColorTable(palette_background[0].get_qcolors())
             tile_image = QtGui.QPixmap.fromImage(char.image)
             item.setIcon(QtGui.QIcon(tile_image))
             self.ui.tilesetTable.setItem(i // 16, i % 16, item)
 
         bin_map_bg1 = LZ77Util.decompLZ77_10(self.bin_data, tilemap_offset)
         for i, map_entry in enumerate(split_by_size(bin_map_bg1, 2)):
+            """ タイルマップに基づいてタイルを描画
+            """
             attribute = bin(int.from_bytes(map_entry, 'little'))[2:].zfill(16)
             palette_num = int(attribute[:4], 2)
             flip_v = int(attribute[4], 2)
             flip_h = int(attribute[5], 2)
             tile_num = int(attribute[6:], 2)
 
-            char_base[tile_num].image.setColorTable(palette_background[palette_num].get_qcolors())
+            if color_mode == 0:
+                char_base[tile_num].image.setColorTable(palette_background[palette_num].get_qcolors())
+            elif color_mode == 1:
+                char_base[tile_num].image.setColorTable(palette_background[0].get_qcolors())
             tile_image = QtGui.QPixmap.fromImage(char_base[tile_num].image)
             if flip_h == 1:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(-1, 1))
