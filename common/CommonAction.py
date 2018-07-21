@@ -88,7 +88,7 @@ class GbaTile:
 
         dot_list = []
         if mode == 16:
-            """ 16色（4bit）モード
+            """ 16色（1px = 4bit）モード
             """
             dot_list = list(bin_tile_data.hex().upper())
             dot_list = [int(i, 16) for i in dot_list]
@@ -97,12 +97,14 @@ class GbaTile:
                 dot_list[i], dot_list[i+1] = dot_list[i+1], dot_list[i]  # これで値を入れ替えられる
 
         elif mode == 256:
+            """ 256色（1px = 8bit）モード
+            """
             dot_list = list(bin_tile_data)
 
         img_array = np.array(dot_list, dtype=np.uint8).reshape((TILE_WIDTH, TILE_HEIGHT))
         self.img_array = img_array
         self.image = QtGui.QImage(img_array, TILE_WIDTH, TILE_HEIGHT, QtGui.QImage.Format_Indexed8)
-        self.pixmap = QtGui.QPixmap.fromImage(self.image)
+        # self.pixmap = QtGui.QPixmap.fromImage(self.image)
 
     def get_bin_tile_data(self):
         """ タイルのバイナリデータを返す
