@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'C:\Users\ideal\Dropbox\Program\EXE6_Tools\ExeMap\ExeMap.ui'
 #
-# Created by: PyQt5 UI code generator 5.6
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1000, 600)
+        MainWindow.resize(1300, 800)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self._2 = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -50,7 +50,6 @@ class Ui_MainWindow(object):
         self.mapTab = QtWidgets.QWidget()
         self.mapTab.setObjectName("mapTab")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.mapTab)
-        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.frame = QtWidgets.QFrame(self.mapTab)
         self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -90,14 +89,14 @@ class Ui_MainWindow(object):
         self.groupBox.setObjectName("groupBox")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.groupBox)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.backgroundPaletteTable = QtWidgets.QTableWidget(self.groupBox)
-        self.backgroundPaletteTable.setRowCount(16)
-        self.backgroundPaletteTable.setColumnCount(16)
-        self.backgroundPaletteTable.setObjectName("backgroundPaletteTable")
-        self.backgroundPaletteTable.horizontalHeader().setDefaultSectionSize(20)
-        self.backgroundPaletteTable.verticalHeader().setVisible(True)
-        self.backgroundPaletteTable.verticalHeader().setDefaultSectionSize(20)
-        self.verticalLayout_2.addWidget(self.backgroundPaletteTable)
+        self.paletteTable = QtWidgets.QTableWidget(self.groupBox)
+        self.paletteTable.setRowCount(16)
+        self.paletteTable.setColumnCount(16)
+        self.paletteTable.setObjectName("paletteTable")
+        self.paletteTable.horizontalHeader().setDefaultSectionSize(20)
+        self.paletteTable.verticalHeader().setVisible(True)
+        self.paletteTable.verticalHeader().setDefaultSectionSize(20)
+        self.verticalLayout_2.addWidget(self.paletteTable)
         self.verticalLayout_4.addWidget(self.groupBox)
         self.horizontalLayout_4.addLayout(self.verticalLayout_4)
         self.horizontalLayout_2.addWidget(self.frame)
@@ -105,7 +104,6 @@ class Ui_MainWindow(object):
         self.movementTab = QtWidgets.QWidget()
         self.movementTab.setObjectName("movementTab")
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout(self.movementTab)
-        self.horizontalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.graphicsView_2 = QtWidgets.QGraphicsView(self.movementTab)
         self.graphicsView_2.setObjectName("graphicsView_2")
@@ -115,7 +113,7 @@ class Ui_MainWindow(object):
         self._2.addLayout(self.horizontalLayout)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1000, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1300, 21))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")

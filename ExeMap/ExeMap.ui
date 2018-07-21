@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
-    <height>600</height>
+    <width>1300</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -265,7 +265,7 @@
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_2">
                   <item>
-                   <widget class="QTableWidget" name="backgroundPaletteTable">
+                   <widget class="QTableWidget" name="paletteTable">
                     <property name="rowCount">
                      <number>16</number>
                     </property>
@@ -346,7 +346,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1000</width>
+     <width>1300</width>
      <height>21</height>
     </rect>
    </property>

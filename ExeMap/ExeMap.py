@@ -2,17 +2,18 @@ import os
 import sys
 import UI_ExeMap as designer
 from PyQt5 import QtWidgets, QtGui, QtCore
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "../common/"))
 import CommonAction as common
+import compress
 import LZ77Util
 
 
-PROGRAM_NAME = "EXE MAP  ver 0.5"
+PROGRAM_NAME = "EXE MAP  ver 0.6"
 MEMORY_OFFSET = 0x8000000
 MAP_SIZE = 144
-MAP_ENTRY_START = 0x339dc  # 0x33BA4
+MAP_ENTRY_START = 0x339dc
 MAP_ENTRY_END = 0x33F28
+TILE_DATA_SIZE_16 = 0x20    # 16色タイルのデータサイズ
+TILE_DATA_SIZE_256 = 0x40   # 256色タイルのデータサイズ
 
 
 class ExeMap(QtWidgets.QMainWindow):
@@ -72,40 +73,52 @@ class ExeMap(QtWidgets.QMainWindow):
         color_mode = self.bin_data[map_entry["tilemap"] + 2]  # おそらく（0: 16色、1: 256色）
         tilemap_offset = map_entry["tilemap"] + 0xC
 
+        """ パレットの更新
+        """
         bin_palette = self.bin_data[palette_offset:palette_offset+0x200]
-        palette_background = []
+        palette_list = []
         if color_mode == 0:
             for bin_palette in split_by_size(bin_palette, 0x20):
-                palette_background.append(common.GbaPalette(bin_palette))
+                palette_list.append(common.GbaPalette(bin_palette))
         elif color_mode == 1:
-            palette_background.append(common.GbaPalette(bin_palette, 256))
+            palette_list.append(common.GbaPalette(bin_palette, 256))
 
-        self.ui.backgroundPaletteTable.clear()
-        for row, palette in enumerate(palette_background):
+        """ GUIのパレットテーブルの更新
+        """
+        self.ui.paletteTable.clear()
+        for row, palette in enumerate(palette_list):
             for col, color in enumerate(palette.color):
                 item = QtWidgets.QTableWidgetItem()
                 brush = QtGui.QBrush(QtGui.QColor(color.r, color.g, color.b))
                 brush.setStyle(QtCore.Qt.SolidPattern)
                 item.setBackground(brush)
-                self.ui.backgroundPaletteTable.setItem(row, col % 16, item)
+                if color_mode == 0:
+                    self.ui.paletteTable.setItem(row, col % 16, item)
+                elif color_mode == 1:
+                    self.ui.paletteTable.setItem(col // 16, col % 16, item)
 
+        """ タイルの処理
+        """
         bin_tileset_1 = LZ77Util.decompLZ77_10(self.bin_data, tileset_offset_1)
         bin_tileset_2 = LZ77Util.decompLZ77_10(self.bin_data, tileset_offset_2)
         bin_tileset = bin_tileset_1 + bin_tileset_2
         char_base = []
 
         if color_mode == 0:
-            for bin_char in split_by_size(bin_tileset, 0x20):
+            for bin_char in split_by_size(bin_tileset, TILE_DATA_SIZE_16):
                 char_base.append(common.GbaTile(bin_char))
         elif color_mode == 1:
-            for bin_char in split_by_size(bin_tileset, 0x40):
+            for bin_char in split_by_size(bin_tileset, TILE_DATA_SIZE_256):
                 char_base.append(common.GbaTile(bin_char, 256))
 
         for i, char in enumerate(char_base):
             """ タイルセットリストの表示
             """
             item = QtWidgets.QTableWidgetItem()
-            char.image.setColorTable(palette_background[0].get_qcolors())
+            if color_mode == 0:
+                char.image.setColorTable(palette_list[1].get_qcolors())
+            elif color_mode == 1:
+                char.image.setColorTable(palette_list[0].get_qcolors())
             tile_image = QtGui.QPixmap.fromImage(char.image)
             item.setIcon(QtGui.QIcon(tile_image))
             self.ui.tilesetTable.setItem(i // 16, i % 16, item)
@@ -121,9 +134,8 @@ class ExeMap(QtWidgets.QMainWindow):
             tile_num = int(attribute[6:], 2)
 
             if color_mode == 0:
-                char_base[tile_num].image.setColorTable(palette_background[palette_num].get_qcolors())
-            elif color_mode == 1:
-                char_base[tile_num].image.setColorTable(palette_background[0].get_qcolors())
+                char_base[tile_num].image.setColorTable(palette_list[palette_num].get_qcolors())
+
             tile_image = QtGui.QPixmap.fromImage(char_base[tile_num].image)
             if flip_h == 1:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(-1, 1))
