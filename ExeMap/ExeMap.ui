@@ -318,6 +318,78 @@
                  </layout>
                 </widget>
                </item>
+               <item>
+                <widget class="QGroupBox" name="layerBox">
+                 <property name="minimumSize">
+                  <size>
+                   <width>200</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>400</width>
+                   <height>150</height>
+                  </size>
+                 </property>
+                 <property name="title">
+                  <string>Layer</string>
+                 </property>
+                 <layout class="QFormLayout" name="formLayout_2">
+                  <item row="0" column="0">
+                   <widget class="QCheckBox" name="checkBox">
+                    <property name="text">
+                     <string>Movement</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QRadioButton" name="radioButton">
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QCheckBox" name="checkBox_2">
+                    <property name="text">
+                     <string>BG2</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QRadioButton" name="radioButton_2">
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="0">
+                   <widget class="QCheckBox" name="checkBox_3">
+                    <property name="text">
+                     <string>BG1</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="1">
+                   <widget class="QRadioButton" name="radioButton_3">
+                    <property name="text">
+                     <string/>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
               </layout>
              </item>
             </layout>
@@ -402,8 +474,42 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>checkBox_2</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>bg2_visible_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>789</x>
+     <y>706</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>822</x>
+     <y>779</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_3</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>bg1_visible_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>798</x>
+     <y>731</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>771</x>
+     <y>771</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>map_entry_selected()</slot>
+  <slot>bg1_visible_changed()</slot>
+  <slot>bg2_visible_changed()</slot>
  </slots>
 </ui>

@@ -1,4 +1,5 @@
 import os
+import logging
 import sys
 import UI_ExeMap as designer
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -7,7 +8,14 @@ import compress
 import LZ77Util
 
 
-PROGRAM_NAME = "EXE MAP  ver 0.6"
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(stream_handler)
+
+
+PROGRAM_NAME = "EXE MAP  ver 0.7"
 MEMORY_OFFSET = 0x8000000
 MAP_SIZE = 144
 MAP_ENTRY_START = 0x339dc
@@ -27,6 +35,8 @@ class ExeMap(QtWidgets.QMainWindow):
         self.graphicsScene = QtWidgets.QGraphicsScene(self)
         self.ui.graphicsView.setScene(self.graphicsScene)
         self.ui.graphicsView.scale(1, 1)
+        self.graphicsGroupBG1 = QtWidgets.QGraphicsItemGroup()
+        self.graphicsGroupBG2 = QtWidgets.QGraphicsItemGroup()
 
         with open('ROCKEXE6_GXX.gba', 'rb') as bin_file:
             self.bin_data = bin_file.read()
@@ -124,6 +134,8 @@ class ExeMap(QtWidgets.QMainWindow):
             self.ui.tilesetTable.setItem(i // 16, i % 16, item)
 
         bin_map_bg1 = LZ77Util.decompLZ77_10(self.bin_data, tilemap_offset)
+        self.graphicsGroupBG1 = QtWidgets.QGraphicsItemGroup()
+        self.graphicsGroupBG2 = QtWidgets.QGraphicsItemGroup()
         for i, map_entry in enumerate(split_by_size(bin_map_bg1, 2)):
             """ タイルマップに基づいてタイルを描画
             """
@@ -143,7 +155,23 @@ class ExeMap(QtWidgets.QMainWindow):
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(1, -1))
             item = QtWidgets.QGraphicsPixmapItem(tile_image)
             item.setOffset(i % map_width * 8, i // map_width % map_height * 8)
-            self.graphicsScene.addItem(item)
+            bg = i // (map_width * map_height)
+            if bg == 0:
+                self.graphicsGroupBG1.addToGroup(item)
+            elif bg == 1:
+                self.graphicsGroupBG2.addToGroup(item)
+
+        self.graphicsScene.addItem(self.graphicsGroupBG1)
+        self.graphicsScene.addItem(self.graphicsGroupBG2)
+
+    def bg1_visible_changed(self, state):
+        self.graphicsGroupBG1.setVisible(state)
+
+    def bg2_visible_changed(self, state):
+        self.graphicsGroupBG2.setVisible(state)
+
+    def movement_visible_changed(self):
+        pass
 
 
 def split_by_size(data, size):
