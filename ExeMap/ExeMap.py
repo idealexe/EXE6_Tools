@@ -1,10 +1,15 @@
-import os
+""" EXE MAP
+
+"""
+# pylint: disable=c-extension-no-member
+
+# import os
 import logging
 import sys
-import UI_ExeMap as designer
 from PyQt5 import QtWidgets, QtGui, QtCore
+import UI_ExeMap as designer
 import CommonAction as common
-import compress
+# import compress
 import LZ77Util
 
 
@@ -28,15 +33,17 @@ class ExeMap(QtWidgets.QMainWindow):
     """ EXE Map
     """
     def __init__(self, parent=None):
+        """ init
+        """
         super(ExeMap, self).__init__(parent)
         self.ui = designer.Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle(PROGRAM_NAME)
-        self.graphicsScene = QtWidgets.QGraphicsScene(self)
-        self.ui.graphicsView.setScene(self.graphicsScene)
+        self.graphics_scene = QtWidgets.QGraphicsScene(self)
+        self.ui.graphicsView.setScene(self.graphics_scene)
         self.ui.graphicsView.scale(1, 1)
-        self.graphicsGroupBG1 = QtWidgets.QGraphicsItemGroup()
-        self.graphicsGroupBG2 = QtWidgets.QGraphicsItemGroup()
+        self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
+        self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
 
         with open('ROCKEXE6_GXX.gba', 'rb') as bin_file:
             self.bin_data = bin_file.read()
@@ -50,7 +57,8 @@ class ExeMap(QtWidgets.QMainWindow):
         map_entries = split_by_size(self.bin_data[MAP_ENTRY_START:MAP_ENTRY_END], 0xC)
         map_entry_list = []
         for map_entry in map_entries:
-            tileset, palette, tilemap = [int.from_bytes(offset, 'little') for offset in split_by_size(map_entry, 4)]
+            tileset, palette, tilemap = [int.from_bytes(offset, 'little')
+                                         for offset in split_by_size(map_entry, 4)]
             if tileset == 0:  # テーブル内に電脳とインターネットの区切りがあるので除去
                 continue
             map_entry_list.append({
@@ -72,7 +80,7 @@ class ExeMap(QtWidgets.QMainWindow):
     def draw(self, map_entry):
         """ マップの描画
         """
-        self.graphicsScene.clear()
+        self.graphics_scene.clear()
 
         map_width = self.bin_data[map_entry["tilemap"]]
         map_height = self.bin_data[map_entry["tilemap"] + 1]
@@ -83,8 +91,7 @@ class ExeMap(QtWidgets.QMainWindow):
         color_mode = self.bin_data[map_entry["tilemap"] + 2]  # おそらく（0: 16色、1: 256色）
         tilemap_offset = map_entry["tilemap"] + 0xC
 
-        """ パレットの更新
-        """
+        # パレットの更新
         bin_palette = self.bin_data[palette_offset:palette_offset+0x200]
         palette_list = []
         if color_mode == 0:
@@ -93,8 +100,7 @@ class ExeMap(QtWidgets.QMainWindow):
         elif color_mode == 1:
             palette_list.append(common.GbaPalette(bin_palette, 256))
 
-        """ GUIのパレットテーブルの更新
-        """
+        # GUIのパレットテーブルの更新
         self.ui.paletteTable.clear()
         for row, palette in enumerate(palette_list):
             for col, color in enumerate(palette.color):
@@ -107,8 +113,7 @@ class ExeMap(QtWidgets.QMainWindow):
                 elif color_mode == 1:
                     self.ui.paletteTable.setItem(col // 16, col % 16, item)
 
-        """ タイルの処理
-        """
+        # タイルの処理
         bin_tileset_1 = LZ77Util.decompLZ77_10(self.bin_data, tileset_offset_1)
         bin_tileset_2 = LZ77Util.decompLZ77_10(self.bin_data, tileset_offset_2)
         bin_tileset = bin_tileset_1 + bin_tileset_2
@@ -122,8 +127,7 @@ class ExeMap(QtWidgets.QMainWindow):
                 char_base.append(common.GbaTile(bin_char, 256))
 
         for i, char in enumerate(char_base):
-            """ タイルセットリストの表示
-            """
+            # タイルセットリストの表示
             item = QtWidgets.QTableWidgetItem()
             if color_mode == 0:
                 char.image.setColorTable(palette_list[1].get_qcolors())
@@ -134,11 +138,10 @@ class ExeMap(QtWidgets.QMainWindow):
             self.ui.tilesetTable.setItem(i // 16, i % 16, item)
 
         bin_map_bg1 = LZ77Util.decompLZ77_10(self.bin_data, tilemap_offset)
-        self.graphicsGroupBG1 = QtWidgets.QGraphicsItemGroup()
-        self.graphicsGroupBG2 = QtWidgets.QGraphicsItemGroup()
+        self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
+        self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
         for i, map_entry in enumerate(split_by_size(bin_map_bg1, 2)):
-            """ タイルマップに基づいてタイルを描画
-            """
+            # タイルマップに基づいてタイルを描画
             attribute = bin(int.from_bytes(map_entry, 'little'))[2:].zfill(16)
             palette_num = int(attribute[:4], 2)
             flip_v = int(attribute[4], 2)
@@ -154,24 +157,43 @@ class ExeMap(QtWidgets.QMainWindow):
             if flip_v == 1:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(1, -1))
             item = QtWidgets.QGraphicsPixmapItem(tile_image)
+            item.ItemIsSelectable = True
+            item.ItemIsMovable = True
             item.setOffset(i % map_width * 8, i // map_width % map_height * 8)
             bg = i // (map_width * map_height)
             if bg == 0:
-                self.graphicsGroupBG1.addToGroup(item)
+                self.graphics_group_bg1.addToGroup(item)
             elif bg == 1:
-                self.graphicsGroupBG2.addToGroup(item)
+                self.graphics_group_bg2.addToGroup(item)
 
-        self.graphicsScene.addItem(self.graphicsGroupBG1)
-        self.graphicsScene.addItem(self.graphicsGroupBG2)
+        self.graphics_scene.addItem(self.graphics_group_bg1)
+        self.graphics_scene.addItem(self.graphics_group_bg2)
 
     def bg1_visible_changed(self, state):
-        self.graphicsGroupBG1.setVisible(state)
+        """ BG1の表示切り替え
+        """
+        self.graphics_group_bg1.setVisible(state)
 
     def bg2_visible_changed(self, state):
-        self.graphicsGroupBG2.setVisible(state)
+        """ BG2の表示切り替え
+        """
+        self.graphics_group_bg2.setVisible(state)
 
     def movement_visible_changed(self):
+        """
+
+        :return:
+        """
         pass
+
+    def rubber_band_changed(self, select_rect):
+        """
+
+        :param select_rect:
+        :return:
+        """
+        items = self.ui.graphicsView.items(select_rect)
+        logger.debug(items)
 
 
 def split_by_size(data, size):
@@ -185,7 +207,7 @@ def split_by_size(data, size):
 
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
-    window = ExeMap()
-    window.show()
-    sys.exit(app.exec_())
+    APP = QtWidgets.QApplication(sys.argv)
+    WINDOW = ExeMap()
+    WINDOW.show()
+    sys.exit(APP.exec_())

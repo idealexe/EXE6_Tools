@@ -62,6 +62,7 @@ class Ui_MainWindow(object):
         brush = QtGui.QBrush(QtGui.QColor(150, 200, 255))
         brush.setStyle(QtCore.Qt.CrossPattern)
         self.graphicsView.setBackgroundBrush(brush)
+        self.graphicsView.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
         self.graphicsView.setObjectName("graphicsView")
         self.horizontalLayout_4.addWidget(self.graphicsView)
         self.verticalLayout_4 = QtWidgets.QVBoxLayout()
@@ -163,6 +164,7 @@ class Ui_MainWindow(object):
         self.mapList.itemDoubleClicked['QListWidgetItem*'].connect(MainWindow.map_entry_selected)
         self.checkBox_2.toggled['bool'].connect(MainWindow.bg2_visible_changed)
         self.checkBox_3.toggled['bool'].connect(MainWindow.bg1_visible_changed)
+        self.graphicsView.rubberBandChanged['QRect','QPointF','QPointF'].connect(MainWindow.rubber_band_changed)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

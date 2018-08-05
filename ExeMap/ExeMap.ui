@@ -116,6 +116,9 @@
                  </color>
                 </brush>
                </property>
+               <property name="dragMode">
+                <enum>QGraphicsView::RubberBandDrag</enum>
+               </property>
               </widget>
              </item>
              <item>
@@ -506,10 +509,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>graphicsView</sender>
+   <signal>rubberBandChanged(QRect,QPointF,QPointF)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>rubber_band_changed(QRect)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>403</x>
+     <y>214</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>438</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>map_entry_selected()</slot>
   <slot>bg1_visible_changed()</slot>
   <slot>bg2_visible_changed()</slot>
+  <slot>rubber_band_changed(QRect)</slot>
  </slots>
 </ui>
