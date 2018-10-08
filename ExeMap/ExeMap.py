@@ -1,31 +1,31 @@
 """ EXE Map
-"""
-# pylint: disable=c-extension-no-member
 
-# import os
+    今は日本語版グレイガ専用です。
+"""
+# pylint: disable=c-extension-no-member, import-error
+
+import argparse
 import logging
 import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
-import UI_ExeMap as designer
-import CommonAction as common
-# import compress
+import exe_map_settings as settings
+import UI_ExeMap as Designer
+import CommonAction as Common
+import compress
 import LZ77Util
 
 
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.DEBUG)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
+""" ロギング設定 """
+STREAM_HANDLER = logging.StreamHandler()
+STREAM_HANDLER.setLevel(logging.DEBUG)
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
+LOGGER.addHandler(STREAM_HANDLER)
 
-
-PROGRAM_NAME = "EXE MAP  ver 0.7"
-MEMORY_OFFSET = 0x8000000
-MAP_SIZE = 144
-MAP_ENTRY_START = 0x339dc
-MAP_ENTRY_END = 0x33F28
-TILE_DATA_SIZE_16 = 0x20    # 16色タイルのデータサイズ
-TILE_DATA_SIZE_256 = 0x40   # 256色タイルのデータサイズ
+""" パーサ設定 """
+PARSER = argparse.ArgumentParser(description=settings.PROGRAM_NAME)
+PARSER.add_argument('-f', '--file', help='開くROMファイル')
+ARGS = PARSER.parse_args()
 
 
 class ExeMap(QtWidgets.QMainWindow):
@@ -35,14 +35,17 @@ class ExeMap(QtWidgets.QMainWindow):
         """ init
         """
         super(ExeMap, self).__init__(parent)
-        self.ui = designer.Ui_MainWindow()
+        self.ui = Designer.Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle(PROGRAM_NAME)
+        self.setWindowTitle(settings.PROGRAM_NAME)
+        self.setWindowIcon(QtGui.QIcon('bug.png'))
         self.graphics_scene = QtWidgets.QGraphicsScene(self)
         self.ui.graphicsView.setScene(self.graphics_scene)
         self.ui.graphicsView.scale(1, 1)
         self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
         self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
+        self.current_map = None
+        self.bin_map_bg = b''
 
         with open('ROCKEXE6_GXX.gba', 'rb') as bin_file:
             self.bin_data = bin_file.read()
@@ -53,7 +56,8 @@ class ExeMap(QtWidgets.QMainWindow):
     def init_map_entry_list(self):
         """ マップリストの初期化
         """
-        map_entries = split_by_size(self.bin_data[MAP_ENTRY_START:MAP_ENTRY_END], 0xC)
+        map_entries = split_by_size(self.bin_data[settings.MAP_ENTRY_START:
+                                                  settings.MAP_ENTRY_END], settings.MAP_ENTRY_SIZE)
         map_entry_list = []
         self.ui.mapList.clear()
 
@@ -73,21 +77,26 @@ class ExeMap(QtWidgets.QMainWindow):
         """ マップリストのアイテムがダブルクリックされたときの処理
         """
         index = self.ui.mapList.currentRow()
-        self.draw(self.map_entry_list[index])
+        self.current_map = self.map_entry_list[index]
+        self.ui_map_attribute_update()
+        self.draw(self.current_map)
+
+    def ui_map_attribute_update(self):
+        self.ui.widthValueLabel.setText(str(self.current_map.width) + ' tile')
+        self.ui.heightValueLabel.setText(str(self.current_map.width) + ' tile')
+        self.ui.tileMapValueLabel.setText(hex(self.current_map.tilemap_offset))
 
     def draw(self, map_entry):
         """ マップの描画
         """
-        self.graphics_scene.clear()
-
         # パレットの更新
         bin_palette = self.bin_data[map_entry.palette_offset: map_entry.palette_offset+0x200]
         palette_list = []
         if map_entry.color_mode == 0:
             for bin_palette in split_by_size(bin_palette, 0x20):
-                palette_list.append(common.GbaPalette(bin_palette))
+                palette_list.append(Common.GbaPalette(bin_palette))
         elif map_entry.color_mode == 1:
-            palette_list.append(common.GbaPalette(bin_palette, 256))
+            palette_list.append(Common.GbaPalette(bin_palette, settings.COLOR_NUM_256))
 
         # GUIのパレットテーブルの更新
         self.ui.paletteTable.clear()
@@ -98,9 +107,10 @@ class ExeMap(QtWidgets.QMainWindow):
                 brush.setStyle(QtCore.Qt.SolidPattern)
                 item.setBackground(brush)
                 if map_entry.color_mode == 0:
-                    self.ui.paletteTable.setItem(row, col % 16, item)
+                    self.ui.paletteTable.setItem(row, col % settings.COLOR_NUM_16, item)
                 elif map_entry.color_mode == 1:
-                    self.ui.paletteTable.setItem(col // 16, col % 16, item)
+                    self.ui.paletteTable.setItem(col // settings.COLOR_NUM_16,
+                                                 col % settings.COLOR_NUM_16, item)
 
         # タイルの処理
         bin_tileset_1 = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tileset_offset_1)
@@ -109,11 +119,11 @@ class ExeMap(QtWidgets.QMainWindow):
         char_base = []
 
         if map_entry.color_mode == 0:
-            for bin_char in split_by_size(bin_tileset, TILE_DATA_SIZE_16):
-                char_base.append(common.GbaTile(bin_char))
+            for bin_char in split_by_size(bin_tileset, settings.TILE_DATA_SIZE_16):
+                char_base.append(Common.GbaTile(bin_char))
         elif map_entry.color_mode == 1:
-            for bin_char in split_by_size(bin_tileset, TILE_DATA_SIZE_256):
-                char_base.append(common.GbaTile(bin_char, 256))
+            for bin_char in split_by_size(bin_tileset, settings.TILE_DATA_SIZE_256):
+                char_base.append(Common.GbaTile(bin_char, settings.COLOR_NUM_256))
 
         for i, char in enumerate(char_base):
             # タイルセットリストの表示
@@ -124,12 +134,24 @@ class ExeMap(QtWidgets.QMainWindow):
                 char.image.setColorTable(palette_list[0].get_qcolors())
             tile_image = QtGui.QPixmap.fromImage(char.image)
             item.setIcon(QtGui.QIcon(tile_image))
-            self.ui.tilesetTable.setItem(i // 16, i % 16, item)
+            self.ui.tilesetTable.setItem(i // settings.COLOR_NUM_16,
+                                         i % settings.COLOR_NUM_16, item)
 
-        bin_map_bg = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tilemap_offset)
+        self.bin_map_bg = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tilemap_offset)
+        self.draw_map(map_entry, char_base, palette_list)
+
+    def draw_map(self, map_entry, char_base, palette_list):
+        """ GraphicsViewにマップを描画する
+
+        :param map_entry:
+        :param char_base:
+        :param palette_list:
+        :return:
+        """
+        self.graphics_scene.clear()
         self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
         self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
-        for i, tile_entry in enumerate(split_by_size(bin_map_bg, 2)):
+        for i, tile_entry in enumerate(split_by_size(self.bin_map_bg, 2)):
             # タイルマップに基づいてタイルを描画
             attribute = bin(int.from_bytes(tile_entry, 'little'))[2:].zfill(16)
             palette_num = int(attribute[:4], 2)
@@ -182,7 +204,7 @@ class ExeMap(QtWidgets.QMainWindow):
         :return:
         """
         items = self.ui.graphicsView.items(select_rect)
-        logger.debug(items)
+        LOGGER.debug(items)
 
 
 class ExeMapEntry:
@@ -193,9 +215,9 @@ class ExeMapEntry:
         tileset, palette, tilemap = [int.from_bytes(offset, 'little')
                                      for offset in split_by_size(bin_map_entry, 4)]
 
-        self.tileset = tileset - MEMORY_OFFSET
-        self.tilemap = tilemap - MEMORY_OFFSET
-        self.palette = palette - MEMORY_OFFSET
+        self.tileset = tileset - settings.MEMORY_OFFSET
+        self.tilemap = tilemap - settings.MEMORY_OFFSET
+        self.palette = palette - settings.MEMORY_OFFSET
 
         self.width = bin_rom_data[self.tilemap]
         self.height = bin_rom_data[self.tilemap + 1]
