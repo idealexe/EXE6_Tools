@@ -39,7 +39,7 @@
       <item row="0" column="1">
        <widget class="QToolButton" name="saveButton">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="minimumSize">
          <size>
@@ -406,7 +406,7 @@
                    </widget>
                   </item>
                   <item row="1" column="0">
-                   <widget class="QCheckBox" name="checkBox_2">
+                   <widget class="QCheckBox" name="bg2CheckBox">
                     <property name="text">
                      <string>BG2</string>
                     </property>
@@ -423,7 +423,7 @@
                    </widget>
                   </item>
                   <item row="2" column="0">
-                   <widget class="QCheckBox" name="checkBox_3">
+                   <widget class="QCheckBox" name="bg1CheckBox">
                     <property name="text">
                      <string>BG1</string>
                     </property>
@@ -530,7 +530,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>checkBox_2</sender>
+   <sender>bg2CheckBox</sender>
    <signal>toggled(bool)</signal>
    <receiver>MainWindow</receiver>
    <slot>bg2_visible_changed()</slot>
@@ -546,7 +546,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>checkBox_3</sender>
+   <sender>bg1CheckBox</sender>
    <signal>toggled(bool)</signal>
    <receiver>MainWindow</receiver>
    <slot>bg1_visible_changed()</slot>
@@ -577,11 +577,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>saveButton</sender>
+   <signal>pressed()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>save()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>130</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>171</x>
+     <y>53</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>map_entry_selected()</slot>
   <slot>bg1_visible_changed()</slot>
   <slot>bg2_visible_changed()</slot>
   <slot>rubber_band_changed(QRect)</slot>
+  <slot>save()</slot>
  </slots>
 </ui>

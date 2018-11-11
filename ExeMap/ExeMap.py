@@ -2,7 +2,7 @@
 
     今は日本語版グレイガ専用です。
 """
-# pylint: disable=c-extension-no-member, import-error
+# pylint: disable=c-extension-no-member, import-error, invalid-name, pointless-string-statement
 
 import argparse
 import logging
@@ -38,12 +38,10 @@ class ExeMap(QtWidgets.QMainWindow):
         self.ui = Designer.Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle(settings.PROGRAM_NAME)
-        self.setWindowIcon(QtGui.QIcon('bug.png'))
+        self.setWindowIcon(QtGui.QIcon(settings.ICON_PATH))
         self.graphics_scene = QtWidgets.QGraphicsScene(self)
         self.ui.graphicsView.setScene(self.graphics_scene)
         self.ui.graphicsView.scale(1, 1)
-        self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
-        self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
         self.current_map = None
         self.bin_map_bg = b''
 
@@ -51,29 +49,29 @@ class ExeMap(QtWidgets.QMainWindow):
             self.bin_data = bin_file.read()
 
         self.map_entry_list = self.init_map_entry_list()
-        self.draw(self.map_entry_list[0])
 
     def init_map_entry_list(self):
         """ マップリストの初期化
         """
-        map_entries = split_by_size(self.bin_data[settings.MAP_ENTRY_START:
-                                                  settings.MAP_ENTRY_END], settings.MAP_ENTRY_SIZE)
+        map_entry_offsets = list(range(settings.MAP_ENTRY_START, settings.MAP_ENTRY_END, settings.MAP_ENTRY_SIZE))
         map_entry_list = []
         self.ui.mapList.clear()
 
-        for bin_map_entry in map_entries:
-            tileset = int.from_bytes(bin_map_entry[0:4], 'little')
+        count = 0
+        for map_entry_offset in map_entry_offsets:
+            tileset = int.from_bytes(self.bin_data[map_entry_offset:map_entry_offset+4], 'little')
             if tileset == 0:  # テーブル内に電脳とインターネットの区切りがあるので除去
                 continue
 
-            map_entry = ExeMapEntry(bin_map_entry, self.bin_data)
+            map_entry = ExeMapEntry(map_entry_offset, self.bin_data)
             map_entry_list.append(map_entry)
-            item = QtWidgets.QListWidgetItem(hex(map_entry.tilemap))
+            item = QtWidgets.QListWidgetItem(str(count) + ':\t' + hex(map_entry_offset))
             self.ui.mapList.addItem(item)
+            count += 1
 
         return map_entry_list
 
-    def map_entry_selected(self):
+    def ui_map_entry_selected(self):
         """ マップリストのアイテムがダブルクリックされたときの処理
         """
         index = self.ui.mapList.currentRow()
@@ -82,8 +80,10 @@ class ExeMap(QtWidgets.QMainWindow):
         self.draw(self.current_map)
 
     def ui_map_attribute_update(self):
+        """ マップ情報の更新
+        """
         self.ui.widthValueLabel.setText(str(self.current_map.width) + ' tile')
-        self.ui.heightValueLabel.setText(str(self.current_map.width) + ' tile')
+        self.ui.heightValueLabel.setText(str(self.current_map.height) + ' tile')
         self.ui.tileMapValueLabel.setText(hex(self.current_map.tilemap_offset))
 
     def draw(self, map_entry):
@@ -93,8 +93,7 @@ class ExeMap(QtWidgets.QMainWindow):
         bin_palette = self.bin_data[map_entry.palette_offset: map_entry.palette_offset+0x200]
         palette_list = []
         if map_entry.color_mode == 0:
-            for bin_palette in split_by_size(bin_palette, 0x20):
-                palette_list.append(Common.GbaPalette(bin_palette))
+            palette_list = [Common.GbaPalette(bin_palette) for bin_palette in split_by_size(bin_palette, 0x20)]
         elif map_entry.color_mode == 1:
             palette_list.append(Common.GbaPalette(bin_palette, settings.COLOR_NUM_256))
 
@@ -119,11 +118,11 @@ class ExeMap(QtWidgets.QMainWindow):
         char_base = []
 
         if map_entry.color_mode == 0:
-            for bin_char in split_by_size(bin_tileset, settings.TILE_DATA_SIZE_16):
-                char_base.append(Common.GbaTile(bin_char))
+            char_base = [Common.GbaTile(bin_char)
+                         for bin_char in split_by_size(bin_tileset, settings.TILE_DATA_SIZE_16)]
         elif map_entry.color_mode == 1:
-            for bin_char in split_by_size(bin_tileset, settings.TILE_DATA_SIZE_256):
-                char_base.append(Common.GbaTile(bin_char, settings.COLOR_NUM_256))
+            char_base = [Common.GbaTile(bin_char, settings.COLOR_NUM_256)
+                         for bin_char in split_by_size(bin_tileset, settings.TILE_DATA_SIZE_256)]
 
         for i, char in enumerate(char_base):
             # タイルセットリストの表示
@@ -146,87 +145,146 @@ class ExeMap(QtWidgets.QMainWindow):
         :param map_entry:
         :param char_base:
         :param palette_list:
-        :return:
         """
         self.graphics_scene.clear()
-        self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
-        self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
-        for i, tile_entry in enumerate(split_by_size(self.bin_map_bg, 2)):
-            # タイルマップに基づいてタイルを描画
-            attribute = bin(int.from_bytes(tile_entry, 'little'))[2:].zfill(16)
-            palette_num = int(attribute[:4], 2)
-            flip_v = int(attribute[4], 2)
-            flip_h = int(attribute[5], 2)
-            tile_num = int(attribute[6:], 2)
+        self.ui.bg1CheckBox.setChecked(True)
+        self.ui.bg2CheckBox.setChecked(True)
+
+        for entry_num, tile_entry in enumerate(split_by_size(self.bin_map_bg, 2)):
+            bg_num = entry_num // (map_entry.width * map_entry.height)
+            x = entry_num % map_entry.width * 8
+            y = entry_num // map_entry.width % map_entry.height * 8
+            item = TileItem(tile_entry, bg_num)
 
             if map_entry.color_mode == 0:
-                char_base[tile_num].image.setColorTable(palette_list[palette_num].get_qcolors())
+                char_base[item.tile_num].image.setColorTable(palette_list[item.palette_num].get_qcolors())
 
-            tile_image = QtGui.QPixmap.fromImage(char_base[tile_num].image)
-            if flip_h == 1:
+            tile_image = QtGui.QPixmap.fromImage(char_base[item.tile_num].image)
+            if item.flip_h:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(-1, 1))
-            if flip_v == 1:
+            if item.flip_v:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(1, -1))
-            item = QtWidgets.QGraphicsPixmapItem(tile_image)
-            item.ItemIsSelectable = True
-            item.ItemIsMovable = True
-            item.setOffset(i % map_entry.width * 8, i // map_entry.width % map_entry.height * 8)
-            bg = i // (map_entry.width * map_entry.height)
-            if bg == 0:
-                self.graphics_group_bg1.addToGroup(item)
-            elif bg == 1:
-                self.graphics_group_bg2.addToGroup(item)
 
-        self.graphics_scene.addItem(self.graphics_group_bg1)
-        self.graphics_scene.addItem(self.graphics_group_bg2)
+            item.setPixmap(tile_image)
+            item.setOffset(x, y)
+            self.graphics_scene.addItem(item)
 
-    def bg1_visible_changed(self, state):
+    def bg1_visible_changed(self, state: bool):
         """ BG1の表示切り替え
         """
-        self.graphics_group_bg1.setVisible(state)
+        # self.graphics_group_bg1.setVisible(state)
+        pass
 
-    def bg2_visible_changed(self, state):
+    def bg2_visible_changed(self, state: bool):
         """ BG2の表示切り替え
         """
-        self.graphics_group_bg2.setVisible(state)
-
-    def movement_visible_changed(self):
-        """
-
-        :return:
-        """
+        # self.graphics_group_bg2.setVisible(state)
         pass
 
     def rubber_band_changed(self, select_rect):
         """
 
         :param select_rect:
-        :return:
         """
         items = self.ui.graphicsView.items(select_rect)
         LOGGER.debug(items)
+
+    def save(self):
+        """ ROMの保存
+        """
+        base = self.map_entry_list[91]
+        LOGGER.debug(base)
+        to = 0x900000
+        self.bin_data = Common.write_bin(self.bin_data, to,
+                                         base.bin_tilemap_entry + base.get_bin_tilemap_compressed(self.bin_data))
+        self.bin_data = Common.write_bin(self.bin_data, base.tilemap_pointer,
+                                         (to + settings.MEMORY_OFFSET).to_bytes(4, 'little'))
+
+        with open('output/BR5J.gba', 'wb') as output_file:
+            LOGGER.info('ファイルを保存しました。')
+            output_file.write(self.bin_data)
+
+
+class TileItem(QtWidgets.QGraphicsPixmapItem):
+    """ TileItem
+
+    """
+    def __init__(self, bin_tile, bg_num):
+        super().__init__()
+        self.ItemIsSelectable = True
+        self.bin_tile = bin_tile
+        self.bg_num = bg_num
+
+        attribute = bin(int.from_bytes(bin_tile, 'little'))[2:].zfill(16)
+        self.palette_num = int(attribute[:4], 2)
+        self.flip_v = bool(int(attribute[4], 2))
+        self.flip_h = bool(int(attribute[5], 2))
+        self.tile_num = int(attribute[6:], 2)
+
+    def __str__(self):
+        string = 'BG:\t' + str(self.bg_num) + '\n' \
+                 'Palette:\t' + str(self.palette_num) + '\n' \
+                 'Flip V:\t' + str(self.flip_v) + '\n' \
+                 'Flip H:\t' + str(self.flip_h) + '\n' \
+                 'Tile:\t' + str(self.tile_num) + '\n'
+        return string
+
+    def mousePressEvent(self, event):
+        LOGGER.debug(self)
 
 
 class ExeMapEntry:
     """ EXE Map Entry
     """
-    def __init__(self, bin_map_entry, bin_rom_data):
-        self.bin_map_entry = bin_map_entry
-        tileset, palette, tilemap = [int.from_bytes(offset, 'little')
-                                     for offset in split_by_size(bin_map_entry, 4)]
+    def __init__(self, map_entry_offset, bin_rom_data):
+        self.offset = map_entry_offset  # マップエントリ開始位置のアドレス
+        self.tileset_pointer = map_entry_offset  # タイルセットのポインタのアドレス（＝エントリ開始位置）
+        self.palette_pointer = map_entry_offset + 4  # パレットのポインタのアドレス
+        self.tilemap_pointer = map_entry_offset + 8  # タイルマップのポインタのアドレス
 
-        self.tileset = tileset - settings.MEMORY_OFFSET
-        self.tilemap = tilemap - settings.MEMORY_OFFSET
-        self.palette = palette - settings.MEMORY_OFFSET
+        self.bin_map_entry = bin_rom_data[map_entry_offset:map_entry_offset+settings.MAP_ENTRY_SIZE]
+        self.tileset, self.palette, self.tilemap = \
+            [int.from_bytes(offset, 'little') - settings.MEMORY_OFFSET
+             for offset in split_by_size(self.bin_map_entry, 4)]
 
-        self.width = bin_rom_data[self.tilemap]
-        self.height = bin_rom_data[self.tilemap + 1]
         self.palette_offset = self.palette + 0x4
+
         self.tileset_offset_1 = self.tileset + 0x18
         self.tileset_offset_2 = self.tileset + int.from_bytes(
             bin_rom_data[self.tileset + 0x10: self.tileset + 0x14], 'little')
+
+        self.bin_tilemap_entry = bin_rom_data[self.tilemap:self.tilemap + 0xC]
+        self.width = bin_rom_data[self.tilemap]
+        self.height = bin_rom_data[self.tilemap + 1]
         self.color_mode = bin_rom_data[self.tilemap + 2]  # おそらく（0: 16色、1: 256色）
         self.tilemap_offset = self.tilemap + 0xC
+
+    def get_bin_tilemap(self, bin_rom_data):
+        """ 非圧縮のタイルマップを取得する
+
+        :param bin_rom_data:
+        :return:
+        """
+        return LZ77Util.decompLZ77_10(bin_rom_data, self.tilemap_offset)
+
+    def get_bin_tilemap_compressed(self, bin_rom_data):
+        """ 圧縮したタイルマップを取得する
+
+        :param bin_rom_data:
+        :return:
+        """
+        tilemap = LZ77Util.decompLZ77_10(bin_rom_data, self.tilemap_offset)
+        return compress.compress(tilemap)
+
+    def __str__(self):
+        string = 'Entry Offset:\t' + hex(self.offset) + '\n' +\
+                 'Tile Set Entry:\t' + hex(self.tileset) + '\n' +\
+                 'Palette Entry:\t' + hex(self.palette) + '\n' +\
+                 'Tile Map Entry:\t' + hex(self.tilemap) + '\n' +\
+                 'Width:\t' + str(self.width) + ' Tile\n' +\
+                 'Height:\t' + str(self.height) + ' Tile\n' +\
+                 'Tile Map Offset:\t' + hex(self.tilemap_offset)
+        return string
 
 
 def split_by_size(data, size):
@@ -234,6 +292,7 @@ def split_by_size(data, size):
 
     :param data:
     :param size:
+
     :return:
     """
     return [data[i:i+size] for i in [i for i in range(0, len(data), size)]]
