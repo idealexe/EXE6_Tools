@@ -302,7 +302,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QGroupBox" name="groupBox">
+                <widget class="QGroupBox" name="paletteGroupBox">
                  <property name="minimumSize">
                   <size>
                    <width>200</width>
