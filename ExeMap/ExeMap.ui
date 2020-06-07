@@ -224,7 +224,7 @@
                   <item>
                    <widget class="QTableWidget" name="tilesetTable">
                     <property name="showGrid">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <property name="rowCount">
                      <number>64</number>
@@ -233,16 +233,22 @@
                      <number>16</number>
                     </property>
                     <attribute name="horizontalHeaderVisible">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </attribute>
                     <attribute name="horizontalHeaderDefaultSectionSize">
-                     <number>16</number>
+                     <number>24</number>
+                    </attribute>
+                    <attribute name="horizontalHeaderMinimumSectionSize">
+                     <number>24</number>
                     </attribute>
                     <attribute name="verticalHeaderVisible">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </attribute>
                     <attribute name="verticalHeaderDefaultSectionSize">
-                     <number>16</number>
+                     <number>24</number>
+                    </attribute>
+                    <attribute name="verticalHeaderMinimumSectionSize">
+                     <number>24</number>
                     </attribute>
                     <row/>
                     <row/>

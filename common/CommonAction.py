@@ -322,6 +322,9 @@ def parsePaletteData(romData, palAddr):
     return palData
 
 
-if __name__ == '__main__':
-    # gba_color = GbaColor(b"\xFE\x0D")
-    gba_palette = GbaPalette(b"\x00\x00\xE2\x7D\x83\x7D\x23\x71\x84\x6C\x04\x60\x01\x4C\x33\x69\x8F\x58\x0B\x44\xE0\x28\xE0\x03\xE0\x03\x21\x24\x41\x28\x00\x28")
+def write_bin(dest, offset, data):
+    """ バイト列の指定位置に書き込む
+    """
+    if len(dest) < offset:
+        dest += b'\xFF' * (offset - len(dest))  # オフセットがデータサイズを超える場合はFFで埋める
+    return dest[:offset] + data + dest[offset+len(data):]

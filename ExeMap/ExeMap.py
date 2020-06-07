@@ -8,6 +8,7 @@ import argparse
 import logging
 from PyQt5 import QtWidgets, QtGui, QtCore
 from typing import List
+from PyQt5.QtWidgets import QGraphicsSceneMouseEvent
 from exe_map_settings import *
 import UI_ExeMap as Designer
 import CommonAction as Common
@@ -55,11 +56,10 @@ class ExeMap(QtWidgets.QMainWindow):
         """
         map_entry_offsets = list(range(MAP_ENTRY_START, MAP_ENTRY_END, MAP_ENTRY_SIZE))
         map_entry_list = []
-        self.ui.mapList.clear()
 
         for map_entry_offset in map_entry_offsets:
             tileset = int.from_bytes(self.bin_data[map_entry_offset:map_entry_offset+4], 'little')
-            if tileset == 0:  # テーブル内に電脳とインターネットの区切りがあるので除去
+            if tileset == 0:  # テーブル内に電脳とインターネットの区切りがあるのでスキップ
                 continue
 
             map_entry = ExeMapEntry(map_entry_offset, self.bin_data)
@@ -104,25 +104,11 @@ class ExeMap(QtWidgets.QMainWindow):
         elif map_entry.color_mode == 1:
             palette_list.append(Common.GbaPalette(bin_palette, COLOR_NUM_256))
 
-        # GUIのパレットテーブルの更新
-        self.ui.paletteTable.clear()
-        for row, palette in enumerate(palette_list):
-            for col, color in enumerate(palette.color):
-                item = QtWidgets.QTableWidgetItem()
-                brush = QtGui.QBrush(QtGui.QColor(color.r, color.g, color.b))
-                brush.setStyle(QtCore.Qt.SolidPattern)
-                item.setBackground(brush)
-                if map_entry.color_mode == 0:
-                    self.ui.paletteTable.setItem(row, col % COLOR_NUM_16, item)
-                elif map_entry.color_mode == 1:
-                    self.ui.paletteTable.setItem(col // COLOR_NUM_16,
-                                                 col % COLOR_NUM_16, item)
-
         # タイルの処理
         bin_tileset_1 = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tileset_offset_1)
         bin_tileset_2 = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tileset_offset_2)
         bin_tileset = bin_tileset_1 + bin_tileset_2
-        char_base = []
+        char_base: List[Common.GbaTile] = []
 
         if map_entry.color_mode == 0:
             char_base = [Common.GbaTile(bin_char)
@@ -131,20 +117,44 @@ class ExeMap(QtWidgets.QMainWindow):
             char_base = [Common.GbaTile(bin_char, COLOR_NUM_256)
                          for bin_char in split_by_size(bin_tileset, TILE_DATA_SIZE_256)]
 
-        for i, char in enumerate(char_base):
+        self.ui_palette_update(palette_list, map_entry.color_mode)
+        self.ui_tileset_update(char_base, palette_list, map_entry.color_mode)
+        self.bin_map_bg = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tilemap_offset)
+        self.draw_map(map_entry, char_base, palette_list)
+
+    def ui_tileset_update(self, tileset: List[Common.GbaTile],
+                          palette_list: List[Common.GbaPalette], color_mode: int) -> None:
+        """ UIタイルセットの更新
+        """
+        self.ui.tilesetTable.clear()
+        for i, tile in enumerate(tileset):
             # タイルセットリストの表示
             item = QtWidgets.QTableWidgetItem()
-            if map_entry.color_mode == 0:
-                char.image.setColorTable(palette_list[1].get_qcolors())
-            elif map_entry.color_mode == 1:
-                char.image.setColorTable(palette_list[0].get_qcolors())
-            tile_image = QtGui.QPixmap.fromImage(char.image)
+            if color_mode == 0:
+                # 16色のマップのときはタイルセットリストは1番目のパレットで描画する。
+                tile.image.setColorTable(palette_list[1].get_qcolors())
+            elif color_mode == 1:
+                tile.image.setColorTable(palette_list[0].get_qcolors())
+            tile_image = QtGui.QPixmap.fromImage(tile.image).scaledToWidth(16)
             item.setIcon(QtGui.QIcon(tile_image))
             self.ui.tilesetTable.setItem(i // COLOR_NUM_16,
                                          i % COLOR_NUM_16, item)
 
-        self.bin_map_bg = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tilemap_offset)
-        self.draw_map(map_entry, char_base, palette_list)
+    def ui_palette_update(self, palette_list: List[Common.GbaPalette], color_mode: int) -> None:
+        """ UIパレットの更新
+        """
+        self.ui.paletteTable.clear()
+        for row, palette in enumerate(palette_list):
+            for col, color in enumerate(palette.color):
+                item = QtWidgets.QTableWidgetItem()
+                brush = QtGui.QBrush(QtGui.QColor(color.r, color.g, color.b))
+                brush.setStyle(QtCore.Qt.SolidPattern)
+                item.setBackground(brush)
+                if color_mode == 0:
+                    self.ui.paletteTable.setItem(row, col % COLOR_NUM_16, item)
+                elif color_mode == 1:
+                    self.ui.paletteTable.setItem(col // COLOR_NUM_16,
+                                                 col % COLOR_NUM_16, item)
 
     def draw_map(self, map_entry, char_base, palette_list):
         """ GraphicsViewにマップを描画する
@@ -157,11 +167,11 @@ class ExeMap(QtWidgets.QMainWindow):
         self.ui.bg1CheckBox.setChecked(True)
         self.ui.bg2CheckBox.setChecked(True)
 
-        for entry_num, tile_entry in enumerate(split_by_size(self.bin_map_bg, 2)):
+        for entry_num, tile_entry in enumerate(split_by_size(self.bin_map_bg, WORD)):
             bg_num = entry_num // (map_entry.width * map_entry.height)
             x = entry_num % map_entry.width * 8
             y = entry_num // map_entry.width % map_entry.height * 8
-            item = TileItem(tile_entry, bg_num)
+            item = TileItem(entry_num, tile_entry, bg_num)
 
             if map_entry.color_mode == 0:
                 char_base[item.tile_num].image.setColorTable(palette_list[item.palette_num].get_qcolors())
@@ -215,8 +225,9 @@ class ExeMap(QtWidgets.QMainWindow):
 class TileItem(QtWidgets.QGraphicsPixmapItem):
     """ TileItem
     """
-    def __init__(self, bin_tile, bg_num):
+    def __init__(self, entry_num, bin_tile, bg_num):
         super().__init__()
+        self.entry_num = entry_num  # タイルマップ内で何番目のタイルか
         self.bin_tile = bin_tile
         self.bg_num = bg_num
 
@@ -224,18 +235,27 @@ class TileItem(QtWidgets.QGraphicsPixmapItem):
         self.palette_num = int(attribute[:4], 2)
         self.flip_v = bool(int(attribute[4], 2))
         self.flip_h = bool(int(attribute[5], 2))
-        self.tile_num = int(attribute[6:], 2)
+        self.tile_num = int(attribute[6:], 2)  # タイルセットの何番目のタイルを使用するか
 
     def __str__(self):
-        string = 'BG:\t' + str(self.bg_num) + '\n' \
+        string = 'NUM:\t' + str(self.entry_num) + '\n' \
+                 'BG:\t' + str(self.bg_num) + '\n' \
                  'Palette:\t' + str(self.palette_num) + '\n' \
                  'Flip V:\t' + str(self.flip_v) + '\n' \
                  'Flip H:\t' + str(self.flip_h) + '\n' \
                  'Tile:\t' + str(self.tile_num) + '\n'
         return string
 
-    def mousePressEvent(self, event):
-        LOGGER.debug(self)
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        """ タイルクリック時の処理
+        """
+        button = event.button()
+        if button == 1:
+            # Left Click
+            LOGGER.debug(self)
+        elif button == 2:
+            # Right Click
+            LOGGER.debug(self)
 
 
 class ExeMapEntry:
