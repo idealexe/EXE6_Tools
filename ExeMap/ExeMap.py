@@ -225,7 +225,7 @@ class ExeMap(QtWidgets.QMainWindow):
 class TileItem(QtWidgets.QGraphicsPixmapItem):
     """ TileItem
     """
-    def __init__(self, entry_num, bin_tile, bg_num):
+    def __init__(self, entry_num: int, bin_tile: bytes, bg_num: int):
         super().__init__()
         self.entry_num = entry_num  # タイルマップ内で何番目のタイルか
         self.bin_tile = bin_tile
