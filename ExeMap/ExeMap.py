@@ -43,8 +43,12 @@ class ExeMap(QtWidgets.QMainWindow):
         self.graphics_scene = QtWidgets.QGraphicsScene(self)
         self.ui.graphicsView.setScene(self.graphics_scene)
         self.ui.graphicsView.scale(1, 1)
+        self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
+        self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
+        self.graphics_scene.addItem(self.graphics_group_bg1)
+        self.graphics_scene.addItem(self.graphics_group_bg2)
         self.current_map = None
-        self.bin_map_bg = b''
+        self.bin_map_bg: bytes = b''
 
         with open(ARGS.file, 'rb') as bin_file:
             self.bin_data = bin_file.read()
@@ -55,13 +59,12 @@ class ExeMap(QtWidgets.QMainWindow):
         """ マップリストの初期化
         """
         map_entry_offsets = list(range(MAP_ENTRY_START, MAP_ENTRY_END, MAP_ENTRY_SIZE))
-        map_entry_list = []
+        map_entry_list: List[ExeMapEntry] = []
 
         for map_entry_offset in map_entry_offsets:
-            tileset = int.from_bytes(self.bin_data[map_entry_offset:map_entry_offset+4], 'little')
+            tileset = int.from_bytes(self.bin_data[map_entry_offset:map_entry_offset+DWORD], 'little')
             if tileset == 0:  # テーブル内に電脳とインターネットの区切りがあるのでスキップ
                 continue
-
             map_entry = ExeMapEntry(map_entry_offset, self.bin_data)
             map_entry_list.append(map_entry)
 
@@ -98,7 +101,7 @@ class ExeMap(QtWidgets.QMainWindow):
         """
         # パレットの更新
         bin_palette = self.bin_data[map_entry.palette_offset: map_entry.palette_offset+map_entry.palette_size]
-        palette_list = []
+        palette_list: List[Common.GbaPalette] = []
         if map_entry.color_mode == 0:
             palette_list = [Common.GbaPalette(bin_palette) for bin_palette in split_by_size(bin_palette, 0x20)]
         elif map_entry.color_mode == 1:
@@ -164,6 +167,8 @@ class ExeMap(QtWidgets.QMainWindow):
         :param palette_list:
         """
         self.graphics_scene.clear()
+        self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
+        self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
         self.ui.bg1CheckBox.setChecked(True)
         self.ui.bg2CheckBox.setChecked(True)
 
@@ -184,18 +189,25 @@ class ExeMap(QtWidgets.QMainWindow):
 
             item.setPixmap(tile_image)
             item.setOffset(x, y)
-            self.graphics_scene.addItem(item)
+
+            if bg_num == 0:
+                self.graphics_group_bg1.addToGroup(item)
+            elif bg_num == 1:
+                self.graphics_group_bg2.addToGroup(item)
+
+        self.graphics_scene.addItem(self.graphics_group_bg1)
+        self.graphics_scene.addItem(self.graphics_group_bg2)
 
     def bg1_visible_changed(self, state: bool):
         """ BG1の表示切り替え
         """
-        # self.graphics_group_bg1.setVisible(state)
+        self.graphics_group_bg1.setVisible(state)
         pass
 
     def bg2_visible_changed(self, state: bool):
         """ BG2の表示切り替え
         """
-        # self.graphics_group_bg2.setVisible(state)
+        self.graphics_group_bg2.setVisible(state)
         pass
 
     def rubber_band_changed(self, select_rect):
