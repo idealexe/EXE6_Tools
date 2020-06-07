@@ -45,7 +45,7 @@ class ExeMap(QtWidgets.QMainWindow):
         self.current_map = None
         self.bin_map_bg = b''
 
-        with open('GXX.bin', 'rb') as bin_file:
+        with open(ARGS.file, 'rb') as bin_file:
             self.bin_data = bin_file.read()
 
         self.map_entry_list = self.init_map_entry_list()
@@ -57,7 +57,6 @@ class ExeMap(QtWidgets.QMainWindow):
         map_entry_list = []
         self.ui.mapList.clear()
 
-        count = 0
         for map_entry_offset in map_entry_offsets:
             tileset = int.from_bytes(self.bin_data[map_entry_offset:map_entry_offset+4], 'little')
             if tileset == 0:  # テーブル内に電脳とインターネットの区切りがあるので除去
@@ -65,11 +64,17 @@ class ExeMap(QtWidgets.QMainWindow):
 
             map_entry = ExeMapEntry(map_entry_offset, self.bin_data)
             map_entry_list.append(map_entry)
-            item = QtWidgets.QListWidgetItem(str(count) + ':\t' + hex(map_entry_offset))
-            self.ui.mapList.addItem(item)
-            count += 1
 
+        self.init_ui_map_entry_list(map_entry_list)
         return map_entry_list
+
+    def init_ui_map_entry_list(self, map_entry_list):
+        """ UIマップリストの初期化
+        """
+        self.ui.mapList.clear()
+        for index, map_entry in enumerate(map_entry_list):
+            item = QtWidgets.QListWidgetItem(str(index) + ':\t' + upper_hex(map_entry.offset))
+            self.ui.mapList.addItem(item)
 
     def ui_map_entry_selected(self):
         """ マップリストのアイテムがダブルクリックされたときの処理
@@ -84,13 +89,15 @@ class ExeMap(QtWidgets.QMainWindow):
         """
         self.ui.widthValueLabel.setText(str(self.current_map.width) + ' tile')
         self.ui.heightValueLabel.setText(str(self.current_map.height) + ' tile')
-        self.ui.tileMapValueLabel.setText(hex(self.current_map.tilemap_offset))
+        self.ui.tileSetValueLabel.setText(upper_hex(self.current_map.tileset))
+        self.ui.tileMapValueLabel.setText(upper_hex(self.current_map.tilemap))
+        self.ui.paletteValueLabel.setText(upper_hex(self.current_map.palette))
 
     def draw(self, map_entry):
         """ マップの描画
         """
         # パレットの更新
-        bin_palette = self.bin_data[map_entry.palette_offset: map_entry.palette_offset+0x200]
+        bin_palette = self.bin_data[map_entry.palette_offset: map_entry.palette_offset+map_entry.palette_size]
         palette_list = []
         if map_entry.color_mode == 0:
             palette_list = [Common.GbaPalette(bin_palette) for bin_palette in split_by_size(bin_palette, 0x20)]
@@ -245,7 +252,8 @@ class ExeMapEntry:
             [int.from_bytes(offset, 'little') - MEMORY_OFFSET
              for offset in split_by_size(self.bin_map_entry, 4)]
 
-        self.palette_offset = self.palette + 0x4
+        self.palette_offset = self.palette + DWORD
+        self.palette_size = int.from_bytes(bin_rom_data[self.palette:self.palette + DWORD], 'little')
 
         self.tileset_offset_1 = self.tileset + 0x18
         self.tileset_offset_2 = self.tileset + int.from_bytes(
@@ -294,6 +302,15 @@ def split_by_size(data: bytes, size: int) -> List[bytes]:
     :return: 文字列をn文字ずつに分割したリスト
     """
     return [data[i:i+size] for i in [i for i in range(0, len(data), size)]]
+
+
+def upper_hex(num: int) -> str:
+    """ 大文字の16進数値を返す
+
+    :param num: 数値
+    :return: 大文字の16進数値
+    """
+    return hex(num)[0:2] + hex(num)[2:].upper()
 
 
 if __name__ == '__main__':

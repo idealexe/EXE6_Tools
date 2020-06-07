@@ -115,15 +115,43 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QLabel" name="tileMapLabel">
               <property name="text">
                <string>Tile Map Offset:</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
+            <item row="3" column="1">
              <widget class="QLabel" name="tileMapValueLabel">
+              <property name="text">
+               <string>-</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="tileSetLabel">
+              <property name="text">
+               <string>Tile Set Offset</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLabel" name="tileSetValueLabel">
+              <property name="text">
+               <string>-</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="paletteLabel">
+              <property name="text">
+               <string>Palette Offset</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QLabel" name="paletteValueLabel">
               <property name="text">
                <string>-</string>
               </property>
@@ -517,7 +545,7 @@
    <sender>mapList</sender>
    <signal>itemDoubleClicked(QListWidgetItem*)</signal>
    <receiver>MainWindow</receiver>
-   <slot>map_entry_selected()</slot>
+   <slot>ui_map_entry_selected()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>109</x>
@@ -595,7 +623,7 @@
   </connection>
  </connections>
  <slots>
-  <slot>map_entry_selected()</slot>
+  <slot>ui_map_entry_selected()</slot>
   <slot>bg1_visible_changed()</slot>
   <slot>bg2_visible_changed()</slot>
   <slot>rubber_band_changed(QRect)</slot>

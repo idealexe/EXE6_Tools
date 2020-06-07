@@ -16,4 +16,5 @@ DWORD = 4
 TILE_DATA_SIZE_16 = 0x20    # 16色タイルのデータサイズ
 TILE_DATA_SIZE_256 = 0x40   # 256色タイルのデータサイズ
 ICON_PATH = '../resources/bug.png'
+LABEL_LIST_DIR = os.path.join(os.path.dirname(__file__), './lists')
 sys.path.append(os.path.join(os.path.dirname(__file__), '../common'))
