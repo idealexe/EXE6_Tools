@@ -6,12 +6,10 @@
 
 import argparse
 import logging
-from PyQt5 import QtWidgets, QtGui, QtCore
-from typing import List
 from PyQt5.QtWidgets import QGraphicsSceneMouseEvent
 from exe_map_settings import *
+from CommonAction import *
 import UI_ExeMap as Designer
-import CommonAction as Common
 import compress
 import LZ77Util
 
@@ -43,8 +41,8 @@ class ExeMap(QtWidgets.QMainWindow):
         self.graphics_scene = QtWidgets.QGraphicsScene(self)
         self.ui.graphicsView.setScene(self.graphics_scene)
         self.ui.graphicsView.scale(1, 1)
-        self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
-        self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
+        self.graphics_group_bg1 = TileGroup('bg1')
+        self.graphics_group_bg2 = TileGroup('bg2')
         self.graphics_scene.addItem(self.graphics_group_bg1)
         self.graphics_scene.addItem(self.graphics_group_bg2)
         self.current_map = None
@@ -101,23 +99,23 @@ class ExeMap(QtWidgets.QMainWindow):
         """
         # パレットの更新
         bin_palette = self.bin_data[map_entry.palette_offset: map_entry.palette_offset+map_entry.palette_size]
-        palette_list: List[Common.GbaPalette] = []
+        palette_list: List[GbaPalette] = []
         if map_entry.color_mode == 0:
-            palette_list = [Common.GbaPalette(bin_palette) for bin_palette in split_by_size(bin_palette, 0x20)]
+            palette_list = [GbaPalette(bin_palette) for bin_palette in split_by_size(bin_palette, 0x20)]
         elif map_entry.color_mode == 1:
-            palette_list.append(Common.GbaPalette(bin_palette, COLOR_NUM_256))
+            palette_list.append(GbaPalette(bin_palette, COLOR_NUM_256))
 
         # タイルの処理
         bin_tileset_1 = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tileset_offset_1)
         bin_tileset_2 = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tileset_offset_2)
         bin_tileset = bin_tileset_1 + bin_tileset_2
-        char_base: List[Common.GbaTile] = []
+        char_base: List[GbaTile] = []
 
         if map_entry.color_mode == 0:
-            char_base = [Common.GbaTile(bin_char)
+            char_base = [GbaTile(bin_char)
                          for bin_char in split_by_size(bin_tileset, TILE_DATA_SIZE_16)]
         elif map_entry.color_mode == 1:
-            char_base = [Common.GbaTile(bin_char, COLOR_NUM_256)
+            char_base = [GbaTile(bin_char, COLOR_NUM_256)
                          for bin_char in split_by_size(bin_tileset, TILE_DATA_SIZE_256)]
 
         self.ui_palette_update(palette_list, map_entry.color_mode)
@@ -125,8 +123,8 @@ class ExeMap(QtWidgets.QMainWindow):
         self.bin_map_bg = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tilemap_offset)
         self.draw_map(map_entry, char_base, palette_list)
 
-    def ui_tileset_update(self, tileset: List[Common.GbaTile],
-                          palette_list: List[Common.GbaPalette], color_mode: int) -> None:
+    def ui_tileset_update(self, tileset: List[GbaTile],
+                          palette_list: List[GbaPalette], color_mode: int) -> None:
         """ UIタイルセットの更新
         """
         self.ui.tilesetTable.clear()
@@ -143,7 +141,7 @@ class ExeMap(QtWidgets.QMainWindow):
             self.ui.tilesetTable.setItem(i // COLOR_NUM_16,
                                          i % COLOR_NUM_16, item)
 
-    def ui_palette_update(self, palette_list: List[Common.GbaPalette], color_mode: int) -> None:
+    def ui_palette_update(self, palette_list: List[GbaPalette], color_mode: int) -> None:
         """ UIパレットの更新
         """
         self.ui.paletteTable.clear()
@@ -167,8 +165,8 @@ class ExeMap(QtWidgets.QMainWindow):
         :param palette_list:
         """
         self.graphics_scene.clear()
-        self.graphics_group_bg1 = QtWidgets.QGraphicsItemGroup()
-        self.graphics_group_bg2 = QtWidgets.QGraphicsItemGroup()
+        self.graphics_group_bg1 = TileGroup('bg1')
+        self.graphics_group_bg2 = TileGroup('bg2')
         self.ui.bg1CheckBox.setChecked(True)
         self.ui.bg2CheckBox.setChecked(True)
 
@@ -194,6 +192,7 @@ class ExeMap(QtWidgets.QMainWindow):
                 self.graphics_group_bg1.addToGroup(item)
             elif bg_num == 1:
                 self.graphics_group_bg2.addToGroup(item)
+            self.graphics_scene.addRect(item.boundingRect(), pen=QtCore.Qt.cyan)
 
         self.graphics_scene.addItem(self.graphics_group_bg1)
         self.graphics_scene.addItem(self.graphics_group_bg2)
@@ -202,13 +201,11 @@ class ExeMap(QtWidgets.QMainWindow):
         """ BG1の表示切り替え
         """
         self.graphics_group_bg1.setVisible(state)
-        pass
 
     def bg2_visible_changed(self, state: bool):
         """ BG2の表示切り替え
         """
         self.graphics_group_bg2.setVisible(state)
-        pass
 
     def rubber_band_changed(self, select_rect):
         """
@@ -224,14 +221,25 @@ class ExeMap(QtWidgets.QMainWindow):
         base = self.map_entry_list[91]
         LOGGER.debug(base)
         to = 0x900000
-        self.bin_data = Common.write_bin(self.bin_data, to,
-                                         base.bin_tilemap_entry + base.get_bin_tilemap_compressed(self.bin_data))
-        self.bin_data = Common.write_bin(self.bin_data, base.tilemap_pointer,
-                                         (to + MEMORY_OFFSET).to_bytes(4, 'little'))
+        self.bin_data = write_bin(self.bin_data, to,
+                                  base.bin_tilemap_entry + base.get_bin_tilemap_compressed(self.bin_data))
+        self.bin_data = write_bin(self.bin_data, base.tilemap_pointer,
+                                  (to + MEMORY_OFFSET).to_bytes(4, 'little'))
 
         with open('output/BR5J.gba', 'wb') as output_file:
             LOGGER.info('ファイルを保存しました。')
             output_file.write(self.bin_data)
+
+
+class TileGroup(QtWidgets.QGraphicsItemGroup):
+    """ TileGroup
+    """
+    def __init__(self, bg_num: str):
+        super().__init__()
+        self.bg_num = bg_num
+
+    def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
+        LOGGER.debug(self.bg_num)
 
 
 class TileItem(QtWidgets.QGraphicsPixmapItem):
@@ -323,26 +331,6 @@ class ExeMapEntry:
                  'Height:\t' + str(self.height) + ' Tile\n' +\
                  'Tile Map Offset:\t' + hex(self.tilemap_offset)
         return string
-
-
-def split_by_size(data: bytes, size: int) -> List[bytes]:
-    """ データをn文字ずつに分割したリストを返す
-
-    :param data: 入力データ
-    :param size: 分割サイズ
-
-    :return: 文字列をn文字ずつに分割したリスト
-    """
-    return [data[i:i+size] for i in [i for i in range(0, len(data), size)]]
-
-
-def upper_hex(num: int) -> str:
-    """ 大文字の16進数値を返す
-
-    :param num: 数値
-    :return: 大文字の16進数値
-    """
-    return hex(num)[0:2] + hex(num)[2:].upper()
 
 
 if __name__ == '__main__':

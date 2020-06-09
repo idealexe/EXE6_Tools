@@ -9,9 +9,9 @@
 
 import gettext
 import os
-import sys
+from typing import List
 from PIL import Image
-from logging import getLogger, StreamHandler, INFO, DEBUG
+from logging import getLogger, StreamHandler, INFO
 from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
 
@@ -328,3 +328,23 @@ def write_bin(dest, offset, data):
     if len(dest) < offset:
         dest += b'\xFF' * (offset - len(dest))  # オフセットがデータサイズを超える場合はFFで埋める
     return dest[:offset] + data + dest[offset+len(data):]
+
+
+def split_by_size(data: bytes, size: int) -> List[bytes]:
+    """ データをn文字ずつに分割したリストを返す
+
+    :param data: 入力データ
+    :param size: 分割サイズ
+
+    :return: 文字列をn文字ずつに分割したリスト
+    """
+    return [data[i:i+size] for i in [i for i in range(0, len(data), size)]]
+
+
+def upper_hex(num: int) -> str:
+    """ 大文字の16進数値を返す
+
+    :param num: 数値
+    :return: 大文字の16進数値
+    """
+    return hex(num)[0:2] + hex(num)[2:].upper()

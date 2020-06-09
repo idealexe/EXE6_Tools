@@ -190,15 +190,6 @@
                  <height>0</height>
                 </size>
                </property>
-               <property name="backgroundBrush">
-                <brush brushstyle="CrossPattern">
-                 <color alpha="255">
-                  <red>150</red>
-                  <green>200</green>
-                  <blue>255</blue>
-                 </color>
-                </brush>
-               </property>
               </widget>
              </item>
              <item>
