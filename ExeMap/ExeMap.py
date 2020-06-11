@@ -6,13 +6,13 @@
 
 import argparse
 import logging
-from PyQt5.QtWidgets import QGraphicsSceneMouseEvent
 from exe_map_settings import *
 from CommonAction import *
 import UI_ExeMap as Designer
 import compress
 import LZ77Util
 
+from PyQt5.QtWidgets import QGraphicsSceneMouseEvent
 
 """ ロギング設定 """
 STREAM_HANDLER = logging.StreamHandler()
@@ -27,9 +27,104 @@ PARSER.add_argument('-f', '--file', help='開くROMファイル')
 ARGS = PARSER.parse_args()
 
 
+class TileItem(QtWidgets.QGraphicsPixmapItem):
+    """ TileItem
+    """
+    def __init__(self, parent, entry_num: int, bin_tile: bytes, bg_num: int):
+        super().__init__()
+        self.parent = parent
+        self.entry_num = entry_num  # タイルマップ内で何番目のタイルか
+        self.bin_tile = bin_tile
+        self.bg_num = bg_num
+
+        attribute = bin(int.from_bytes(bin_tile, 'little'))[2:].zfill(16)
+        self.palette_num = int(attribute[:4], 2)
+        self.flip_v = bool(int(attribute[4], 2))
+        self.flip_h = bool(int(attribute[5], 2))
+        self.tile_num = int(attribute[6:], 2)  # タイルセットの何番目のタイルを使用するか
+
+    def __str__(self):
+        string = 'NUM:\t' + str(self.entry_num) + '\n' \
+                 'BG:\t' + str(self.bg_num) + '\n' \
+                 'Palette:\t' + str(self.palette_num) + '\n' \
+                 'Flip V:\t' + str(self.flip_v) + '\n' \
+                 'Flip H:\t' + str(self.flip_h) + '\n' \
+                 'Tile:\t' + str(self.tile_num) + '\n'
+        return string
+
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        """ タイルクリック時の処理
+        """
+        button = event.button()
+        if button == 1:
+            # Left Click
+            self.parent.tile_item_left_click(self)
+        elif button == 2:
+            # Right Click
+            self.parent.tile_item_right_click(self)
+
+
+class ExeMapEntry:
+    """ EXE Map Entry
+    """
+    def __init__(self, map_entry_offset: int, bin_rom_data: bytes):
+        self.offset = map_entry_offset  # マップエントリ開始位置のアドレス
+        self.tileset_pointer = map_entry_offset  # タイルセットのポインタのアドレス（＝エントリ開始位置）
+        self.palette_pointer = map_entry_offset + 4  # パレットのポインタのアドレス
+        self.tilemap_pointer = map_entry_offset + 8  # タイルマップのポインタのアドレス
+
+        self.bin_map_entry = bin_rom_data[map_entry_offset:map_entry_offset+MAP_ENTRY_SIZE]
+        self.tileset, self.palette, self.tilemap = \
+            [int.from_bytes(offset, 'little') - MEMORY_OFFSET
+             for offset in split_by_size(self.bin_map_entry, 4)]
+
+        self.palette_offset = self.palette + DWORD
+        self.palette_size = int.from_bytes(bin_rom_data[self.palette:self.palette + DWORD], 'little')
+
+        self.tileset_offset_1 = self.tileset + 0x18
+        self.tileset_offset_2 = self.tileset + int.from_bytes(
+            bin_rom_data[self.tileset + 0x10: self.tileset + 0x14], 'little')
+
+        self.bin_tilemap_entry = bin_rom_data[self.tilemap:self.tilemap + 0xC]
+        self.width = bin_rom_data[self.tilemap]
+        self.height = bin_rom_data[self.tilemap + 1]
+        self.color_mode = bin_rom_data[self.tilemap + 2]  # おそらく（0: 16色、1: 256色）
+        self.tilemap_offset = self.tilemap + 0xC
+
+    def get_bin_tilemap(self, bin_rom_data):
+        """ 非圧縮のタイルマップを取得する
+
+        :param bin_rom_data:
+        :return: 非圧縮のタイルマップ
+        """
+        return LZ77Util.decompLZ77_10(bin_rom_data, self.tilemap_offset)
+
+    def get_bin_tilemap_compressed(self, bin_rom_data):
+        """ 圧縮したタイルマップを取得する
+
+        :param bin_rom_data:
+        :return: 圧縮したタイルマップ
+        """
+        tilemap = LZ77Util.decompLZ77_10(bin_rom_data, self.tilemap_offset)
+        return compress.compress(tilemap)
+
+    def __str__(self):
+        string = 'Entry Offset:\t' + hex(self.offset) + '\n' +\
+                 'Tile Set Entry:\t' + hex(self.tileset) + '\n' +\
+                 'Palette Entry:\t' + hex(self.palette) + '\n' +\
+                 'Tile Map Entry:\t' + hex(self.tilemap) + '\n' +\
+                 'Width:\t' + str(self.width) + ' Tile\n' +\
+                 'Height:\t' + str(self.height) + ' Tile\n' +\
+                 'Tile Map Offset:\t' + hex(self.tilemap_offset)
+        return string
+
+
 class ExeMap(QtWidgets.QMainWindow):
     """ EXE Map
     """
+    current_map: ExeMapEntry
+    current_brush: TileItem
+
     def __init__(self, parent=None):
         """ init
         """
@@ -40,18 +135,20 @@ class ExeMap(QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon(ICON_PATH))
         self.graphics_scene = QtWidgets.QGraphicsScene(self)
         self.ui.graphicsView.setScene(self.graphics_scene)
-        self.ui.graphicsView.scale(1, 1)
-        self.graphics_group_bg1 = TileGroup('bg1')
-        self.graphics_group_bg2 = TileGroup('bg2')
+        self.ui.graphicsView.scale(2, 2)
+        self.graphics_group_bg1 = QtWidgets.QGraphicsPixmapItem()
+        self.graphics_group_bg2 = QtWidgets.QGraphicsPixmapItem()
+        self.graphics_group_bg1.setZValue(0)
+        self.graphics_group_bg2.setZValue(-1)
         self.graphics_scene.addItem(self.graphics_group_bg1)
         self.graphics_scene.addItem(self.graphics_group_bg2)
-        self.current_map = None
+        self.current_tiles: List[TileItem] = []
         self.bin_map_bg: bytes = b''
 
         with open(ARGS.file, 'rb') as bin_file:
             self.bin_data = bin_file.read()
 
-        self.map_entry_list = self.init_map_entry_list()
+        self.map_entry_list: List[ExeMapEntry] = self.init_map_entry_list()
 
     def init_map_entry_list(self):
         """ マップリストの初期化
@@ -164,38 +261,47 @@ class ExeMap(QtWidgets.QMainWindow):
         :param char_base:
         :param palette_list:
         """
+        # タイルのロード
+        self.current_tiles: List[TileItem] = []
+        for entry_num, tile_entry in enumerate(split_by_size(self.bin_map_bg, WORD)):
+            bg_num = entry_num // (map_entry.width * map_entry.height)
+            tile_item = TileItem(self, entry_num, tile_entry, bg_num)
+            self.current_tiles.append(tile_item)
+
+        # タイルの描画
         self.graphics_scene.clear()
-        self.graphics_group_bg1 = TileGroup('bg1')
-        self.graphics_group_bg2 = TileGroup('bg2')
+        self.graphics_group_bg1 = QtWidgets.QGraphicsPixmapItem()
+        self.graphics_group_bg2 = QtWidgets.QGraphicsPixmapItem()
+        self.graphics_group_bg1.setZValue(0)
+        self.graphics_group_bg2.setZValue(-1)
+        self.graphics_scene.addItem(self.graphics_group_bg1)
+        self.graphics_scene.addItem(self.graphics_group_bg2)
         self.ui.bg1CheckBox.setChecked(True)
         self.ui.bg2CheckBox.setChecked(True)
 
-        for entry_num, tile_entry in enumerate(split_by_size(self.bin_map_bg, WORD)):
-            bg_num = entry_num // (map_entry.width * map_entry.height)
-            x = entry_num % map_entry.width * 8
-            y = entry_num // map_entry.width % map_entry.height * 8
-            item = TileItem(entry_num, tile_entry, bg_num)
+        for tile_item in self.current_tiles:
+            x = tile_item.entry_num % map_entry.width * 8
+            y = tile_item.entry_num // map_entry.width % map_entry.height * 8
 
             if map_entry.color_mode == 0:
-                char_base[item.tile_num].image.setColorTable(palette_list[item.palette_num].get_qcolors())
+                char_base[tile_item.tile_num].image.setColorTable(palette_list[tile_item.palette_num].get_qcolors())
 
-            tile_image = QtGui.QPixmap.fromImage(char_base[item.tile_num].image)
-            if item.flip_h:
+            tile_image = QtGui.QPixmap.fromImage(char_base[tile_item.tile_num].image)
+            if tile_item.flip_h:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(-1, 1))
-            if item.flip_v:
+            if tile_item.flip_v:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(1, -1))
 
-            item.setPixmap(tile_image)
-            item.setOffset(x, y)
+            tile_item.setPixmap(tile_image)
+            tile_item.setOffset(x, y)
 
-            if bg_num == 0:
-                self.graphics_group_bg1.addToGroup(item)
-            elif bg_num == 1:
-                self.graphics_group_bg2.addToGroup(item)
-            self.graphics_scene.addRect(item.boundingRect(), pen=QtCore.Qt.cyan)
+            self.graphics_scene.addRect(tile_item.boundingRect(), pen=QtGui.QPen(QtGui.QColor(0, 200, 255, 20)))
+            if tile_item.bg_num == 0:
+                tile_item.setParentItem(self.graphics_group_bg1)
+            elif tile_item.bg_num == 1:
+                tile_item.setParentItem(self.graphics_group_bg2)
 
-        self.graphics_scene.addItem(self.graphics_group_bg1)
-        self.graphics_scene.addItem(self.graphics_group_bg2)
+        self.current_brush = self.current_tiles[0]
 
     def bg1_visible_changed(self, state: bool):
         """ BG1の表示切り替え
@@ -207,8 +313,24 @@ class ExeMap(QtWidgets.QMainWindow):
         """
         self.graphics_group_bg2.setVisible(state)
 
-    def rubber_band_changed(self, select_rect):
+    def bg1_radio_changed(self, state: bool):
+        """ BG1の編集切り替え
         """
+        if state:
+            self.graphics_group_bg1.setZValue(0)
+        else:
+            self.graphics_group_bg1.setZValue(-1)
+
+    def bg2_radio_changed(self, state: bool):
+        """ BG2の編集切り替え
+        """
+        if state:
+            self.graphics_group_bg2.setZValue(0)
+        else:
+            self.graphics_group_bg2.setZValue(-1)
+
+    def rubber_band_changed(self, select_rect):
+        """ 範囲選択時
 
         :param select_rect:
         """
@@ -230,107 +352,21 @@ class ExeMap(QtWidgets.QMainWindow):
             LOGGER.info('ファイルを保存しました。')
             output_file.write(self.bin_data)
 
+    def tile_item_left_click(self, tile: TileItem):
+        """ タイル左クリック時
 
-class TileGroup(QtWidgets.QGraphicsItemGroup):
-    """ TileGroup
-    """
-    def __init__(self, bg_num: str):
-        super().__init__()
-        self.bg_num = bg_num
-
-    def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
-        LOGGER.debug(self.bg_num)
-
-
-class TileItem(QtWidgets.QGraphicsPixmapItem):
-    """ TileItem
-    """
-    def __init__(self, entry_num: int, bin_tile: bytes, bg_num: int):
-        super().__init__()
-        self.entry_num = entry_num  # タイルマップ内で何番目のタイルか
-        self.bin_tile = bin_tile
-        self.bg_num = bg_num
-
-        attribute = bin(int.from_bytes(bin_tile, 'little'))[2:].zfill(16)
-        self.palette_num = int(attribute[:4], 2)
-        self.flip_v = bool(int(attribute[4], 2))
-        self.flip_h = bool(int(attribute[5], 2))
-        self.tile_num = int(attribute[6:], 2)  # タイルセットの何番目のタイルを使用するか
-
-    def __str__(self):
-        string = 'NUM:\t' + str(self.entry_num) + '\n' \
-                 'BG:\t' + str(self.bg_num) + '\n' \
-                 'Palette:\t' + str(self.palette_num) + '\n' \
-                 'Flip V:\t' + str(self.flip_v) + '\n' \
-                 'Flip H:\t' + str(self.flip_h) + '\n' \
-                 'Tile:\t' + str(self.tile_num) + '\n'
-        return string
-
-    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        """ タイルクリック時の処理
+            クリック位置に現在の描画タイルで描画してマップを更新
         """
-        button = event.button()
-        if button == 1:
-            # Left Click
-            LOGGER.debug(self)
-        elif button == 2:
-            # Right Click
-            LOGGER.debug(self)
+        LOGGER.debug(tile.entry_num)
+        tile.setPixmap(self.current_brush.pixmap())
 
+    def tile_item_right_click(self, tile: TileItem):
+        """ タイル右クリック時
 
-class ExeMapEntry:
-    """ EXE Map Entry
-    """
-    def __init__(self, map_entry_offset: int, bin_rom_data: bytes):
-        self.offset = map_entry_offset  # マップエントリ開始位置のアドレス
-        self.tileset_pointer = map_entry_offset  # タイルセットのポインタのアドレス（＝エントリ開始位置）
-        self.palette_pointer = map_entry_offset + 4  # パレットのポインタのアドレス
-        self.tilemap_pointer = map_entry_offset + 8  # タイルマップのポインタのアドレス
-
-        self.bin_map_entry = bin_rom_data[map_entry_offset:map_entry_offset+MAP_ENTRY_SIZE]
-        self.tileset, self.palette, self.tilemap = \
-            [int.from_bytes(offset, 'little') - MEMORY_OFFSET
-             for offset in split_by_size(self.bin_map_entry, 4)]
-
-        self.palette_offset = self.palette + DWORD
-        self.palette_size = int.from_bytes(bin_rom_data[self.palette:self.palette + DWORD], 'little')
-
-        self.tileset_offset_1 = self.tileset + 0x18
-        self.tileset_offset_2 = self.tileset + int.from_bytes(
-            bin_rom_data[self.tileset + 0x10: self.tileset + 0x14], 'little')
-
-        self.bin_tilemap_entry = bin_rom_data[self.tilemap:self.tilemap + 0xC]
-        self.width = bin_rom_data[self.tilemap]
-        self.height = bin_rom_data[self.tilemap + 1]
-        self.color_mode = bin_rom_data[self.tilemap + 2]  # おそらく（0: 16色、1: 256色）
-        self.tilemap_offset = self.tilemap + 0xC
-
-    def get_bin_tilemap(self, bin_rom_data):
-        """ 非圧縮のタイルマップを取得する
-
-        :param bin_rom_data:
-        :return: 非圧縮のタイルマップ
+            クリックしたタイルを描画タイルにする。
         """
-        return LZ77Util.decompLZ77_10(bin_rom_data, self.tilemap_offset)
-
-    def get_bin_tilemap_compressed(self, bin_rom_data):
-        """ 圧縮したタイルマップを取得する
-
-        :param bin_rom_data:
-        :return: 圧縮したタイルマップ
-        """
-        tilemap = LZ77Util.decompLZ77_10(bin_rom_data, self.tilemap_offset)
-        return compress.compress(tilemap)
-
-    def __str__(self):
-        string = 'Entry Offset:\t' + hex(self.offset) + '\n' +\
-                 'Tile Set Entry:\t' + hex(self.tileset) + '\n' +\
-                 'Palette Entry:\t' + hex(self.palette) + '\n' +\
-                 'Tile Map Entry:\t' + hex(self.tilemap) + '\n' +\
-                 'Width:\t' + str(self.width) + ' Tile\n' +\
-                 'Height:\t' + str(self.height) + ' Tile\n' +\
-                 'Tile Map Offset:\t' + hex(self.tilemap_offset)
-        return string
+        LOGGER.debug(tile)
+        self.current_brush = tile
 
 
 if __name__ == '__main__':

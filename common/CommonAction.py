@@ -70,7 +70,8 @@ class GbaPalette:
 
         for color in self.color:
             if len(colors) == 0:
-                colors.append(QtGui.qRgba(color.r, color.g, color.b, 0))  # 最初の色は透過色
+                # 最初の色は透過色 TODO:透明度0だとQGraphicsItemで使うときmousePressEventが発火しないので仕方なく1にしているのを直す
+                colors.append(QtGui.qRgba(color.r, color.g, color.b, 1))
             else:
                 colors.append(QtGui.qRgba(color.r, color.g, color.b, 255))
 

@@ -441,7 +441,7 @@
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="QRadioButton" name="radioButton_2">
+                   <widget class="QRadioButton" name="bg1RadioButton">
                     <property name="text">
                      <string/>
                     </property>
@@ -458,7 +458,7 @@
                    </widget>
                   </item>
                   <item row="2" column="1">
-                   <widget class="QRadioButton" name="radioButton_3">
+                   <widget class="QRadioButton" name="bg2RadioButton">
                     <property name="text">
                      <string/>
                     </property>
@@ -618,6 +618,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>bg1RadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>bg2_radio_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>856</x>
+     <y>705</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>989</x>
+     <y>774</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>bg2RadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>bg1_radio_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>852</x>
+     <y>726</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1161</x>
+     <y>773</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>ui_map_entry_selected()</slot>
@@ -625,5 +657,7 @@
   <slot>bg2_visible_changed()</slot>
   <slot>rubber_band_changed(QRect)</slot>
   <slot>save()</slot>
+  <slot>bg1_radio_changed()</slot>
+  <slot>bg2_radio_changed()</slot>
  </slots>
 </ui>
