@@ -95,6 +95,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
         self.graphicsView = QtWidgets.QGraphicsView(self.frame)
         self.graphicsView.setMinimumSize(QtCore.QSize(400, 0))
+        self.graphicsView.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
         self.graphicsView.setObjectName("graphicsView")
         self.horizontalLayout_4.addWidget(self.graphicsView)
         self.verticalLayout_4 = QtWidgets.QVBoxLayout()

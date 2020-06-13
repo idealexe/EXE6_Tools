@@ -190,6 +190,9 @@
                  <height>0</height>
                 </size>
                </property>
+               <property name="dragMode">
+                <enum>QGraphicsView::RubberBandDrag</enum>
+               </property>
               </widget>
              </item>
              <item>

@@ -21,7 +21,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 LOGGER.addHandler(STREAM_HANDLER)
 
-""" パーサ設定 """
+""" 引数パーサ設定 """
 PARSER = argparse.ArgumentParser(description=PROGRAM_NAME)
 PARSER.add_argument('-f', '--file', help='開くROMファイル')
 ARGS = PARSER.parse_args()
@@ -30,30 +30,27 @@ ARGS = PARSER.parse_args()
 class TileItem(QtWidgets.QGraphicsPixmapItem):
     """ TileItem
     """
-    def __init__(self, parent, entry_num: int, bin_tile: bytes, bg_num: int):
+
+    def __init__(self, parent, entry_num: int, bg_num: int, bin_tile: bytes):
         super().__init__()
         self.parent = parent
         self.entry_num = entry_num  # タイルマップ内で何番目のタイルか
-        self.bin_tile = bin_tile
         self.bg_num = bg_num
-
-        attribute = bin(int.from_bytes(bin_tile, 'little'))[2:].zfill(16)
-        self.palette_num = int(attribute[:4], 2)
-        self.flip_v = bool(int(attribute[4], 2))
-        self.flip_h = bool(int(attribute[5], 2))
-        self.tile_num = int(attribute[6:], 2)  # タイルセットの何番目のタイルを使用するか
+        self.bg_screen = GbaBgScreen(bin_tile)
 
     def __str__(self):
         string = 'NUM:\t' + str(self.entry_num) + '\n' \
                  'BG:\t' + str(self.bg_num) + '\n' \
-                 'Palette:\t' + str(self.palette_num) + '\n' \
-                 'Flip V:\t' + str(self.flip_v) + '\n' \
-                 'Flip H:\t' + str(self.flip_h) + '\n' \
-                 'Tile:\t' + str(self.tile_num) + '\n'
+                 'Palette:\t' + str(self.bg_screen.palette_num) + '\n' \
+                 'Flip V:\t' + str(self.bg_screen.flip_v) + '\n' \
+                 'Flip H:\t' + str(self.bg_screen.flip_h) + '\n' \
+                 'Tile:\t' + str(self.bg_screen.tile_num) + '\n'
         return string
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """ タイルクリック時の処理
+
+        :param event: QGraphicsSceneMouseEvent
         """
         button = event.button()
         if button == 1:
@@ -61,12 +58,13 @@ class TileItem(QtWidgets.QGraphicsPixmapItem):
             self.parent.tile_item_left_click(self)
         elif button == 2:
             # Right Click
-            self.parent.tile_item_right_click(self)
+            event.ignore()
 
 
 class ExeMapEntry:
     """ EXE Map Entry
     """
+
     def __init__(self, map_entry_offset: int, bin_rom_data: bytes):
         self.offset = map_entry_offset  # マップエントリ開始位置のアドレス
         self.tileset_pointer = map_entry_offset  # タイルセットのポインタのアドレス（＝エントリ開始位置）
@@ -123,7 +121,7 @@ class ExeMap(QtWidgets.QMainWindow):
     """ EXE Map
     """
     current_map: ExeMapEntry
-    current_brush: TileItem
+    current_brush: List[TileItem]
 
     def __init__(self, parent=None):
         """ init
@@ -200,7 +198,7 @@ class ExeMap(QtWidgets.QMainWindow):
         if map_entry.color_mode == 0:
             palette_list = [GbaPalette(bin_palette) for bin_palette in split_by_size(bin_palette, 0x20)]
         elif map_entry.color_mode == 1:
-            palette_list.append(GbaPalette(bin_palette, COLOR_NUM_256))
+            palette_list.append(GbaPalette(bin_palette))
 
         # タイルの処理
         bin_tileset_1 = LZ77Util.decompLZ77_10(self.bin_data, map_entry.tileset_offset_1)
@@ -265,7 +263,7 @@ class ExeMap(QtWidgets.QMainWindow):
         self.current_tiles: List[TileItem] = []
         for entry_num, tile_entry in enumerate(split_by_size(self.bin_map_bg, WORD)):
             bg_num = entry_num // (map_entry.width * map_entry.height)
-            tile_item = TileItem(self, entry_num, tile_entry, bg_num)
+            tile_item = TileItem(self, entry_num, bg_num, tile_entry)
             self.current_tiles.append(tile_item)
 
         # タイルの描画
@@ -284,12 +282,13 @@ class ExeMap(QtWidgets.QMainWindow):
             y = tile_item.entry_num // map_entry.width % map_entry.height * 8
 
             if map_entry.color_mode == 0:
-                char_base[tile_item.tile_num].image.setColorTable(palette_list[tile_item.palette_num].get_qcolors())
+                char_base[tile_item.bg_screen.tile_num].image\
+                    .setColorTable(palette_list[tile_item.bg_screen.palette_num].get_qcolors())
 
-            tile_image = QtGui.QPixmap.fromImage(char_base[tile_item.tile_num].image)
-            if tile_item.flip_h:
+            tile_image = QtGui.QPixmap.fromImage(char_base[tile_item.bg_screen.tile_num].image)
+            if tile_item.bg_screen.flip_h:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(-1, 1))
-            if tile_item.flip_v:
+            if tile_item.bg_screen.flip_v:
                 tile_image = tile_image.transformed(QtGui.QTransform().scale(1, -1))
 
             tile_item.setPixmap(tile_image)
@@ -301,7 +300,7 @@ class ExeMap(QtWidgets.QMainWindow):
             elif tile_item.bg_num == 1:
                 tile_item.setParentItem(self.graphics_group_bg2)
 
-        self.current_brush = self.current_tiles[0]
+        self.current_brush = [self.current_tiles[0]]
 
     def bg1_visible_changed(self, state: bool):
         """ BG1の表示切り替え
@@ -334,8 +333,19 @@ class ExeMap(QtWidgets.QMainWindow):
 
         :param select_rect:
         """
+        if not select_rect:
+            # 選択終了時は空になるのでスキップ
+            return
         items = self.ui.graphicsView.items(select_rect)
-        LOGGER.debug(items)
+        items: List[TileItem] = [item for item in items if isinstance(item, TileItem) and item.bg_num == 0]
+        items.sort(key=lambda item: item.entry_num)
+
+        self.current_brush = []
+        for item in items:
+            # 参照渡しだとコピー元が変わってしまうと描画ブラシの内容も変わってしまうので生成し直す
+            new_tile = TileItem(item.parent, item.entry_num, item.bg_num, item.bg_screen.bin_screen_data)
+            new_tile.setPixmap(item.pixmap())
+            self.current_brush.append(new_tile)
 
     def save(self):
         """ ROMの保存
@@ -357,16 +367,12 @@ class ExeMap(QtWidgets.QMainWindow):
 
             クリック位置に現在の描画タイルで描画してマップを更新
         """
-        LOGGER.debug(tile.entry_num)
-        tile.setPixmap(self.current_brush.pixmap())
-
-    def tile_item_right_click(self, tile: TileItem):
-        """ タイル右クリック時
-
-            クリックしたタイルを描画タイルにする。
-        """
-        LOGGER.debug(tile)
-        self.current_brush = tile
+        offset = self.current_brush[0].entry_num - tile.entry_num
+        for tile in self.current_brush:
+            target = tile.entry_num - offset
+            if target >= 0:
+                self.current_tiles[target].setPixmap(tile.pixmap())
+                self.current_tiles[target].bg_screen = tile.bg_screen
 
 
 if __name__ == '__main__':
